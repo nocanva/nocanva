@@ -14,13 +14,13 @@ Framewise is the working name for the AI-native branded media generator.
 
 Exit test: a user can edit structured copy, change a template or format, and see a consistent branded result without a freeform canvas.
 
-### Milestone 2: real rendering
+### Milestone 2: real rendering — complete
 
-- Extract template and brand definitions into shared application services.
-- Add schema validation for every content payload.
-- Render fixed-size HTML/CSS with bundled fonts.
-- Export 1080 × 1350 and 1080 × 1080 PNG files through Playwright.
-- Add layout checks for overflow, missing assets, and unsafe logo placement.
+- Extracted template and brand definitions into shared application services.
+- Added schema validation for every content payload.
+- Added fixed-size HTML/CSS output with deterministic 1080 px canvases.
+- Added browser download plus a Playwright automation renderer.
+- Added layout checks for overflow, canvas bounds, and font readiness.
 
 Exit test: one command or application call creates a pixel-stable PNG from a template ID and structured content.
 
