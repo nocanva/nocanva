@@ -1,20 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
-type TemplateId = "statement" | "signal";
-type FormatId = "portrait" | "square";
-
-const templates = {
-  statement: {
-    name: "Editorial statement",
-    description: "One strong idea with a sharp supporting line.",
-  },
-  signal: {
-    name: "Signal card",
-    description: "A numbered claim for a recurring evidence series.",
-  },
-} as const;
+import { useMemo, useRef, useState } from "react";
+import { toPng } from "html-to-image";
+import { PostArtwork } from "./post-artwork";
+import {
+  formats,
+  postPayloadSchema,
+  renderFilename,
+  templates,
+  type FormatId,
+  type PostPayload,
+  type TemplateId,
+} from "../lib/media";
+import { inspectRenderNode, type RenderCheck } from "../lib/render-checks";
 
 const recentRenders = [
   { id: "R-018", title: "Screenshots aren’t evidence", template: "Editorial statement", time: "12 min ago" },
@@ -31,6 +29,17 @@ export function Studio() {
     "Without a source, timestamp, and surrounding context, an image only proves that pixels exist.",
   );
   const [notice, setNotice] = useState("Preview is ready");
+  const [isRendering, setIsRendering] = useState(false);
+  const [checks, setChecks] = useState<RenderCheck[]>([]);
+  const exportRef = useRef<HTMLElement>(null);
+
+  const payload: PostPayload = {
+    brandId: "blindspot",
+    templateId: template,
+    format,
+    content: { eyebrow, headline, support },
+  };
+  const validation = postPayloadSchema.safeParse(payload);
 
   const headlineState = useMemo(() => {
     if (headline.length > 84) return "Too long for this template";
@@ -47,8 +56,44 @@ export function Studio() {
     setNotice("Content reset");
   }
 
-  function createDraft() {
-    setNotice(`Draft preview prepared with ${templates[template].name}`);
+  async function renderPng() {
+    if (!validation.success) {
+      setNotice(validation.error.issues[0]?.message ?? "Content is not ready");
+      return;
+    }
+    if (!exportRef.current) return;
+
+    setIsRendering(true);
+    setNotice("Checking layout…");
+    try {
+      const nextChecks = await inspectRenderNode(exportRef.current);
+      setChecks(nextChecks);
+      if (nextChecks.some((check) => !check.passed)) {
+        setNotice("Layout check failed — shorten the copy");
+        return;
+      }
+
+      setNotice("Rendering 1080 px PNG…");
+      const dimensions = formats[payload.format];
+      const dataUrl = await toPng(exportRef.current, {
+        width: dimensions.width,
+        height: dimensions.height,
+        canvasWidth: dimensions.width,
+        canvasHeight: dimensions.height,
+        pixelRatio: 1,
+        cacheBust: false,
+        backgroundColor: "#efede6",
+      });
+      const link = document.createElement("a");
+      link.download = renderFilename(payload);
+      link.href = dataUrl;
+      link.click();
+      setNotice(`PNG ready · ${dimensions.width} × ${dimensions.height}`);
+    } catch {
+      setNotice("PNG render failed — please try again");
+    } finally {
+      setIsRendering(false);
+    }
   }
 
   return (
@@ -84,8 +129,8 @@ export function Studio() {
           <div className="rail-section">
             <p className="section-label">Build status</p>
             <ol className="milestone-list">
-              <li className="done"><span>01</span><div><strong>Brand foundation</strong><small>Active now</small></div></li>
-              <li className="current"><span>02</span><div><strong>PNG renderer</strong><small>Up next</small></div></li>
+              <li className="done"><span>01</span><div><strong>Brand foundation</strong><small>Complete</small></div></li>
+              <li className="current"><span>02</span><div><strong>PNG renderer</strong><small>Active now</small></div></li>
               <li><span>03</span><div><strong>Render history</strong><small>Planned</small></div></li>
               <li><span>04</span><div><strong>Agent workflow</strong><small>Planned</small></div></li>
             </ol>
@@ -170,28 +215,26 @@ export function Studio() {
           </div>
 
           <div className="canvas-stage">
-            <article className={`post-canvas ${format} ${template}`} aria-label="Rendered Blindspot post preview">
-              <header>
-                <span className="post-logo">BLINDSPOT<span>●</span></span>
-                <span className="post-format">{format === "portrait" ? "1080 × 1350" : "1080 × 1080"}</span>
-              </header>
-              <div className="post-content">
-                <p className="post-eyebrow">{eyebrow || "UNTITLED SERIES"}</p>
-                {template === "signal" && <span className="signal-number">01</span>}
-                <h2>{headline || "Your headline appears here."}</h2>
-                <div className="red-rule" />
-                <p className="post-support">{support || "Add supporting context to complete this frame."}</p>
-              </div>
-              <footer><span>LOOK CLOSER.</span><span>blindspot.media</span></footer>
-            </article>
+            <PostArtwork payload={payload} />
+          </div>
+
+          <div className="export-surface" aria-hidden="true">
+            <PostArtwork ref={exportRef} payload={payload} mode="export" />
           </div>
 
           <div className="preview-meta">
             <div><span>Template</span><strong>{templates[template].name}</strong></div>
-            <div><span>Brand rules</span><strong>All checks passed</strong></div>
+            <div><span>Brand rules</span><strong>{validation.success ? "Schema passed" : "Needs attention"}</strong></div>
           </div>
-          <button className="primary-button" onClick={createDraft} type="button">Prepare draft preview <span>→</span></button>
-          <p className="export-note">PNG export arrives in milestone 2.</p>
+          <button className="primary-button" disabled={isRendering || !validation.success} onClick={renderPng} type="button">
+            {isRendering ? "Rendering PNG…" : "Render & download PNG"}<span>↓</span>
+          </button>
+          <p className="export-note">Exports a checked, Instagram-ready 1080 px PNG.</p>
+          {checks.length > 0 && (
+            <div className="render-checks" aria-live="polite">
+              {checks.map((check) => <span className={check.passed ? "passed" : "failed"} key={check.id}>{check.passed ? "✓" : "!"} {check.label}</span>)}
+            </div>
+          )}
 
           <section className="recent-renders" id="renders">
             <div className="recent-heading"><h2>Recent renders</h2><button type="button">View all</button></div>

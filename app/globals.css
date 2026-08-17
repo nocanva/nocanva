@@ -109,6 +109,19 @@ button { color: inherit; }
 .signal-number { position: absolute; left: 0; top: 1px; color: var(--red); font: 700 clamp(12px,1.4vw,20px)/1 var(--font-serif); }
 .post-canvas.signal h2 { font-family: var(--font-sans), sans-serif; font-weight: 800; letter-spacing: -.06em; }
 .post-canvas.signal .red-rule { height: 2px; width: 100%; }
+.export-surface { position: fixed; left: -1200px; top: 0; width: 1080px; pointer-events: none; }
+.post-canvas.export { width: 1080px; max-width: none; height: 1350px; aspect-ratio: auto; padding: 81px; box-shadow: none; transition: none; }
+.post-canvas.export.square { height: 1080px; }
+.post-canvas.export header, .post-canvas.export footer { font-size: 18px; }
+.post-canvas.export .post-eyebrow { margin-bottom: 112px; font-size: 20px; }
+.post-canvas.export h2 { max-width: 94%; font-size: 96px; }
+.post-canvas.export .red-rule { width: 96px; height: 10px; margin: 74px 0 54px; }
+.post-canvas.export .post-support { max-width: 86%; font-size: 28px; }
+.post-canvas.export.signal .signal-number { font-size: 38px; }
+.post-canvas.export.signal h2 { font-size: 88px; }
+.post-canvas.export.signal .red-rule { width: 100%; height: 4px; }
+.render-route { min-width: 1080px; min-height: 1080px; margin: 0; padding: 0; background: #efede6; }
+.render-route .post-canvas.export { position: relative; }
 .preview-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
 .preview-meta div { border: 1px solid #d3d1c9; background: #f7f6f1; padding: 10px; }
 .preview-meta span, .preview-meta strong { display: block; }
@@ -116,7 +129,12 @@ button { color: inherit; }
 .preview-meta strong { font-size: 10px; }
 .primary-button { width: 100%; display: flex; justify-content: space-between; border: 0; background: var(--ink); color: white; padding: 13px 15px; font-size: 11px; font-weight: 750; cursor: pointer; }
 .primary-button:hover { background: #30302a; }
+.primary-button:disabled { cursor: not-allowed; background: #77766f; }
 .export-note { margin: 8px 0 26px; text-align: center; color: var(--muted); font-size: 8px; }
+.render-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: -16px 0 22px; }
+.render-checks span { padding: 6px 8px; border: 1px solid #d3d1c9; background: #f7f6f1; font-size: 8px; }
+.render-checks .passed { color: var(--green); }
+.render-checks .failed { color: var(--red); }
 .recent-renders { padding-top: 22px; border-top: 1px solid #d4d2ca; }
 .recent-heading { display: flex; justify-content: space-between; align-items: center; }
 .recent-heading h2 { margin: 0; font-size: 12px; }
