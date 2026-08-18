@@ -13,7 +13,12 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     const rect = region.getBoundingClientRect();
     return rect.left < rootRect.left - 1 || rect.top < rootRect.top - 1 || rect.right > rootRect.right + 1 || rect.bottom > rootRect.bottom + 1;
   });
-  const overflowing = regions.filter((region) => region.scrollWidth > region.clientWidth + 1 || region.scrollHeight > region.clientHeight + 1);
+  const overflowing = regions.filter((region) => {
+    const style = getComputedStyle(region);
+    const clipsX = ["hidden", "clip"].includes(style.overflowX);
+    const clipsY = ["hidden", "clip"].includes(style.overflowY);
+    return (clipsX && region.scrollWidth > region.clientWidth + 1) || (clipsY && region.scrollHeight > region.clientHeight + 1);
+  });
 
   return [
     { id: "schema", label: "Content schema", passed: true, detail: "All required fields are valid." },

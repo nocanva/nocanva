@@ -97,20 +97,20 @@ button { color: inherit; }
 .post-canvas { width: min(100%, 410px); aspect-ratio: 4/5; background: #efede6; box-shadow: 0 18px 36px rgba(28,27,23,.15); padding: 7.5%; display: flex; flex-direction: column; transition: aspect-ratio .2s; overflow: hidden; }
 .post-canvas.square { aspect-ratio: 1/1; }
 .post-canvas header, .post-canvas footer { display: flex; justify-content: space-between; align-items: center; font-size: clamp(6px, .65vw, 9px); font-weight: 800; letter-spacing: .09em; }
-.post-logo span { color: var(--red); padding-left: 2px; }
+.post-logo span { color: var(--brand-signal, var(--red)); padding-left: 2px; }
 .post-format { color: #8b8981; font-weight: 600; }
 .post-content { margin: auto 0; }
-.post-eyebrow { margin: 0 0 12%; color: var(--red); font-size: clamp(7px,.8vw,11px); font-weight: 800; letter-spacing: .15em; }
+.post-eyebrow { margin: 0 0 12%; color: var(--brand-signal, var(--red)); font-size: clamp(7px,.8vw,11px); font-weight: 800; letter-spacing: .15em; }
 .post-canvas h2 { max-width: 94%; margin: 0; font: 590 clamp(27px,3.2vw,49px)/.99 var(--font-serif), serif; letter-spacing: -.045em; overflow-wrap: anywhere; }
-.red-rule { width: 48px; height: 5px; margin: 8% 0 6%; background: var(--red); }
-.post-support { max-width: 86%; margin: 0; color: #494840; font-size: clamp(9px,1vw,14px); line-height: 1.45; }
-.post-canvas footer { padding-top: 4%; border-top: 1px solid #c9c6bb; color: #5f5d55; }
+.red-rule { width: 48px; height: 5px; margin: 8% 0 6%; background: var(--brand-signal, var(--red)); }
+.post-support { max-width: 86%; margin: 0; color: var(--brand-muted, #494840); font-size: clamp(9px,1vw,14px); line-height: 1.45; }
+.post-canvas footer { padding-top: 4%; border-top: 1px solid color-mix(in srgb, currentColor 24%, transparent); color: var(--brand-muted, #5f5d55); }
 .post-canvas.signal .post-content { position: relative; padding-left: 14%; }
-.signal-number { position: absolute; left: 0; top: 1px; color: var(--red); font: 700 clamp(12px,1.4vw,20px)/1 var(--font-serif); }
+.signal-number { position: absolute; left: 0; top: 1px; color: var(--brand-signal, var(--red)); font: 700 clamp(12px,1.4vw,20px)/1 var(--font-serif); }
 .post-canvas.signal h2 { font-family: var(--font-sans), sans-serif; font-weight: 800; letter-spacing: -.06em; }
 .post-canvas.signal .red-rule { height: 2px; width: 100%; }
 .export-surface { position: fixed; left: -1200px; top: 0; width: 1080px; pointer-events: none; }
-.post-canvas.export { width: 1080px; max-width: none; height: 1350px; aspect-ratio: auto; padding: 81px; box-shadow: none; transition: none; }
+.post-canvas.export { width: 1080px; max-width: none; height: 1350px; aspect-ratio: auto; box-shadow: none; transition: none; }
 .post-canvas.export.square { height: 1080px; }
 .post-canvas.export header, .post-canvas.export footer { font-size: 18px; }
 .post-canvas.export .post-eyebrow { margin-bottom: 112px; font-size: 20px; }
