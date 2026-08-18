@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PostArtwork } from "../../post-artwork";
 import { defaultPostPayload, postPayloadSchema } from "../../../lib/media";
 
-export const metadata: Metadata = { title: "Framewise render", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Canvnah render", robots: { index: false, follow: false } };
 
 function decodePayload(raw?: string) {
   if (!raw) return defaultPostPayload;

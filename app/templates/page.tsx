@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { listTemplates } from "../../lib/server/media-repository";
 import { WorkspaceHeader } from "../workspace-header";
 
-export const metadata: Metadata = { title: "Templates — Framewise", description: "Versioned visual templates in Framewise." };
+export const metadata: Metadata = { title: "Templates — Canvnah", description: "Versioned visual templates in Canvnah." };
 
 export default async function TemplatesPage() {
   const records = await listTemplates();

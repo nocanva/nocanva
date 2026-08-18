@@ -17,20 +17,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const imageUrl = `${protocol}://${host}/og.png`;
+  const imageUrl = `${protocol}://${host}/og-canvnah.png`;
 
   return {
-    title: "Framewise — AI-native branded media",
+    title: "Canvnah — AI-native branded media",
     description: "Turn structured ideas into consistent, brand-ready social media.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "Framewise — AI-native branded media",
+      title: "Canvnah — AI-native branded media",
       description: "Ideas in. Brand-ready media out.",
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: "Framewise branded media studio" }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: "Canvnah branded media studio" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Framewise — AI-native branded media",
+      title: "Canvnah — AI-native branded media",
       description: "Ideas in. Brand-ready media out.",
       images: [imageUrl],
     },

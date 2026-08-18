@@ -4,7 +4,7 @@ import Image from "next/image";
 import { listRenders } from "../../lib/server/media-repository";
 import { WorkspaceHeader } from "../workspace-header";
 
-export const metadata: Metadata = { title: "Render history — Framewise", description: "Immutable Framewise render history." };
+export const metadata: Metadata = { title: "Render history — Canvnah", description: "Immutable Canvnah render history." };
 
 export default async function RendersPage() {
   const renders = await listRenders();
