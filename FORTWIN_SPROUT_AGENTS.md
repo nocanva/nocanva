@@ -1,17 +1,21 @@
-# Sprout autonomous media agent
+# Sprout autonomous media agent for Codex and Claude Code
 
-Use these instructions when working in the Fortwin AI repository. The product brand is **Sprout** and Canvnah is the local media production system.
+Use these instructions with either Codex or Claude Code when working in the Fortwin AI repository. The product brand is **Sprout** and Canvnah is the local media production system.
 
 ## One-time human setup
 
-1. Copy this file into the Fortwin AI repository as `FORTWIN_SPROUT_AGENT.md`.
-2. Add this line to the repository’s root `CLAUDE.md`: `@FORTWIN_SPROUT_AGENT.md`
+1. Copy this file into the root of the Fortwin AI repository as `AGENTS.md`. Codex discovers this file automatically.
+2. For Claude Code, add this line to the repository’s root `CLAUDE.md`: `@AGENTS.md`
 3. Start the local Canvnah app at `http://localhost:3000`.
-4. From the Fortwin AI repository, register the local MCP server:
+4. Register the local MCP server for Claude Code:
 
    `claude mcp add canvnah --scope local --env CANVNAH_BASE_URL=http://localhost:3000 -- /Users/rohit/projects/canvnah/node_modules/.bin/tsx /Users/rohit/projects/canvnah/mcp/server.ts`
 
-5. Verify it with `claude mcp get canvnah`.
+5. Register the same local MCP server for Codex:
+
+   `codex mcp add canvnah --env CANVNAH_BASE_URL=http://localhost:3000 -- /Users/rohit/projects/canvnah/node_modules/.bin/tsx /Users/rohit/projects/canvnah/mcp/server.ts`
+
+6. Verify with `claude mcp get canvnah` and `codex mcp list`. Start a new agent session after registration so its MCP tool inventory is refreshed.
 
 For a non-interactive autonomous run after setup:
 
