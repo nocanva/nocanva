@@ -5,6 +5,10 @@ type D1Row = Record<string, unknown>;
 
 export type BrandRecord = { id: string; name: string; config: typeof brand; createdAt: number };
 export type TemplateRecord = { id: string; brandId: string; name: string; type: string; version: number; rendererKey: string; contentSchema: Record<string, unknown>; createdAt: number };
+export type PostRecord = {
+  id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload;
+  createdBy: string; createdAt: number;
+};
 export type RenderRecord = {
   id: string; postId: string; parentRenderId: string | null; brandName: string; templateName: string;
   templateVersion: number; payload: PostPayload; width: number; height: number; sha256: string;
@@ -72,6 +76,47 @@ export async function listTemplates(): Promise<TemplateRecord[]> {
   }));
 }
 
+const postSelect = `SELECT id, brand_id, template_id, prompt, content_json, created_by, created_at FROM posts`;
+
+function mapPost(row: D1Row): PostRecord {
+  const stored = JSON.parse(String(row.content_json)) as { format?: unknown; content?: unknown } | PostPayload["content"];
+  const payload = postPayloadSchema.parse({
+    brandId: row.brand_id,
+    templateId: row.template_id,
+    format: "format" in stored ? stored.format : "portrait",
+    content: "content" in stored ? stored.content : stored,
+  });
+  return {
+    id: String(row.id), brandId: payload.brandId, templateId: payload.templateId,
+    prompt: row.prompt ? String(row.prompt) : null, payload, createdBy: String(row.created_by), createdAt: Number(row.created_at),
+  };
+}
+
+export async function listPosts(limit = 30): Promise<PostRecord[]> {
+  await ensureMediaDatabase();
+  const result = await database().prepare(`${postSelect} ORDER BY created_at DESC LIMIT ?`).bind(Math.min(Math.max(limit, 1), 100)).all<D1Row>();
+  return result.results.map(mapPost);
+}
+
+export async function getPostById(id: string): Promise<PostRecord | null> {
+  await ensureMediaDatabase();
+  const row = await database().prepare(`${postSelect} WHERE id = ? LIMIT 1`).bind(id).first<D1Row>();
+  return row ? mapPost(row) : null;
+}
+
+export async function createPost(input: { payload: unknown; prompt?: string | null; createdBy?: string }): Promise<PostRecord> {
+  await ensureMediaDatabase();
+  const payload = postPayloadSchema.parse(input.payload);
+  const id = crypto.randomUUID();
+  const now = Date.now();
+  await database().prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, payload.brandId, payload.templateId, input.prompt?.trim() || null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now)
+    .run();
+  const record = await getPostById(id);
+  if (!record) throw new Error("The post record could not be read after creation.");
+  return record;
+}
+
 const renderSelect = `SELECT r.id, r.post_id, r.parent_render_id, r.width, r.height, r.sha256, r.created_at, r.input_snapshot_json, b.name AS brand_name, t.name AS template_name, tv.version AS template_version FROM renders r JOIN posts p ON p.id = r.post_id JOIN brands b ON b.id = p.brand_id JOIN templates t ON t.id = p.template_id JOIN template_versions tv ON tv.id = r.template_version_id`;
 
 function mapRender(row: D1Row): RenderRecord {
@@ -97,19 +142,24 @@ export async function getRenderById(id: string): Promise<RenderRecord | null> {
   return row ? mapRender(row) : null;
 }
 
-export async function createRender(input: { payload: unknown; png: ArrayBuffer; parentRenderId?: string | null }): Promise<RenderRecord> {
+export async function createRender(input: { payload: unknown; png: ArrayBuffer; postId?: string | null; parentRenderId?: string | null; createdBy?: string }): Promise<RenderRecord> {
   await ensureMediaDatabase();
   const payload = postPayloadSchema.parse(input.payload);
   const dimensions = formats[payload.format];
   validatePng(input.png, dimensions.width, dimensions.height);
 
   const now = Date.now();
-  const postId = crypto.randomUUID();
+  const postId = input.postId ?? crypto.randomUUID();
   const renderId = crypto.randomUUID();
   const assetKey = `renders/${renderId}.png`;
   const hash = await crypto.subtle.digest("SHA-256", input.png);
   const sha256 = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
   const db = database();
+  if (input.postId) {
+    const post = await getPostById(input.postId);
+    if (!post) throw new Error("The post does not exist.");
+    if (JSON.stringify(post.payload) !== JSON.stringify(payload)) throw new Error("The render payload must match the stored post.");
+  }
   if (input.parentRenderId) {
     const parent = await db.prepare("SELECT id FROM renders WHERE id = ? LIMIT 1").bind(input.parentRenderId).first();
     if (!parent) throw new Error("The parent render does not exist.");
@@ -117,10 +167,13 @@ export async function createRender(input: { payload: unknown; png: ArrayBuffer; 
 
   await mediaBucket().put(assetKey, input.png, { httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { sha256 } });
   try {
-    await db.batch([
-      db.prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(postId, payload.brandId, payload.templateId, null, JSON.stringify(payload.content), "human:workspace", now),
+    const statements = [
       db.prepare("INSERT INTO renders (id, post_id, template_version_id, parent_render_id, asset_key, asset_content_type, width, height, input_snapshot_json, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(renderId, postId, `${payload.templateId}@1`, input.parentRenderId ?? null, assetKey, "image/png", dimensions.width, dimensions.height, JSON.stringify(payload), sha256, now),
-    ]);
+    ];
+    if (!input.postId) {
+      statements.unshift(db.prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(postId, payload.brandId, payload.templateId, null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now));
+    }
+    await db.batch(statements);
   } catch (error) {
     await mediaBucket().delete(assetKey);
     throw error;

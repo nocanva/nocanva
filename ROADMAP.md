@@ -37,12 +37,14 @@ Exit test: refreshing the application preserves data and every render can be rep
 
 ## Phase 3 — Agent-native workflow
 
-### Milestone 4: MCP surface
+### Milestone 4: MCP surface — complete
 
 - Expose the small `brands`, `templates`, `posts`, and `renders` tool surface.
 - Return asset URL, workspace URL, IDs, dimensions, and template version.
 - Keep MCP and UI operations behind the same application services.
 - Add an end-to-end fixture for “Create a Blindspot post explaining X.”
+
+Development note: the MCP server is intentionally local-only over stdio and only accepts loopback Canvnah URLs.
 
 Exit test: Codex or Claude can select a template, create content, render it, inspect the shared URL, and rerender without UI-only logic.
 

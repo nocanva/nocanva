@@ -1,8 +1,9 @@
 import { createRender, listRenders } from "../../../lib/server/media-repository";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return Response.json({ renders: await listRenders() });
+    const limit = Number(new URL(request.url).searchParams.get("limit") ?? 30);
+    return Response.json({ renders: await listRenders(Number.isFinite(limit) ? limit : 30) });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "Unable to list renders." }, { status: 500 });
   }
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
     const payloadValue = form.get("payload");
     const pngValue = form.get("png");
     const parentValue = form.get("parentRenderId");
+    const postValue = form.get("postId");
     if (typeof payloadValue !== "string" || !(pngValue instanceof File)) {
       return Response.json({ error: "payload and png are required" }, { status: 400 });
     }
@@ -24,7 +26,9 @@ export async function POST(request: Request) {
     const render = await createRender({
       payload: JSON.parse(payloadValue),
       png: await pngValue.arrayBuffer(),
+      postId: typeof postValue === "string" && postValue ? postValue : null,
       parentRenderId: typeof parentValue === "string" && parentValue ? parentValue : null,
+      createdBy: request.headers.get("x-canvnah-created-by") ?? "human:workspace",
     });
     return Response.json({ render }, { status: 201 });
   } catch (error) {

@@ -153,9 +153,9 @@ export function Studio() {
             <p className="section-label">Build status</p>
             <ol className="milestone-list">
               <li className="done"><span>01</span><div><strong>Brand foundation</strong><small>Complete</small></div></li>
-              <li className="current"><span>02</span><div><strong>PNG renderer</strong><small>Active now</small></div></li>
-              <li><span>03</span><div><strong>Render history</strong><small>Planned</small></div></li>
-              <li><span>04</span><div><strong>Agent workflow</strong><small>Planned</small></div></li>
+              <li className="done"><span>02</span><div><strong>PNG renderer</strong><small>Complete</small></div></li>
+              <li className="done"><span>03</span><div><strong>Durable workspace</strong><small>Complete</small></div></li>
+              <li className="current"><span>04</span><div><strong>Agent workflow</strong><small>Local development</small></div></li>
             </ol>
           </div>
 
