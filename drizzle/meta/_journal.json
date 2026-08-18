@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1787073762742,
+      "tag": "0000_flippant_omega_flight",
+      "breakpoints": true
+    }
+  ]
 }

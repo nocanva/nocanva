@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import Link from "next/link";
 import { PostArtwork } from "./post-artwork";
 import {
   formats,
@@ -13,12 +14,9 @@ import {
   type TemplateId,
 } from "../lib/media";
 import { inspectRenderNode, type RenderCheck } from "../lib/render-checks";
+import { WorkspaceHeader } from "./workspace-header";
 
-const recentRenders = [
-  { id: "R-018", title: "Screenshots aren’t evidence", template: "Editorial statement", time: "12 min ago" },
-  { id: "R-017", title: "Context changes the story", template: "Signal card", time: "Yesterday" },
-  { id: "R-016", title: "Receipts need provenance", template: "Editorial statement", time: "2 days ago" },
-];
+type ClientRender = { id: string; templateName: string; createdAt: number; payload: PostPayload };
 
 export function Studio() {
   const [template, setTemplate] = useState<TemplateId>("statement");
@@ -31,6 +29,8 @@ export function Studio() {
   const [notice, setNotice] = useState("Preview is ready");
   const [isRendering, setIsRendering] = useState(false);
   const [checks, setChecks] = useState<RenderCheck[]>([]);
+  const [recentRenders, setRecentRenders] = useState<ClientRender[]>([]);
+  const [parentRenderId, setParentRenderId] = useState<string | null>(null);
   const exportRef = useRef<HTMLElement>(null);
 
   const payload: PostPayload = {
@@ -47,12 +47,39 @@ export function Studio() {
     return "Fits comfortably";
   }, [headline]);
 
+  useEffect(() => {
+    void refreshHistory();
+    const rerenderId = new URLSearchParams(window.location.search).get("rerender");
+    if (!rerenderId) return;
+    void fetch(`/api/renders/${encodeURIComponent(rerenderId)}`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Render not found")))
+      .then((value) => {
+        const { render } = value as { render: ClientRender };
+        setTemplate(render.payload.templateId); setFormat(render.payload.format); setEyebrow(render.payload.content.eyebrow);
+        setHeadline(render.payload.content.headline); setSupport(render.payload.content.support); setParentRenderId(render.id);
+        setNotice(`Loaded iteration of ${render.id.slice(0, 8)}…`);
+      })
+      .catch(() => setNotice("Could not load the requested render"));
+  }, []);
+
+  async function refreshHistory() {
+    try {
+      const response = await fetch("/api/renders");
+      if (!response.ok) return;
+      const data = await response.json() as { renders: ClientRender[] };
+      setRecentRenders(data.renders.slice(0, 3));
+    } catch {
+      // The editor remains usable if history is temporarily unavailable.
+    }
+  }
+
   function resetContent() {
     setEyebrow("MEDIA LITERACY / 01");
     setHeadline("A screenshot is a claim, not proof.");
     setSupport(
       "Without a source, timestamp, and surrounding context, an image only proves that pixels exist.",
     );
+    setParentRenderId(null);
     setNotice("Content reset");
   }
 
@@ -84,11 +111,22 @@ export function Studio() {
         cacheBust: false,
         backgroundColor: "#efede6",
       });
+      setNotice("Saving immutable render…");
+      const png = await fetch(dataUrl).then((response) => response.blob());
+      const form = new FormData();
+      form.set("payload", JSON.stringify(payload));
+      form.set("png", new File([png], renderFilename(payload), { type: "image/png" }));
+      if (parentRenderId) form.set("parentRenderId", parentRenderId);
+      const savedResponse = await fetch("/api/renders", { method: "POST", body: form });
+      const saved = await savedResponse.json() as { render?: ClientRender; error?: string };
+      if (!savedResponse.ok || !saved.render) throw new Error(saved.error ?? "Could not save render");
       const link = document.createElement("a");
       link.download = renderFilename(payload);
       link.href = dataUrl;
       link.click();
-      setNotice(`PNG ready · ${dimensions.width} × ${dimensions.height}`);
+      setParentRenderId(saved.render.id);
+      setNotice(`Saved ${saved.render.id.slice(0, 8)}… · ${dimensions.width} × ${dimensions.height}`);
+      await refreshHistory();
     } catch {
       setNotice("PNG render failed — please try again");
     } finally {
@@ -98,22 +136,7 @@ export function Studio() {
 
   return (
     <main className="studio-shell">
-      <header className="topbar">
-        <a className="wordmark" href="#top" aria-label="Framewise home">
-          <span className="wordmark-mark">F</span>
-          <span>Framewise</span>
-          <span className="alpha-tag">ALPHA</span>
-        </a>
-        <nav className="primary-nav" aria-label="Primary navigation">
-          <a className="nav-item active" href="#create">Create</a>
-          <a className="nav-item" href="#templates">Templates</a>
-          <a className="nav-item" href="#renders">Renders</a>
-        </nav>
-        <div className="topbar-actions">
-          <span className="status-dot"><i />Local workspace</span>
-          <button className="avatar" type="button" aria-label="Open workspace menu">RB</button>
-        </div>
-      </header>
+      <WorkspaceHeader active="create" />
 
       <section className="workspace" id="create">
         <aside className="rail" aria-label="Workspace context">
@@ -192,7 +215,7 @@ export function Studio() {
             </label>
             <label className="field">
               <span>Headline <small className={headline.length > 84 ? "warning" : ""}>{headline.length}/84</small></span>
-              <textarea maxLength={100} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} />
+              <textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} />
               <em>{headlineState}</em>
             </label>
             <label className="field">
@@ -237,13 +260,14 @@ export function Studio() {
           )}
 
           <section className="recent-renders" id="renders">
-            <div className="recent-heading"><h2>Recent renders</h2><button type="button">View all</button></div>
+            <div className="recent-heading"><h2>Recent renders</h2><Link href="/renders">View all</Link></div>
+            {recentRenders.length === 0 && <p className="empty-inline">Your first saved render will appear here.</p>}
             {recentRenders.map((render) => (
-              <button className="render-row" key={render.id} type="button">
+              <Link className="render-row" href={`/renders/${render.id}`} key={render.id}>
                 <span className="render-mini"><i /></span>
-                <span><strong>{render.title}</strong><small>{render.template} · {render.time}</small></span>
-                <em>{render.id}</em>
-              </button>
+                <span><strong>{render.payload.content.headline}</strong><small>{render.templateName} · {new Date(render.createdAt).toLocaleDateString()}</small></span>
+                <em>{render.id.slice(0, 8)}</em>
+              </Link>
             ))}
           </section>
         </aside>
