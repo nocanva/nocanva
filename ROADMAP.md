@@ -1,6 +1,6 @@
-# Framewise delivery roadmap
+# Canvnah delivery roadmap
 
-Framewise is the working name for the AI-native branded media generator.
+Canvnah is the working name for the AI-native branded media generator.
 
 ## Phase 1 — Product foundation
 

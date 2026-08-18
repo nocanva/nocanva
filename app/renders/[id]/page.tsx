@@ -16,12 +16,12 @@ function absoluteAssetUrl(host: string, protocol: string, id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const render = await getRender(id);
-  if (!render) return { title: "Render not found — Framewise", description: "This Framewise render does not exist.", openGraph: { images: [] }, twitter: { images: [] } };
+  if (!render) return { title: "Render not found — Canvnah", description: "This Canvnah render does not exist.", openGraph: { images: [] }, twitter: { images: [] } };
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const image = absoluteAssetUrl(host, protocol, id);
-  const title = `${render.payload.content.headline} — Framewise`;
+  const title = `${render.payload.content.headline} — Canvnah`;
   const description = render.payload.content.support;
   return {
     title, description,

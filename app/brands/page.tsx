@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { listBrands } from "../../lib/server/media-repository";
 import { WorkspaceHeader } from "../workspace-header";
 
-export const metadata: Metadata = { title: "Brands — Framewise", description: "Deterministic brand systems in Framewise." };
+export const metadata: Metadata = { title: "Brands — Canvnah", description: "Deterministic brand systems in Canvnah." };
 
 export default async function BrandsPage() {
   const brands = await listBrands();

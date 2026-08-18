@@ -4,7 +4,7 @@ import test from "node:test";
 
 const root = new URL("../", import.meta.url);
 
-test("Framewise Studio exposes the durable render workflow", async () => {
+test("Canvnah Studio exposes the durable render workflow", async () => {
   const [studio, header, packageJson] = await Promise.all([
     readFile(new URL("app/studio.tsx", root), "utf8"),
     readFile(new URL("app/workspace-header.tsx", root), "utf8"),
