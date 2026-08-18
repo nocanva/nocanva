@@ -26,12 +26,12 @@ Exit test: one command or application call creates a pixel-stable PNG from a tem
 
 ## Phase 2 — Durable workspace
 
-### Milestone 3: brands, templates, posts, and immutable renders
+### Milestone 3: brands, templates, posts, and immutable renders — complete
 
-- Add SQLite-compatible schema for Brand, Template, TemplateVersion, Post, and Render.
-- Store every render as an immutable version with its exact input snapshot.
-- Build Brands, Templates, Render History, and Render Detail routes.
-- Add downloads, rerendering, and links between iterations.
+- Added a D1/SQLite-compatible schema for Brand, Template, TemplateVersion, Post, and Render.
+- Stored PNG assets in R2 and every render as an immutable record with its exact input snapshot.
+- Built Brands, Templates, Render History, and shareable Render Detail routes.
+- Added persistent downloads, rerendering, iteration links, hashes, and record metadata.
 
 Exit test: refreshing the application preserves data and every render can be reproduced from its stored snapshot.
 
