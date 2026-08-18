@@ -17,7 +17,11 @@ function result(value: Record<string, unknown>) {
 function buildServer() {
   const server = new McpServer(
     { name: "canvnah-local", version: "0.1.0" },
-    { capabilities: { tools: {} }, instructions: "Use these tools to create deterministic, brand-safe Canvnah media through the local development app." },
+    {
+      capabilities: { tools: {} },
+      instructions:
+        "Autonomous local workflow: inspect repository evidence; list then create or update the brand; list then create or version a deterministic template; review the template and exact post copy in portrait and square; create the post; render it; then inspect the immutable render. Correct failed reviews before rendering. Never invent claims, use non-loopback URLs, or publish externally.",
+    },
   );
   const client = new CanvnahClient();
 

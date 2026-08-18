@@ -50,7 +50,7 @@ Available tools:
 
 The render tools open the local preview with Playwright, verify two identical PNG hashes, save the asset through the same API used by the UI, and return the render ID, post ID, dimensions, template version, asset URL, and workspace URL.
 
-For an autonomous Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENT.md](./FORTWIN_SPROUT_AGENT.md) into that repository and import it from the project `CLAUDE.md`.
+For an autonomous Codex or Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENTS.md](./FORTWIN_SPROUT_AGENTS.md) into that repository as `AGENTS.md`. Codex discovers it automatically; import it from Claude Code's project `CLAUDE.md` with `@AGENTS.md`.
 
 ## Validation
 
