@@ -25,27 +25,48 @@ try {
   await client.connect(transport);
   const listed = await client.listTools();
   const toolNames = listed.tools.map((tool) => tool.name);
-  for (const name of ["canvnah_list_brands", "canvnah_list_templates", "canvnah_create_post", "canvnah_render_post", "canvnah_get_render", "canvnah_rerender"]) {
+  for (const name of ["canvnah_list_brands", "canvnah_create_brand", "canvnah_list_templates", "canvnah_create_template", "canvnah_review_template", "canvnah_create_post", "canvnah_render_post", "canvnah_get_render", "canvnah_rerender"]) {
     assert.ok(toolNames.includes(name), `Missing MCP tool: ${name}`);
   }
 
-  const brands = structured(await client.callTool({ name: "canvnah_list_brands", arguments: {} }));
-  assert.equal(brands.brands[0].id, "blindspot");
-  const templates = structured(await client.callTool({ name: "canvnah_list_templates", arguments: { brandId: "blindspot" } }));
-  assert.ok(templates.templates.some((template) => template.id === "statement"));
+  const brand = structured(await client.callTool({
+    name: "canvnah_create_brand",
+    arguments: {
+      id: "sprout", name: "Sprout", tagline: "GROW WITH CLARITY.", website: "sprout.example",
+      colors: { paper: "#F3F7EF", ink: "#17351F", signal: "#69A84F", muted: "#637266" }, safeArea: 72,
+    },
+  }));
+  assert.equal(brand.brand.id, "sprout");
+  const template = structured(await client.callTool({
+    name: "canvnah_create_template",
+    arguments: { id: "sprout-statement", brandId: "sprout", name: "Sprout statement", description: "A clear product insight with concise supporting evidence.", rendererKey: "statement" },
+  }));
+  assert.equal(template.template.brandId, "sprout");
+
+  const sampleContent = {
+    eyebrow: "SPROUT / PRODUCT",
+    headline: "Turn scattered signals into clear action.",
+    support: "Sprout helps teams organize what matters, understand the context, and move forward with confidence.",
+  };
+  const reviewed = structured(await client.callTool({
+    name: "canvnah_review_template",
+    arguments: { brandId: "sprout", templateId: "sprout-statement", format: "portrait", content: sampleContent },
+  }));
+  assert.equal(reviewed.review.passed, true);
+  const squareReview = structured(await client.callTool({
+    name: "canvnah_review_template",
+    arguments: { brandId: "sprout", templateId: "sprout-statement", format: "square", content: sampleContent },
+  }));
+  assert.equal(squareReview.review.passed, true);
 
   const created = structured(await client.callTool({
     name: "canvnah_create_post",
     arguments: {
-      brandId: "blindspot",
-      templateId: "statement",
+      brandId: "sprout",
+      templateId: "sprout-statement",
       format: "portrait",
-      prompt: "Create a Blindspot post explaining why context matters when evaluating screenshots.",
-      content: {
-        eyebrow: "CONTEXT / 01",
-        headline: "A screenshot begins the investigation.",
-        support: "Check the source, timestamp, and surrounding record before treating isolated pixels as proof.",
-      },
+      prompt: "Create a Sprout post from the Fortwin AI product repository.",
+      content: sampleContent,
     },
   }));
   assert.equal(created.post.createdBy, "agent:mcp");
@@ -64,7 +85,7 @@ try {
   assert.equal(rerendered.render.parentRenderId, rendered.render.id);
   assert.equal(rerendered.render.sha256, rendered.render.sha256);
 
-  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, brandId: brand.brand.id, templateId: template.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
 } finally {
   await client.close();
 }

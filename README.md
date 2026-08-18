@@ -37,7 +37,10 @@ The MCP process uses stdio and accepts loopback URLs only. It is intentionally n
 Available tools:
 
 - `canvnah_list_brands`
+- `canvnah_create_brand`
 - `canvnah_list_templates`
+- `canvnah_create_template`
+- `canvnah_review_template`
 - `canvnah_create_post`
 - `canvnah_list_posts`
 - `canvnah_render_post`
@@ -47,6 +50,8 @@ Available tools:
 
 The render tools open the local preview with Playwright, verify two identical PNG hashes, save the asset through the same API used by the UI, and return the render ID, post ID, dimensions, template version, asset URL, and workspace URL.
 
+For an autonomous Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENT.md](./FORTWIN_SPROUT_AGENT.md) into that repository and import it from the project `CLAUDE.md`.
+
 ## Validation
 
 With the local app running, execute the full agent workflow fixture:
@@ -55,7 +60,7 @@ With the local app running, execute the full agent workflow fixture:
 npm run mcp:fixture
 ```
 
-The fixture lists the Blindspot brand and templates, creates a post about screenshot context, renders it, inspects it, and creates a linked rerender.
+The fixture creates a local Sprout brand and template, reviews portrait and square layouts, creates a post, renders it, inspects it, and creates a linked rerender.
 
 Run the regular project checks with:
 

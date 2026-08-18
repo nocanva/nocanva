@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
 import { CanvnahClient } from "./canvnah-client";
+import { brandConfigSchema, templateInputSchema } from "../lib/media";
 
 const contentSchema = z.object({
   eyebrow: z.string().trim().min(1).max(28).describe("Short section label, up to 28 characters."),
@@ -27,6 +28,13 @@ function buildServer() {
     annotations: { readOnlyHint: true },
   }, async () => result({ brands: await client.listBrands() }));
 
+  server.registerTool("canvnah_create_brand", {
+    title: "Create or update a Canvnah brand",
+    description: "Create a local brand system from repository evidence, or update the same brand ID after review.",
+    inputSchema: brandConfigSchema,
+    annotations: { destructiveHint: false, idempotentHint: true },
+  }, async (config) => result({ brand: await client.createBrand(config) }));
+
   server.registerTool("canvnah_list_templates", {
     title: "List Canvnah templates",
     description: "List locally available versioned templates, optionally filtered by brand.",
@@ -34,12 +42,37 @@ function buildServer() {
     annotations: { readOnlyHint: true },
   }, async ({ brandId }) => result({ templates: await client.listTemplates(brandId) }));
 
+  server.registerTool("canvnah_create_template", {
+    title: "Create a Canvnah template version",
+    description: "Create a local brand template. Reusing its ID creates a new immutable version after review.",
+    inputSchema: templateInputSchema,
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async (template) => result({ template: await client.createTemplate(template) }));
+
+  server.registerTool("canvnah_review_template", {
+    title: "Review a Canvnah template",
+    description: "Render representative copy without saving a post, return automated layout checks, and attach the PNG for visual review.",
+    inputSchema: z.object({
+      brandId: z.string(), templateId: z.string(), format: z.enum(["portrait", "square"]), content: contentSchema,
+    }),
+    annotations: { readOnlyHint: true },
+  }, async (payload) => {
+    const { imageBase64, ...review } = await client.reviewTemplate(payload);
+    return {
+      content: [
+        { type: "text" as const, text: JSON.stringify({ review }, null, 2) },
+        { type: "image" as const, data: imageBase64, mimeType: "image/png" },
+      ],
+      structuredContent: { review },
+    };
+  });
+
   server.registerTool("canvnah_create_post", {
     title: "Create a Canvnah post",
     description: "Create a structured local post record. Use a listed brand and template ID.",
     inputSchema: z.object({
-      brandId: z.literal("blindspot"),
-      templateId: z.enum(["statement", "signal"]),
+      brandId: z.string(),
+      templateId: z.string(),
       format: z.enum(["portrait", "square"]),
       content: contentSchema,
       prompt: z.string().trim().max(500).optional().describe("The originating agent request or editorial brief."),

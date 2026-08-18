@@ -55,7 +55,11 @@ export function Studio() {
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Render not found")))
       .then((value) => {
         const { render } = value as { render: ClientRender };
-        setTemplate(render.payload.templateId); setFormat(render.payload.format); setEyebrow(render.payload.content.eyebrow);
+        if (!(render.payload.templateId in templates)) {
+          setNotice("This agent-created template can be rerendered through MCP");
+          return;
+        }
+        setTemplate(render.payload.templateId as TemplateId); setFormat(render.payload.format); setEyebrow(render.payload.content.eyebrow);
         setHeadline(render.payload.content.headline); setSupport(render.payload.content.support); setParentRenderId(render.id);
         setNotice(`Loaded iteration of ${render.id.slice(0, 8)}…`);
       })

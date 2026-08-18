@@ -1,10 +1,10 @@
 import { env } from "cloudflare:workers";
-import { brand, formats, postPayloadSchema, templates, type PostPayload } from "../media";
+import { brand, brandConfigSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type PostPayload, type TemplateInput } from "../media";
 
 type D1Row = Record<string, unknown>;
 
-export type BrandRecord = { id: string; name: string; config: typeof brand; createdAt: number };
-export type TemplateRecord = { id: string; brandId: string; name: string; type: string; version: number; rendererKey: string; contentSchema: Record<string, unknown>; createdAt: number };
+export type BrandRecord = { id: string; name: string; config: BrandConfig; createdAt: number };
+export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal"; contentSchema: Record<string, unknown>; createdAt: number };
 export type PostRecord = {
   id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload;
   createdBy: string; createdAt: number;
@@ -64,16 +64,71 @@ async function initializeDatabase() {
 export async function listBrands(): Promise<BrandRecord[]> {
   await ensureMediaDatabase();
   const result = await database().prepare("SELECT id, name, config_json, created_at FROM brands ORDER BY name").all<D1Row>();
-  return result.results.map((row) => ({ id: String(row.id), name: String(row.name), config: JSON.parse(String(row.config_json)), createdAt: Number(row.created_at) }));
+  return result.results.map((row) => ({ id: String(row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) }));
+}
+
+export async function getBrandById(id: string): Promise<BrandRecord | null> {
+  await ensureMediaDatabase();
+  const row = await database().prepare("SELECT id, name, config_json, created_at FROM brands WHERE id = ? LIMIT 1").bind(id).first<D1Row>();
+  return row ? { id: String(row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) } : null;
+}
+
+export async function createBrand(value: unknown): Promise<BrandRecord> {
+  await ensureMediaDatabase();
+  const config = brandConfigSchema.parse(value);
+  const now = Date.now();
+  await database().prepare("INSERT INTO brands (id, name, config_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, config_json = excluded.config_json").bind(config.id, config.name, JSON.stringify(config), now).run();
+  const record = await getBrandById(config.id);
+  if (!record) throw new Error("The brand record could not be read after creation.");
+  return record;
 }
 
 export async function listTemplates(): Promise<TemplateRecord[]> {
   await ensureMediaDatabase();
-  const result = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key FROM templates t JOIN template_versions tv ON tv.template_id = t.id ORDER BY t.name, tv.version DESC`).all<D1Row>();
+  const result = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id ORDER BY t.name, tv.version DESC`).all<D1Row>();
   return result.results.map((row) => ({
     id: String(row.id), brandId: String(row.brand_id), name: String(row.name), type: String(row.type),
-    version: Number(row.version), rendererKey: String(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
+    description: String((JSON.parse(String(row.config_json)) as { description?: unknown }).description ?? "Structured editorial template."),
+    version: Number(row.version), rendererKey: templateInputSchema.shape.rendererKey.parse(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
   }));
+}
+
+export async function getTemplateById(id: string): Promise<TemplateRecord | null> {
+  const records = await listTemplates();
+  return records.find((record) => record.id === id) ?? null;
+}
+
+export async function createTemplate(value: unknown): Promise<TemplateRecord> {
+  await ensureMediaDatabase();
+  const input: TemplateInput = templateInputSchema.parse(value);
+  const brandRecord = await getBrandById(input.brandId);
+  if (!brandRecord) throw new Error("Create the brand before creating its template.");
+  const db = database();
+  const existing = await db.prepare("SELECT id, brand_id FROM templates WHERE id = ? LIMIT 1").bind(input.id).first<D1Row>();
+  if (existing && String(existing.brand_id) !== input.brandId) throw new Error("That template ID belongs to another brand.");
+  const latest = await db.prepare("SELECT MAX(version) AS version FROM template_versions WHERE template_id = ?").bind(input.id).first<{ version: number | null }>();
+  const version = Number(latest?.version ?? 0) + 1;
+  const now = Date.now();
+  const contentSchema = JSON.stringify({ eyebrow: { type: "string", maxLength: 28 }, headline: { type: "string", maxLength: 84 }, support: { type: "string", maxLength: 150 } });
+  const statements = [
+    db.prepare("INSERT INTO template_versions (id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(`${input.id}@${version}`, input.id, version, input.rendererKey, JSON.stringify({ description: input.description }), now),
+  ];
+  if (existing) {
+    statements.unshift(db.prepare("UPDATE templates SET name = ?, type = ?, content_schema_json = ? WHERE id = ?").bind(input.name, input.rendererKey, contentSchema, input.id));
+  } else {
+    statements.unshift(db.prepare("INSERT INTO templates (id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(input.id, input.brandId, input.name, input.rendererKey, contentSchema, now));
+  }
+  await db.batch(statements);
+  const record = await getTemplateById(input.id);
+  if (!record) throw new Error("The template record could not be read after creation.");
+  return record;
+}
+
+async function validatePayloadReferences(payload: PostPayload) {
+  const [brandRecord, templateRecord] = await Promise.all([getBrandById(payload.brandId), getTemplateById(payload.templateId)]);
+  if (!brandRecord) throw new Error("The selected brand does not exist.");
+  if (!templateRecord) throw new Error("The selected template does not exist.");
+  if (templateRecord.brandId !== brandRecord.id) throw new Error("The selected template does not belong to the selected brand.");
 }
 
 const postSelect = `SELECT id, brand_id, template_id, prompt, content_json, created_by, created_at FROM posts`;
@@ -107,6 +162,7 @@ export async function getPostById(id: string): Promise<PostRecord | null> {
 export async function createPost(input: { payload: unknown; prompt?: string | null; createdBy?: string }): Promise<PostRecord> {
   await ensureMediaDatabase();
   const payload = postPayloadSchema.parse(input.payload);
+  await validatePayloadReferences(payload);
   const id = crypto.randomUUID();
   const now = Date.now();
   await database().prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -145,6 +201,7 @@ export async function getRenderById(id: string): Promise<RenderRecord | null> {
 export async function createRender(input: { payload: unknown; png: ArrayBuffer; postId?: string | null; parentRenderId?: string | null; createdBy?: string }): Promise<RenderRecord> {
   await ensureMediaDatabase();
   const payload = postPayloadSchema.parse(input.payload);
+  await validatePayloadReferences(payload);
   const dimensions = formats[payload.format];
   validatePng(input.png, dimensions.width, dimensions.height);
 

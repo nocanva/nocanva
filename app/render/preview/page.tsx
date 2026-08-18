@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PostArtwork } from "../../post-artwork";
 import { defaultPostPayload, postPayloadSchema } from "../../../lib/media";
+import { getBrandById, getTemplateById } from "../../../lib/server/media-repository";
 
 export const metadata: Metadata = { title: "Canvnah render", robots: { index: false, follow: false } };
 
@@ -16,5 +17,10 @@ function decodePayload(raw?: string) {
 
 export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string }> }) {
   const { payload } = await searchParams;
-  return <main className="render-route"><PostArtwork payload={decodePayload(payload)} mode="export" /></main>;
+  const decoded = decodePayload(payload);
+  const [brandRecord, templateRecord] = await Promise.all([getBrandById(decoded.brandId), getTemplateById(decoded.templateId)]);
+  if (!brandRecord || !templateRecord || templateRecord.brandId !== brandRecord.id) {
+    return <main className="render-route"><p>Brand or template not found.</p></main>;
+  }
+  return <main className="render-route"><PostArtwork payload={decoded} brandConfig={brandRecord.config} template={templateRecord} mode="export" /></main>;
 }
