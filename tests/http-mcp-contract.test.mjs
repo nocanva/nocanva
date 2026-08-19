@@ -33,3 +33,16 @@ test("self-host package keeps the MCP sidecar authenticated and persistent", asy
   assert.match(guide, /codex mcp add nocanva --url/);
   assert.match(guide, /claude mcp add --transport http/);
 });
+
+test("managed hosted tokens are hashed, revocable, and validated by the app boundary", async () => {
+  const [repository, worker, route] = await Promise.all([
+    readFile(new URL("../lib/server/media-repository.ts", import.meta.url), "utf8"),
+    readFile(new URL("../mcp/worker.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/internal/mcp/auth/route.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(repository, /sha256Text\(token\)/);
+  assert.doesNotMatch(repository, /INSERT INTO mcp_tokens[^\n]*\btoken\b,/);
+  assert.match(repository, /revoked_at IS NULL/);
+  assert.match(worker, /\/api\/internal\/mcp\/auth/);
+  assert.match(route, /principal\.kind !== "service"/);
+});

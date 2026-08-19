@@ -39,6 +39,8 @@ For the managed authenticated endpoint, export the workspace token and add `--re
 NOCANVA_MCP_TOKEN=... npm run connect -- codex --remote
 ```
 
+Hosted workspace owners can create and revoke per-agent tokens on the Connect page. NoCanva shows each secret once, stores only its SHA-256 hash, and rejects a revoked token on its next request. Environment-backed tokens remain supported for self-hosting and backward compatibility.
+
 The MCP process uses stdio and accepts loopback URLs by default. For remote self-hosting, run `npm run mcp:http` with `NOCANVA_MCP_TOKEN` and `NOCANVA_BASE_URL`, or use the Docker setup. The managed deployment uses `npm run mcp:worker:deploy`: an authenticated Streamable HTTP Worker plus Cloudflare Browser Rendering, with no Container or embedded LLM.
 
 Primary daily-use tools:

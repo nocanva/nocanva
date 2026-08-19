@@ -36,6 +36,25 @@ async function applicationHealth(env: Env) {
   }
 }
 
+async function authenticateManagedToken(authorization: string | null, env: Env) {
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  if (!match || !match[1].startsWith("ncv_")) return null;
+  const response = await fetch(new URL("/api/internal/mcp/auth", env.NOCANVA_BASE_URL), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
+      "content-type": "application/json",
+      "oai-sites-authorization": `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`,
+    },
+    body: JSON.stringify({ token: match[1] }),
+  });
+  if (response.status === 401) return null;
+  if (!response.ok) throw new Error(`Managed token validation failed with status ${response.status}.`);
+  const value = await response.json() as { principal?: { id?: unknown; workspaceId?: unknown } };
+  if (!value.principal || typeof value.principal.id !== "string" || typeof value.principal.workspaceId !== "string") throw new Error("Managed token validation returned an invalid principal.");
+  return { id: value.principal.id, workspaceId: value.principal.workspaceId, revokedAt: null };
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -49,7 +68,7 @@ export default {
       });
     }
 
-    let principal;
+    let principal = null;
     try {
       const tokens = loadTokenRecords({
         NOCANVA_MCP_TOKEN: env.NOCANVA_MCP_TOKEN,
@@ -58,7 +77,14 @@ export default {
       principal = authenticateBearer(request.headers.get("authorization") ?? undefined, tokens);
     } catch (error) {
       console.error(JSON.stringify({ event: "token_configuration_error", error: error instanceof Error ? error.message : "Unknown error" }));
-      return json(503, { error: "NoCanva MCP authentication is not configured." });
+    }
+    if (!principal) {
+      try {
+        principal = await authenticateManagedToken(request.headers.get("authorization"), env);
+      } catch (error) {
+        console.error(JSON.stringify({ event: "managed_token_validation_error", error: error instanceof Error ? error.message : "Unknown error" }));
+        return json(503, { error: "NoCanva MCP authentication is temporarily unavailable." });
+      }
     }
 
     if (!principal) {

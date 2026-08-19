@@ -43,6 +43,7 @@ test("every media API route except health enforces the application boundary", as
     "drafts/route.ts", "drafts/[id]/route.ts", "drafts/[id]/revisions/route.ts", "drafts/[id]/review/route.ts",
     "drafts/[id]/approval/route.ts", "drafts/[id]/archive/route.ts", "renders/route.ts", "renders/[id]/route.ts",
     "renders/[id]/asset/route.ts",
+    "activation/route.ts", "mcp-tokens/route.ts", "mcp-tokens/[id]/route.ts", "internal/mcp/auth/route.ts",
   ];
   for (const route of routes) {
     const source = await readFile(new URL(`../app/api/${route}`, import.meta.url), "utf8");
