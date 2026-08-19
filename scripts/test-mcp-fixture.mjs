@@ -8,7 +8,7 @@ const tsx = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.met
 const baseUrl = process.env.NOCANVA_BASE_URL ?? process.env.CANVNAH_BASE_URL ?? "http://localhost:3000";
 const transport = new StdioClientTransport({
   command: process.execPath,
-  args: [tsx, "mcp/server.ts"],
+  args: [tsx, "mcp/stdio.ts"],
   cwd: root,
   env: { ...process.env, CANVNAH_BASE_URL: baseUrl },
   stderr: "inherit",

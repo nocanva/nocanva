@@ -1,6 +1,4 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
 import { brandConfigSchema, templateInputSchema } from "../lib/media";
@@ -214,13 +212,4 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   }, async ({ renderId }) => result({ render: await client.rerender(renderId) }));
 
   return server;
-}
-
-const entrypoint = process.argv[1] ? pathToFileURL(process.argv[1]).href : undefined;
-if (entrypoint === import.meta.url) {
-  serveStdio(() => buildServer(undefined, {
-    workspaceId: process.env.NOCANVA_WORKSPACE_ID,
-    actor: process.env.NOCANVA_ACTOR_ID ?? "agent:mcp",
-    serviceToken: process.env.NOCANVA_APP_TOKEN,
-  }), { onerror: (error) => console.error(error.message) });
 }
