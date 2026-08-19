@@ -50,7 +50,15 @@ export function DraftWorkspace({ initialDraft, initialRevisions, brand, template
     setBusy(true);
     try {
       const checks = await inspectRenderNode(exportRef.current);
-      await request(`/api/drafts/${draft.id}/review`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ expectedRevision: draft.currentRevision, reviewer: "human:workspace", checks: checks.map((check) => ({ id: check.id, passed: check.passed, detail: check.detail })) }) });
+      const dimensions = formats[format];
+      const dataUrl = await toPng(exportRef.current, { width: dimensions.width, height: dimensions.height, canvasWidth: dimensions.width, canvasHeight: dimensions.height, pixelRatio: 1, cacheBust: false, backgroundColor: brand.config.colors.paper });
+      const png = await fetch(dataUrl).then((response) => response.blob());
+      const form = new FormData();
+      form.set("expectedRevision", String(draft.currentRevision));
+      form.set("reviewer", "human:workspace");
+      form.set("checks", JSON.stringify(checks));
+      form.set("png", new File([png], `nocanva-draft-${draft.id}.png`, { type: "image/png" }));
+      await request(`/api/drafts/${draft.id}/review`, { method: "POST", body: form });
       setNotice(checks.every((check) => check.passed) ? "Mechanical review passed. Visually inspect the preview before approval." : "Mechanical review needs changes.");
     } catch (error) { setNotice(error instanceof Error ? error.message : "Review failed."); }
     finally { setBusy(false); }
@@ -66,15 +74,11 @@ export function DraftWorkspace({ initialDraft, initialRevisions, brand, template
   }
 
   async function render() {
-    if (!exportRef.current || draft.status !== "approved") return;
+    if (draft.status !== "approved") return;
     setBusy(true);
     try {
-      const dimensions = formats[format];
-      const dataUrl = await toPng(exportRef.current, { width: dimensions.width, height: dimensions.height, canvasWidth: dimensions.width, canvasHeight: dimensions.height, pixelRatio: 1, cacheBust: false, backgroundColor: brand.config.colors.paper });
-      const png = await fetch(dataUrl).then((response) => response.blob());
       const form = new FormData();
       form.set("payload", JSON.stringify(payload));
-      form.set("png", new File([png], `nocanva-draft-${draft.id}.png`, { type: "image/png" }));
       form.set("draftRevisionId", draft.revisionId);
       form.set("templateVersionId", draft.templateVersionId);
       const data = await request("/api/renders", { method: "POST", headers: { "x-nocanva-created-by": "human:workspace" }, body: form });

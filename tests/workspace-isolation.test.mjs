@@ -27,6 +27,9 @@ test("authenticated API routes pass the principal workspace to storage", async (
     "app/api/drafts/[id]/route.ts", "app/api/drafts/[id]/revisions/route.ts",
     "app/api/drafts/[id]/review/route.ts", "app/api/drafts/[id]/approval/route.ts",
     "app/api/drafts/[id]/archive/route.ts", "app/api/renders/route.ts",
+    "app/api/carousels/route.ts", "app/api/carousels/[id]/route.ts", "app/api/carousels/[id]/review/route.ts",
+    "app/api/carousels/[id]/approval/route.ts", "app/api/carousels/[id]/archive/route.ts", "app/api/carousels/[id]/render/route.ts",
+    "app/api/carousel-renders/[id]/route.ts", "app/api/carousel-renders/[id]/assets/[slideIndex]/route.ts",
     "app/api/renders/[id]/route.ts", "app/api/renders/[id]/asset/route.ts",
   ];
   for (const file of routeFiles) {

@@ -15,11 +15,11 @@ function result(value: Record<string, unknown>) {
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.2.0" },
+    { name: "nocanva", version: "0.3.0" },
     {
       capabilities: { tools: {} },
       instructions:
-        "Primary workflow: get the approved brand, list and reuse templates, create a stable draft, review its pinned revision and inspect the returned PNG, approve that exact revision, render it, then inspect the immutable render. Retrieve a draft before updating so expectedRevision cannot overwrite newer edits. Brand/template creation is advanced setup. Never invent claims or publish externally.",
+        "Primary workflow: get the approved brand, list and reuse templates, create a stable draft or 3–7 slide carousel, review its pinned revision and visually inspect every returned PNG, approve that exact review, render it, then inspect the immutable render. Retrieve current state before updating so expectedRevision cannot overwrite newer edits. Brand/template creation is advanced setup. Never invent claims or publish externally.",
     },
   );
   const client = new CanvnahClient(baseUrl, context);
@@ -116,6 +116,84 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     inputSchema: z.object({ renderId: z.string().uuid() }),
     annotations: { readOnlyHint: true },
   }, async ({ renderId }) => result({ render: await client.getRender(renderId) }));
+
+  server.registerTool("nocanva_list_carousels", {
+    title: "List NoCanva carousels",
+    description: "List current 3–7 slide carousels and their latest revisions.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(100).default(30), includeArchived: z.boolean().default(false) }),
+    annotations: { readOnlyHint: true },
+  }, async ({ limit, includeArchived }) => result({ carousels: await client.listCarousels(limit, includeArchived) }));
+
+  server.registerTool("nocanva_get_carousel", {
+    title: "Get NoCanva carousel",
+    description: "Retrieve current carousel slides, human or agent edits, review artifacts, approval, pinned template version, and stable workspace URL.",
+    inputSchema: z.object({ carouselId: z.string().uuid() }),
+    annotations: { readOnlyHint: true },
+  }, async ({ carouselId }) => result({ carousel: await client.getCarousel(carouselId) }));
+
+  server.registerTool("nocanva_create_carousel", {
+    title: "Create NoCanva carousel",
+    description: "Create a stable editable 3–7 slide carousel using one existing brand and approved template.",
+    inputSchema: z.object({
+      brandId: z.string(), templateId: z.string(), format: z.enum(["portrait", "square"]), slides: z.array(contentSchema).min(3).max(7),
+      prompt: z.string().trim().max(500).optional(),
+    }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async (input) => result({ carousel: await client.createCarousel(input) }));
+
+  server.registerTool("nocanva_update_carousel", {
+    title: "Update NoCanva carousel",
+    description: "Create a new immutable carousel revision. expectedRevision prevents overwriting newer human or agent edits.",
+    inputSchema: z.object({
+      carouselId: z.string().uuid(), expectedRevision: z.number().int().positive(), brandId: z.string(), templateId: z.string(),
+      format: z.enum(["portrait", "square"]), slides: z.array(contentSchema).min(3).max(7), prompt: z.string().trim().max(500).optional(),
+    }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async ({ carouselId, ...input }) => result({ carousel: await client.updateCarousel(carouselId, input) }));
+
+  server.registerTool("nocanva_review_carousel", {
+    title: "Review NoCanva carousel",
+    description: "Render every pinned carousel slide, run mechanical checks, record one review, and attach every PNG for multimodal visual inspection.",
+    inputSchema: z.object({ carouselId: z.string().uuid(), reviewer: z.string().default("agent:mcp"), notes: z.string().trim().max(500).optional() }),
+    annotations: { readOnlyHint: false, destructiveHint: false },
+  }, async ({ carouselId, reviewer, notes }) => {
+    const reviewed = await client.reviewCarousel(carouselId, reviewer, notes);
+    return {
+      content: [
+        { type: "text" as const, text: JSON.stringify({ carousel: reviewed.carousel, review: reviewed.review }, null, 2) },
+        ...reviewed.imagesBase64.map((data) => ({ type: "image" as const, data, mimeType: "image/png" as const })),
+      ],
+      structuredContent: { carousel: reviewed.carousel, review: reviewed.review },
+    };
+  });
+
+  server.registerTool("nocanva_approve_carousel", {
+    title: "Approve or reject NoCanva carousel",
+    description: "Record a decision against the current carousel revision and its exact passing review artifact set.",
+    inputSchema: z.object({ carouselId: z.string().uuid(), expectedRevision: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), actor: z.string().default("agent:mcp"), notes: z.string().trim().max(500).optional() }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async ({ carouselId, expectedRevision, decision, actor, notes }) => result({ carousel: await client.approveCarousel(carouselId, expectedRevision, decision, actor, notes) }));
+
+  server.registerTool("nocanva_archive_carousel", {
+    title: "Archive or restore NoCanva carousel",
+    description: "Soft-archive or restore a carousel without deleting revisions, review artifacts, approvals, or render history.",
+    inputSchema: z.object({ carouselId: z.string().uuid(), archived: z.boolean().default(true) }),
+    annotations: { destructiveHint: false, idempotentHint: true },
+  }, async ({ carouselId, archived }) => result({ carousel: await client.archiveCarousel(carouselId, archived) }));
+
+  server.registerTool("nocanva_render_carousel", {
+    title: "Render approved NoCanva carousel",
+    description: "Promote the exact approved review PNGs into an immutable multi-slide render and expose a ZIP download.",
+    inputSchema: z.object({ carouselId: z.string().uuid() }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async ({ carouselId }) => result({ render: await client.renderCarousel(carouselId) }));
+
+  server.registerTool("nocanva_get_carousel_render", {
+    title: "Get NoCanva carousel render",
+    description: "Inspect immutable carousel slides, pinned template version, dimensions, SHA-256 hashes, slide URLs, ZIP URL, and workspace URL.",
+    inputSchema: z.object({ renderId: z.string().uuid() }),
+    annotations: { readOnlyHint: true },
+  }, async ({ renderId }) => result({ render: await client.getCarouselRender(renderId) }));
 
   server.registerTool("canvnah_list_brands", {
     title: "List NoCanva brands",

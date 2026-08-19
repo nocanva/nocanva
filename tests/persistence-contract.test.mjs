@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("migration defines the durable media graph and query indexes", async () => {
-  const sql = `${await readFile(new URL("drizzle/0000_flippant_omega_flight.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0001_trustworthy_drafts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0002_workspace_events.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0004_review_artifacts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0005_mcp_tokens.sql", root), "utf8")}`;
+  const sql = `${await readFile(new URL("drizzle/0000_flippant_omega_flight.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0001_trustworthy_drafts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0002_workspace_events.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0004_review_artifacts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0005_mcp_tokens.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0006_carousels.sql", root), "utf8")}`;
   for (const table of ["brands", "templates", "template_versions", "posts", "renders"]) {
     assert.match(sql, new RegExp(`CREATE TABLE .${table}.`));
   }
@@ -25,6 +25,12 @@ test("migration defines the durable media graph and query indexes", async () => 
   assert.match(sql, /idx_draft_approvals_review/);
   assert.match(sql, /CREATE TABLE .mcp_tokens./);
   assert.match(sql, /idx_mcp_tokens_hash/);
+  for (const table of ["carousels", "carousel_revisions", "carousel_reviews", "carousel_approvals", "carousel_renders"]) {
+    assert.match(sql, new RegExp(`CREATE TABLE .${table}.`));
+  }
+  assert.match(sql, /slides_json/);
+  assert.match(sql, /artifacts_json/);
+  assert.match(sql, /idx_carousel_approvals_review/);
 });
 
 test("hosting binds relational data and immutable assets", async () => {
@@ -44,4 +50,8 @@ test("hosting binds relational data and immutable assets", async () => {
   assert.match(repository, /render_completed/);
   assert.match(repository, /approval\.reviewId/);
   assert.match(repository, /approved review artifact failed its SHA-256 integrity check/);
+  const carouselRepository = await readFile(new URL("lib/server/carousel-repository.ts", root), "utf8");
+  assert.match(carouselRepository, /carousel-reviews/);
+  assert.match(carouselRepository, /carousel-renders/);
+  assert.match(carouselRepository, /failed its SHA-256 integrity check/);
 });

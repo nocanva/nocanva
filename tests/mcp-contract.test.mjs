@@ -21,6 +21,9 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["nocanva_get_brand", "nocanva_list_templates", "nocanva_list_drafts", "nocanva_get_draft", "nocanva_create_draft", "nocanva_update_draft", "nocanva_review_draft", "nocanva_approve_draft", "nocanva_archive_draft", "nocanva_render", "nocanva_get_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
+  for (const tool of ["nocanva_list_carousels", "nocanva_get_carousel", "nocanva_create_carousel", "nocanva_update_carousel", "nocanva_review_carousel", "nocanva_approve_carousel", "nocanva_archive_carousel", "nocanva_render_carousel", "nocanva_get_carousel_render"]) {
+    assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
+  }
   assert.match(nodeRenderer, /chromium\.launch/);
   assert.match(client, /Repeated PNG hashes match/);
   assert.match(client, /NOCANVA_ALLOW_REMOTE_APP_URL/);
@@ -37,4 +40,5 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(agentInstructions, /claude mcp add nocanva/);
   assert.match(packageJson, /"mcp:fixture"/);
   assert.match(packageJson, /"mcp:draft-fixture"/);
+  assert.match(packageJson, /"mcp:carousel-fixture"/);
 });

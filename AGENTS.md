@@ -8,7 +8,7 @@ NoCanva is a deterministic, agent-native media workspace. It does not make embed
 - Keep local development on stdio MCP with `npm run mcp:dev` and the web app at `http://localhost:3000`.
 - Use the `nocanva_*` draft lifecycle for new work. `canvnah_*` exists only for advanced brand/template administration and backward compatibility.
 - Preserve deterministic rendering, exact template-version pinning, immutable revisions, and stable workspace URLs.
-- Run `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run mcp:fixture`, and `npm run mcp:draft-fixture` after changes to media or MCP behavior.
+- Run `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run mcp:fixture`, `npm run mcp:draft-fixture`, and `npm run mcp:carousel-fixture` after changes to media or MCP behavior.
 
 ## Creating media
 
@@ -21,3 +21,5 @@ NoCanva is a deterministic, agent-native media workspace. It does not make embed
 7. Retrieve the immutable render with `nocanva_get_render` and report its workspace URL, asset URL, pinned template version, dimensions, and SHA-256.
 
 Do not publish externally, create a new brand/template for each post, bypass review, or claim that mechanical checks establish aesthetic quality.
+
+For a 3–7 slide story, use the parallel `nocanva_*_carousel` lifecycle. Keep one brand, format, template, and pinned template version across the set; visually inspect every PNG returned by `nocanva_review_carousel`; approve the complete review set; and report every slide hash plus the immutable ZIP URL.

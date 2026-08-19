@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { brandConfigSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostPayload, type TemplateInput } from "../lib/media";
+import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostContent, type PostPayload, type TemplateInput } from "../lib/media";
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
 export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal" | "bloom"; contentSchema: unknown; createdAt: number };
@@ -23,6 +23,24 @@ export type ReviewResult = {
   passed: boolean; checks: Array<{ id: string; passed: boolean; detail: string }>;
   width: number; height: number; sha256: string; templateVersion: string; previewUrl: string; imageBase64: string;
 };
+export type CarouselArtifactResult = { slideIndex: number; width: number; height: number; sha256: string; assetUrl: string };
+export type CarouselReviewResult = {
+  id: string; reviewer: string; status: "passed" | "changes_requested"; notes: string | null;
+  checks: Array<Array<{ id: string; passed: boolean; detail: string }>>; artifacts: CarouselArtifactResult[]; createdAt: number;
+};
+export type CarouselResult = {
+  id: string; brandId: string; brandName: string; templateId: string; templateName: string; templateVersionId: string; templateVersion: number;
+  currentRevision: number; revisionId: string; status: "draft" | "in_review" | "approved" | "rendered"; approvalPolicy: "agent_allowed" | "human_required"; archivedAt: number | null;
+  format: "portrait" | "square"; slides: PostContent[]; prompt: string | null; createdBy: string; revisionCreatedBy: string; createdAt: number; updatedAt: number;
+  review: CarouselReviewResult | null; approval: { id: string; reviewId: string | null; actor: string; decision: "approved" | "rejected"; notes: string | null; createdAt: number } | null;
+  workspaceUrl: string;
+};
+export type CarouselRenderResult = {
+  id: string; carouselId: string; carouselRevisionId: string; templateVersionId: string; templateVersion: number; brandName: string; templateName: string;
+  format: "portrait" | "square"; slides: PostContent[]; artifacts: CarouselArtifactResult[]; createdAt: number; zipUrl: string; workspaceUrl: string;
+};
+type ApiCarousel = Omit<CarouselResult, "workspaceUrl">;
+type ApiCarouselRender = Omit<CarouselRenderResult, "workspaceUrl">;
 
 export type RenderCaptureInput = {
   previewUrl: string;
@@ -37,6 +55,7 @@ export type RenderCaptureOutput = {
   second: Uint8Array;
   outside: number;
   overflowing: number;
+  collapsed: number;
   templateVersion: string | null;
 };
 
@@ -174,6 +193,78 @@ export class CanvnahClient {
     return this.presentDraft(data.draft);
   }
 
+  async listCarousels(limit = 30, includeArchived = false): Promise<CarouselResult[]> {
+    const data = await this.request<{ carousels: ApiCarousel[] }>(`/api/carousels?limit=${limit}&includeArchived=${includeArchived}`);
+    return data.carousels.map((carousel) => this.presentCarousel(carousel));
+  }
+
+  async getCarousel(id: string): Promise<CarouselResult> {
+    const data = await this.request<{ carousel: ApiCarousel }>(`/api/carousels/${encodeURIComponent(id)}`);
+    return this.presentCarousel(data.carousel);
+  }
+
+  async createCarousel(value: unknown): Promise<CarouselResult> {
+    const input = carouselCreateInputSchema.parse(value);
+    const data = await this.request<{ carousel: ApiCarousel }>("/api/carousels", {
+      method: "POST", headers: { "content-type": "application/json", "x-nocanva-created-by": "agent:mcp" }, body: JSON.stringify(input),
+    });
+    return this.presentCarousel(data.carousel);
+  }
+
+  async updateCarousel(id: string, value: unknown): Promise<CarouselResult> {
+    const input = carouselUpdateInputSchema.parse(value);
+    const data = await this.request<{ carousel: ApiCarousel }>(`/api/carousels/${encodeURIComponent(id)}`, {
+      method: "PUT", headers: { "content-type": "application/json", "x-nocanva-created-by": "agent:mcp" }, body: JSON.stringify(input),
+    });
+    return this.presentCarousel(data.carousel);
+  }
+
+  async reviewCarousel(id: string, reviewer = "agent:mcp", notes?: string): Promise<{ carousel: CarouselResult; review: CarouselReviewResult; imagesBase64: string[] }> {
+    const carousel = await this.getCarousel(id);
+    const captures = [];
+    for (const content of carousel.slides) {
+      captures.push(await this.capturePayload({ brandId: carousel.brandId, templateId: carousel.templateId, format: carousel.format, content }, carousel.templateVersionId));
+    }
+    const form = new FormData();
+    form.set("expectedRevision", String(carousel.currentRevision));
+    form.set("reviewer", reviewer);
+    if (notes) form.set("notes", notes);
+    form.set("checks", JSON.stringify(captures.map((capture) => capture.review.checks)));
+    captures.forEach((capture, slideIndex) => {
+      const pngBytes = new Uint8Array(capture.png.byteLength);
+      pngBytes.set(capture.png);
+      form.set(`slide-${slideIndex}`, new Blob([pngBytes.buffer], { type: "image/png" }), `slide-${String(slideIndex + 1).padStart(2, "0")}.png`);
+    });
+    const data = await this.request<{ carousel: ApiCarousel }>(`/api/carousels/${encodeURIComponent(id)}/review`, { method: "POST", body: form });
+    const reviewed = this.presentCarousel(data.carousel);
+    if (!reviewed.review) throw new Error("The carousel review was not returned after capture.");
+    return { carousel: reviewed, review: reviewed.review, imagesBase64: captures.map((capture) => Buffer.from(capture.png).toString("base64")) };
+  }
+
+  async approveCarousel(id: string, expectedRevision: number, decision: "approved" | "rejected", actor = "agent:mcp", notes?: string): Promise<CarouselResult> {
+    const data = await this.request<{ carousel: ApiCarousel }>(`/api/carousels/${encodeURIComponent(id)}/approval`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ expectedRevision, actor, decision, notes }),
+    });
+    return this.presentCarousel(data.carousel);
+  }
+
+  async archiveCarousel(id: string, archived = true): Promise<CarouselResult> {
+    const data = await this.request<{ carousel: ApiCarousel }>(`/api/carousels/${encodeURIComponent(id)}/archive`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ archived }),
+    });
+    return this.presentCarousel(data.carousel);
+  }
+
+  async renderCarousel(id: string): Promise<CarouselRenderResult> {
+    const data = await this.request<{ render: ApiCarouselRender }>(`/api/carousels/${encodeURIComponent(id)}/render`, { method: "POST" });
+    return this.presentCarouselRender(data.render);
+  }
+
+  async getCarouselRender(id: string): Promise<CarouselRenderResult> {
+    const data = await this.request<{ render: ApiCarouselRender }>(`/api/carousel-renders/${encodeURIComponent(id)}`);
+    return this.presentCarouselRender(data.render);
+  }
+
   async renderDraft(id: string): Promise<RenderResult> {
     const draft = await this.getDraft(id);
     if (draft.status !== "approved" && draft.status !== "rendered") throw new Error("Approve the current draft revision before rendering it.");
@@ -257,6 +348,7 @@ export class CanvnahClient {
       { id: "schema", passed: true, detail: "Content matches the structured schema." },
       { id: "bounds", passed: capture.outside === 0, detail: capture.outside === 0 ? "Every region stays inside the canvas." : `${capture.outside} region(s) leave the canvas.` },
       { id: "overflow", passed: capture.overflowing === 0, detail: capture.overflowing === 0 ? "No text is clipped." : `${capture.overflowing} region(s) are clipped.` },
+      { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];
     return {
@@ -279,6 +371,23 @@ export class CanvnahClient {
 
   private presentDraft(draft: Omit<DraftResult, "workspaceUrl">): DraftResult {
     return { ...draft, workspaceUrl: new URL(`/drafts/${draft.id}`, `${this.baseUrl}/`).href };
+  }
+
+  private presentCarousel(carousel: ApiCarousel): CarouselResult {
+    return {
+      ...carousel,
+      review: carousel.review ? { ...carousel.review, artifacts: carousel.review.artifacts.map((artifact) => ({ ...artifact, assetUrl: new URL(artifact.assetUrl, `${this.baseUrl}/`).href })) } : null,
+      workspaceUrl: new URL(`/carousels/${carousel.id}`, `${this.baseUrl}/`).href,
+    };
+  }
+
+  private presentCarouselRender(render: ApiCarouselRender): CarouselRenderResult {
+    return {
+      ...render,
+      artifacts: render.artifacts.map((artifact) => ({ ...artifact, assetUrl: new URL(artifact.assetUrl, `${this.baseUrl}/`).href })),
+      zipUrl: new URL(render.zipUrl, `${this.baseUrl}/`).href,
+      workspaceUrl: new URL(`/carousel-renders/${render.id}`, `${this.baseUrl}/`).href,
+    };
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {

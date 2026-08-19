@@ -56,6 +56,15 @@ Primary daily-use tools:
 - `nocanva_archive_draft`
 - `nocanva_render`
 - `nocanva_get_render`
+- `nocanva_list_carousels`
+- `nocanva_get_carousel`
+- `nocanva_create_carousel`
+- `nocanva_update_carousel`
+- `nocanva_review_carousel`
+- `nocanva_approve_carousel`
+- `nocanva_archive_carousel`
+- `nocanva_render_carousel`
+- `nocanva_get_carousel_render`
 
 Legacy and advanced tools:
 
@@ -74,6 +83,8 @@ The existing `canvnah_*` tool namespace is retained for MCP-client compatibility
 - `canvnah_rerender`
 
 The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version and reviewed PNG. Review tools use local Playwright for self-hosting or Cloudflare Browser Rendering in the managed Worker, verify two identical PNG hashes, and save the checked artifact. Approval pins that review record; rendering promotes the exact reviewed bytes without a second browser capture and returns the render ID, revision, dimensions, template version, asset URL, and workspace URL.
+
+The carousel workflow applies that same lifecycle to 3–7 slides under one brand, format, template, and pinned template version. A review captures and checks every slide, approval pins the complete artifact set, and rendering promotes those exact bytes into immutable per-slide PNGs plus a ZIP download. Stable workspaces live at `/carousels/:id` and immutable exports at `/carousel-renders/:id`.
 
 The reusable agent workflow is bundled as [`skills/nocanva-media/SKILL.md`](./skills/nocanva-media/SKILL.md).
 
@@ -96,6 +107,14 @@ npm run mcp:draft-fixture
 ```
 
 It proves multi-actor revision retrieval, stale-write protection, mechanical review, approval, template-version pinning, immutable rendering, approval invalidation after edits, and archive/restore.
+
+Run the multi-slide lifecycle fixture with:
+
+```bash
+npm run mcp:carousel-fixture
+```
+
+It proves 3-slide capture, per-slide checks and hashes, review-set approval, exact-byte promotion, ZIP export, stale-write protection, approval invalidation, and archive/restore.
 
 Approval is agent-enabled by default for autonomous workspaces. Set `NOCANVA_APPROVAL_MODE=human_required` to require approval actors whose ID begins with `human:` before final rendering.
 

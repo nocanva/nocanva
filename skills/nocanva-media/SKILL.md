@@ -1,6 +1,6 @@
 ---
 name: nocanva-media
-description: Create evidence-backed, brand-consistent media through a NoCanva MCP workspace. Use when an agent should turn repository, release-note, documentation, or product facts into a branded draft, visually review the PNG, approve it, and return an immutable render without publishing externally.
+description: Create evidence-backed, brand-consistent single cards or 3–7 slide carousels through a NoCanva MCP workspace. Use when an agent should turn repository, release-note, documentation, or product facts into branded media, visually review every PNG, approve it, and return immutable renders without publishing externally.
 ---
 
 # NoCanva media
@@ -18,3 +18,12 @@ Use NoCanva as the constrained design and provenance layer. Supply the copy and 
 7. Call `nocanva_get_render`. Report the draft workspace URL, render workspace URL, asset URL, dimensions, pinned template version, and SHA-256.
 
 Never publish externally, bypass review, invent claims, or create a new brand/template for each post. Keep repeated posts within one brand visually consistent while allowing different brands and templates to remain distinct.
+
+## Create a carousel
+
+1. Build one evidence-backed narrative with 3–7 structured slides. Each slide needs an eyebrow, headline, and support line.
+2. Call `nocanva_create_carousel` with one approved brand, template, and format for the entire set. Preserve its `workspaceUrl`, `templateVersionId`, and `currentRevision`.
+3. Before edits, call `nocanva_get_carousel` and use its exact `currentRevision` with `nocanva_update_carousel`.
+4. Call `nocanva_review_carousel`. Inspect every returned PNG visually; one attractive slide does not establish the quality of the full set. Check narrative flow, hierarchy, legibility, repetition, brand fit, and whether slide-to-slide rhythm is intentional.
+5. Approve the exact review set with `nocanva_approve_carousel`, then call `nocanva_render_carousel`. Rendering promotes every approved review artifact without a second capture.
+6. Call `nocanva_get_carousel_render`. Report the editable workspace URL, immutable render URL, every slide URL and SHA-256, the pinned template version, dimensions, and ZIP URL.

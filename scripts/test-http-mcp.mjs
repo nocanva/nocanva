@@ -59,7 +59,7 @@ try {
   });
   await client.connect(transport);
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 22);
+  assert.equal(tools.tools.length, 31);
 
   const created = structured(await client.callTool({
     name: "nocanva_create_draft",

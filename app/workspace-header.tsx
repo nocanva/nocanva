@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export function WorkspaceHeader({ active }: { active: "create" | "brands" | "templates" | "drafts" | "renders" | "connections" }) {
+export function WorkspaceHeader({ active }: { active: "create" | "brands" | "templates" | "drafts" | "carousels" | "renders" | "connections" }) {
   return (
     <header className="topbar">
       <Link className="wordmark" href="/" aria-label="NoCanva home">
@@ -11,6 +11,7 @@ export function WorkspaceHeader({ active }: { active: "create" | "brands" | "tem
         <Link className={`nav-item ${active === "brands" ? "active" : ""}`} href="/brands">Brands</Link>
         <Link className={`nav-item ${active === "templates" ? "active" : ""}`} href="/templates">Templates</Link>
         <Link className={`nav-item ${active === "drafts" ? "active" : ""}`} href="/drafts">Drafts</Link>
+        <Link className={`nav-item ${active === "carousels" ? "active" : ""}`} href="/carousels">Carousels</Link>
         <Link className={`nav-item ${active === "renders" ? "active" : ""}`} href="/renders">Renders</Link>
         <Link className={`nav-item ${active === "connections" ? "active" : ""}`} href="/connections">Connect</Link>
       </nav>
