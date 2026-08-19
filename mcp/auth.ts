@@ -17,7 +17,7 @@ function equalSecret(left: string, right: string) {
   return timingSafeEqual(digest(left), digest(right));
 }
 
-export function loadTokenRecords(environment: NodeJS.ProcessEnv = process.env): McpTokenRecord[] {
+export function loadTokenRecords(environment: Record<string, string | undefined> = process.env): McpTokenRecord[] {
   if (environment.NOCANVA_MCP_TOKENS) {
     const value = JSON.parse(environment.NOCANVA_MCP_TOKENS) as unknown;
     if (!Array.isArray(value)) throw new Error("NOCANVA_MCP_TOKENS must be a JSON array.");

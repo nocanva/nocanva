@@ -3,6 +3,7 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { authenticateBearer, loadTokenRecords, type McpPrincipal } from "./auth";
 import { buildServer } from "./server";
+import { renderWithLocalPlaywright } from "./node-renderer";
 
 const port = Number(process.env.NOCANVA_MCP_PORT ?? 3100);
 const hostname = process.env.NOCANVA_MCP_HOST ?? "0.0.0.0";
@@ -20,6 +21,7 @@ function handlerFor(actor: McpPrincipal) {
     workspaceId: actor.workspaceId,
     actor: `agent:${actor.id}`,
     serviceToken: process.env.NOCANVA_APP_TOKEN,
+    render: renderWithLocalPlaywright,
   }), {
     legacy: "stateless",
     responseMode: "auto",

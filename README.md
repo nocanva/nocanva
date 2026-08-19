@@ -14,7 +14,7 @@ This generates a unique bearer token and starts the web workspace plus its Strea
 
 ## Local development
 
-NoCanva requires Node.js 22.13 or newer.
+NoCanva requires Node.js 22.18 or newer.
 
 ```bash
 npm install
@@ -42,7 +42,7 @@ Keep the NoCanva app running, then configure an MCP client to spawn:
 }
 ```
 
-The MCP process uses stdio and accepts loopback URLs by default. For remote use, run `npm run mcp:http` with `NOCANVA_MCP_TOKEN` and `NOCANVA_BASE_URL`, or use the Docker setup. Remote MCP uses authenticated Streamable HTTP with revocable workspace token records, rate limiting, health checks, diagnostics, and structured request logs.
+The MCP process uses stdio and accepts loopback URLs by default. For remote self-hosting, run `npm run mcp:http` with `NOCANVA_MCP_TOKEN` and `NOCANVA_BASE_URL`, or use the Docker setup. The managed deployment uses `npm run mcp:worker:deploy`: an authenticated Streamable HTTP Worker plus Cloudflare Browser Rendering, with no Container or embedded LLM.
 
 Primary daily-use tools:
 
@@ -74,7 +74,7 @@ The existing `canvnah_*` tool namespace is retained for MCP-client compatibility
 - `canvnah_get_render`
 - `canvnah_rerender`
 
-The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version used for review and rendering. Render tools open the local preview with Playwright, verify two identical PNG hashes, save the asset through the same API used by the UI, and return the render ID, revision, dimensions, template version, asset URL, and workspace URL.
+The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version used for review and rendering. Render tools use local Playwright for self-hosting or Cloudflare Browser Rendering in the managed Worker, verify two identical PNG hashes, save the asset through the same API used by the UI, and return the render ID, revision, dimensions, template version, asset URL, and workspace URL.
 
 For an autonomous Codex or Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENTS.md](./FORTWIN_SPROUT_AGENTS.md) into that repository as `AGENTS.md`. Codex discovers it automatically; import it from Claude Code's project `CLAUDE.md` with `@AGENTS.md`.
 

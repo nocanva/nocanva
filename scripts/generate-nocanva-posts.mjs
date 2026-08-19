@@ -10,7 +10,7 @@ const baseUrl = process.env.CANVNAH_BASE_URL ?? "http://localhost:3000";
 const outputDirectory = fileURLToPath(new URL("../outputs/nocanva/", import.meta.url));
 const transport = new StdioClientTransport({
   command: process.execPath,
-  args: [tsx, "mcp/server.ts"],
+  args: [tsx, "mcp/stdio.ts"],
   cwd: root,
   env: { ...process.env, CANVNAH_BASE_URL: baseUrl },
   stderr: "inherit",

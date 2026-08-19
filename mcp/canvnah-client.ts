@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { chromium } from "playwright";
 import { brandConfigSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostPayload, type TemplateInput } from "../lib/media";
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
@@ -25,16 +24,42 @@ export type ReviewResult = {
   width: number; height: number; sha256: string; templateVersion: string; previewUrl: string; imageBase64: string;
 };
 
-export type CanvnahClientContext = { workspaceId?: string; actor?: string; serviceToken?: string };
+export type RenderCaptureInput = {
+  previewUrl: string;
+  width: number;
+  height: number;
+  headers: Record<string, string>;
+  timeoutMs: number;
+};
+
+export type RenderCaptureOutput = {
+  first: Uint8Array;
+  second: Uint8Array;
+  outside: number;
+  overflowing: number;
+  templateVersion: string | null;
+};
+
+export type MediaRenderer = (input: RenderCaptureInput) => Promise<RenderCaptureOutput>;
+
+export type CanvnahClientContext = {
+  workspaceId?: string;
+  actor?: string;
+  serviceToken?: string;
+  siteBypassToken?: string;
+  allowRemote?: boolean;
+  render?: MediaRenderer;
+  renderTimeoutMs?: number;
+};
 
 export class CanvnahClient {
   readonly baseUrl: string;
   readonly context: CanvnahClientContext;
 
-  constructor(baseUrl = process.env.NOCANVA_BASE_URL ?? process.env.CANVNAH_BASE_URL ?? "http://localhost:3000", context: CanvnahClientContext = {}) {
+  constructor(baseUrl: string = process.env.NOCANVA_BASE_URL ?? process.env.CANVNAH_BASE_URL ?? "http://localhost:3000", context: CanvnahClientContext = {}) {
     const url = new URL(baseUrl);
     const loopback = ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-    if (!loopback && process.env.NOCANVA_ALLOW_REMOTE_APP_URL !== "1") {
+    if (!loopback && !context.allowRemote && process.env.NOCANVA_ALLOW_REMOTE_APP_URL !== "1") {
       throw new Error("Set NOCANVA_ALLOW_REMOTE_APP_URL=1 to let the MCP sidecar connect to a non-loopback NoCanva application URL.");
     }
     this.baseUrl = url.href.replace(/\/$/, "");
@@ -125,7 +150,7 @@ export class CanvnahClient {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ expectedRevision: draft.currentRevision, reviewer, notes, checks: capture.review.checks }),
     });
-    return { draft: this.presentDraft(data.draft), review: { ...capture.review, imageBase64: capture.png.toString("base64") } };
+    return { draft: this.presentDraft(data.draft), review: { ...capture.review, imageBase64: Buffer.from(capture.png).toString("base64") } };
   }
 
   async approveDraft(id: string, expectedRevision: number, decision: "approved" | "rejected", actor = "agent:mcp", notes?: string): Promise<DraftResult> {
@@ -172,7 +197,7 @@ export class CanvnahClient {
   async reviewTemplate(payloadValue: unknown): Promise<ReviewResult> {
     const payload = postPayloadSchema.parse(payloadValue);
     const capture = await this.capturePayload(payload);
-    return { ...capture.review, imageBase64: capture.png.toString("base64") };
+    return { ...capture.review, imageBase64: Buffer.from(capture.png).toString("base64") };
   }
 
   private async renderPayload(payload: PostPayload, postId?: string, parentRenderId?: string, pinned?: { draftRevisionId?: string; templateVersionId?: string }): Promise<RenderResult> {
@@ -196,63 +221,40 @@ export class CanvnahClient {
     return this.presentRender(data.render);
   }
 
-  private async capturePayload(payload: PostPayload, templateVersionId?: string): Promise<{ png: Buffer; review: Omit<ReviewResult, "imageBase64"> }> {
+  private async capturePayload(payload: PostPayload, templateVersionId?: string): Promise<{ png: Uint8Array; review: Omit<ReviewResult, "imageBase64"> }> {
+    if (!this.context.render) throw new Error("No media renderer is configured for this NoCanva MCP runtime.");
     const dimensions = formats[payload.format];
     const query = new URLSearchParams({ payload: JSON.stringify(payload) });
     if (templateVersionId) query.set("templateVersionId", templateVersionId);
     const previewUrl = `${this.baseUrl}/render/preview?${query.toString()}`;
-    const browser = await chromium.launch({ headless: true });
-    try {
-      const page = await browser.newPage({ viewport: dimensions, deviceScaleFactor: 1 });
-      const trustedHeaders = this.trustedHeaders();
-      if (Object.keys(trustedHeaders).length) await page.setExtraHTTPHeaders(trustedHeaders);
-      const renderTimeout = Number(process.env.NOCANVA_RENDER_TIMEOUT_MS ?? 45_000);
-      page.setDefaultTimeout(renderTimeout);
-      page.setDefaultNavigationTimeout(renderTimeout);
-      const response = await page.goto(previewUrl, { waitUntil: "networkidle", timeout: renderTimeout });
-      if (!response?.ok()) throw new Error(`The local render preview returned HTTP ${response?.status() ?? "unknown"}.`);
-      await page.evaluate(() => document.fonts.ready);
-      const target = page.locator("[data-render-root]");
-      await target.waitFor({ state: "visible" });
-      const layout = await target.evaluate((root) => {
-        const rootRect = root.getBoundingClientRect();
-        const regions = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region]"));
-        const outside = regions.filter((region) => {
-          const rect = region.getBoundingClientRect();
-          return rect.left < rootRect.left - 1 || rect.top < rootRect.top - 1 || rect.right > rootRect.right + 1 || rect.bottom > rootRect.bottom + 1;
-        }).length;
-        const overflowing = regions.filter((region) => {
-          const style = getComputedStyle(region);
-          const clipsX = ["hidden", "clip"].includes(style.overflowX);
-          const clipsY = ["hidden", "clip"].includes(style.overflowY);
-          return (clipsX && region.scrollWidth > region.clientWidth + 1) || (clipsY && region.scrollHeight > region.clientHeight + 1);
-        }).length;
-        return { outside, overflowing };
-      });
-      const first = await target.screenshot({ type: "png" });
-      const second = await target.screenshot({ type: "png" });
-      const firstHash = createHash("sha256").update(first).digest("hex");
-      const secondHash = createHash("sha256").update(second).digest("hex");
-      if (first.readUInt32BE(16) !== dimensions.width || first.readUInt32BE(20) !== dimensions.height) {
-        throw new Error(`The PNG must be ${dimensions.width} × ${dimensions.height}.`);
-      }
-      const checks = [
-        { id: "schema", passed: true, detail: "Content matches the structured schema." },
-        { id: "bounds", passed: layout.outside === 0, detail: layout.outside === 0 ? "Every region stays inside the canvas." : `${layout.outside} region(s) leave the canvas.` },
-        { id: "overflow", passed: layout.overflowing === 0, detail: layout.overflowing === 0 ? "No text is clipped." : `${layout.overflowing} region(s) are clipped.` },
-        { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
-      ];
-      return {
-        png: first,
-        review: {
-          passed: checks.every((check) => check.passed), checks, width: dimensions.width, height: dimensions.height,
-          sha256: firstHash, templateVersion: await target.getAttribute("data-template-version") ?? payload.templateId,
-          previewUrl,
-        },
-      };
-    } finally {
-      await browser.close();
+    const capture = await this.context.render({
+      previewUrl,
+      width: dimensions.width,
+      height: dimensions.height,
+      headers: this.trustedHeaders(),
+      timeoutMs: this.context.renderTimeoutMs ?? Number(process.env.NOCANVA_RENDER_TIMEOUT_MS ?? 45_000),
+    });
+    const first = Buffer.from(capture.first);
+    const second = Buffer.from(capture.second);
+    const firstHash = createHash("sha256").update(first).digest("hex");
+    const secondHash = createHash("sha256").update(second).digest("hex");
+    if (first.readUInt32BE(16) !== dimensions.width || first.readUInt32BE(20) !== dimensions.height) {
+      throw new Error(`The PNG must be ${dimensions.width} × ${dimensions.height}.`);
     }
+    const checks = [
+      { id: "schema", passed: true, detail: "Content matches the structured schema." },
+      { id: "bounds", passed: capture.outside === 0, detail: capture.outside === 0 ? "Every region stays inside the canvas." : `${capture.outside} region(s) leave the canvas.` },
+      { id: "overflow", passed: capture.overflowing === 0, detail: capture.overflowing === 0 ? "No text is clipped." : `${capture.overflowing} region(s) are clipped.` },
+      { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
+    ];
+    return {
+      png: first,
+      review: {
+        passed: checks.every((check) => check.passed), checks, width: dimensions.width, height: dimensions.height,
+        sha256: firstHash, templateVersion: capture.templateVersion ?? payload.templateId,
+        previewUrl,
+      },
+    };
   }
 
   private presentRender(render: ApiRender): RenderResult {
@@ -284,6 +286,7 @@ export class CanvnahClient {
   private trustedHeaders() {
     const requestHeaders: Record<string, string> = {};
     if (this.context.serviceToken) requestHeaders.authorization = `Bearer ${this.context.serviceToken}`;
+    if (this.context.siteBypassToken) requestHeaders["oai-sites-authorization"] = `Bearer ${this.context.siteBypassToken}`;
     if (this.context.workspaceId) requestHeaders["x-nocanva-workspace-id"] = this.context.workspaceId;
     if (this.context.actor) requestHeaders["x-nocanva-actor-id"] = this.context.actor;
     return requestHeaders;

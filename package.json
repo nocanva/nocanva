@@ -13,10 +13,10 @@
     "url": "https://github.com/nocanva/nocanva/issues"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.18.0"
   },
   "volta": {
-    "node": "22.17.0",
+    "node": "22.18.0",
     "npm": "10.9.2"
   },
   "scripts": {
@@ -28,8 +28,11 @@
     "render:sample": "node scripts/render-post.mjs",
     "render:nocanva": "node scripts/generate-nocanva-posts.mjs",
     "render:campaigns": "node scripts/generate-brand-campaigns.mjs",
-    "mcp:dev": "tsx mcp/server.ts",
+    "mcp:dev": "tsx mcp/stdio.ts",
     "mcp:http": "tsx mcp/http-server.ts",
+    "mcp:worker:dev": "wrangler dev --remote --config wrangler.mcp.jsonc",
+    "mcp:worker:types": "wrangler types --config wrangler.mcp.jsonc --include-runtime false --env-interface McpWorkerEnv --strict-vars false mcp/worker-env.d.ts",
+    "mcp:worker:deploy": "wrangler deploy --config wrangler.mcp.jsonc",
     "mcp:fixture": "node scripts/test-mcp-fixture.mjs",
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
@@ -38,12 +41,14 @@
     "seed": "node scripts/seed.mjs",
     "backup": "node scripts/backup.mjs",
     "restore": "node scripts/restore.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .wrangler --ignore-pattern mcp/worker-env.d.ts",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@cloudflare/playwright": "^1.3.5",
     "@modelcontextprotocol/node": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
+    "agents": "^0.21.0",
     "drizzle-orm": "0.45.2",
     "html-to-image": "1.11.13",
     "next": "16.3.1",
@@ -53,7 +58,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
-    "@cloudflare/workers-types": "4.20260702.1",
+    "@cloudflare/workers-types": "^5.20260819.1",
     "@modelcontextprotocol/client": "^2.0.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
@@ -71,7 +76,7 @@
     "typescript": "5.9.3",
     "vinext": "0.0.50",
     "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "wrangler": "^4.124.0"
   },
   "type": "module"
 }
