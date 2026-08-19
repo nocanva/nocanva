@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { listRenders } from "../../lib/server/media-repository";
+import { requireNoCanvaViewer } from "../../lib/server/request-auth";
 import { WorkspaceHeader } from "../workspace-header";
 
-export const metadata: Metadata = { title: "Render history — Canvnah", description: "Immutable Canvnah render history." };
+export const metadata: Metadata = { title: "Render history — NoCanva", description: "Immutable NoCanva render history." };
 
 export default async function RendersPage() {
-  const renders = await listRenders();
+  const principal = await requireNoCanvaViewer("/renders");
+  const renders = await listRenders(30, principal.workspaceId);
   return (
     <main className="studio-shell"><WorkspaceHeader active="renders" /><section className="collection-page">
       <div className="collection-heading history-heading"><div><p className="kicker">Immutable history</p><h1>Every frame, reproducible.</h1><p>Each output keeps its exact content, template version, dimensions, and asset.</p></div><Link className="dark-link" href="/">Create render →</Link></div>

@@ -1,26 +1,52 @@
 {
-  "name": "canvnah",
-  "version": "0.1.0",
+  "name": "nocanva",
+  "version": "0.2.0",
+  "description": "Deterministic, agent-native workspace for brand-ready media.",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nocanva/nocanva.git"
+  },
+  "homepage": "https://github.com/nocanva/nocanva#readme",
+  "bugs": {
+    "url": "https://github.com/nocanva/nocanva/issues"
+  },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "volta": {
+    "node": "22.17.0",
+    "npm": "10.9.2"
   },
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "start:self-host": "node scripts/start-self-host.mjs",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
     "render:sample": "node scripts/render-post.mjs",
+    "render:nocanva": "node scripts/generate-nocanva-posts.mjs",
+    "render:campaigns": "node scripts/generate-brand-campaigns.mjs",
     "mcp:dev": "tsx mcp/server.ts",
+    "mcp:http": "tsx mcp/http-server.ts",
     "mcp:fixture": "node scripts/test-mcp-fixture.mjs",
+    "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
+    "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
+    "self-host": "node scripts/self-host.mjs",
+    "self-host:token": "node scripts/show-self-host-token.mjs",
+    "seed": "node scripts/seed.mjs",
+    "backup": "node scripts/backup.mjs",
+    "restore": "node scripts/restore.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "drizzle-orm": "0.45.2",
     "html-to-image": "1.11.13",
-    "next": "16.2.6",
+    "next": "16.3.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "zod": "4.4.3"

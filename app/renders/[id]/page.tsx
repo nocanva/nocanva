@@ -5,6 +5,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { getRenderById } from "../../../lib/server/media-repository";
+import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
 import { WorkspaceHeader } from "../../workspace-header";
 
 const getRender = cache(getRenderById);
@@ -15,13 +16,14 @@ function absoluteAssetUrl(host: string, protocol: string, id: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const render = await getRender(id);
-  if (!render) return { title: "Render not found — Canvnah", description: "This Canvnah render does not exist.", openGraph: { images: [] }, twitter: { images: [] } };
+  const principal = await requireNoCanvaViewer(`/renders/${id}`);
+  const render = await getRender(id, principal.workspaceId);
+  if (!render) return { title: "Render not found — NoCanva", description: "This NoCanva render does not exist.", openGraph: { images: [] }, twitter: { images: [] } };
   const requestHeaders = await headers();
   const host = requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const image = absoluteAssetUrl(host, protocol, id);
-  const title = `${render.payload.content.headline} — Canvnah`;
+  const title = `${render.payload.content.headline} — NoCanva`;
   const description = render.payload.content.support;
   return {
     title, description,
@@ -32,7 +34,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function RenderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const render = await getRender(id);
+  const principal = await requireNoCanvaViewer(`/renders/${id}`);
+  const render = await getRender(id, principal.workspaceId);
   if (!render) notFound();
   return (
     <main className="studio-shell"><WorkspaceHeader active="renders" /><section className="render-detail-page">
@@ -41,9 +44,10 @@ export default async function RenderDetailPage({ params }: { params: Promise<{ i
         <div className="detail-art-stage"><Image src={render.assetUrl} alt={render.payload.content.headline} width={render.width} height={render.height} unoptimized /></div>
         <aside className="detail-inspector">
           <p className="kicker">Render detail</p><h1>{render.payload.content.headline}</h1><p className="detail-support">{render.payload.content.support}</p>
-          <div className="detail-actions"><a className="dark-link" href={render.assetUrl} download>Download PNG ↓</a><Link className="light-link" href={`/?rerender=${render.id}`}>Rerender →</Link></div>
+          <div className="detail-actions"><a className="dark-link" href={render.assetUrl} download>Download PNG ↓</a>{render.draftRevisionId ? <Link className="light-link" href={`/drafts/${render.draftRevisionId.split("@")[0]}`}>Open draft →</Link> : <Link className="light-link" href={`/?rerender=${render.id}`}>Rerender →</Link>}</div>
           <dl className="record-list">
             <div><dt>Brand</dt><dd>{render.brandName}</dd></div><div><dt>Template</dt><dd>{render.templateName} · v{render.templateVersion}</dd></div>
+            <div><dt>Template version ID</dt><dd className="mono-value">{render.templateVersionId}</dd></div><div><dt>Draft revision</dt><dd className="mono-value">{render.draftRevisionId ?? "Legacy post"}</dd></div>
             <div><dt>Dimensions</dt><dd>{render.width} × {render.height}</dd></div><div><dt>Created</dt><dd>{new Date(render.createdAt).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}</dd></div>
             <div><dt>Render ID</dt><dd className="mono-value">{render.id}</dd></div><div><dt>SHA-256</dt><dd className="mono-value">{render.sha256}</dd></div>
           </dl>

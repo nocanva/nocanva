@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { resolvePrincipal } from "../lib/server/auth-policy.ts";
+
+const serviceToken = "ncv_app_fixture_0123456789abcdef0123456789";
+
+test("local mode preserves the frictionless self-host actor contract", async () => {
+  const principal = await resolvePrincipal(new Headers({ "x-nocanva-created-by": "human:fixture" }), {
+    mode: "disabled",
+    workspaceId: "local-team",
+  });
+  assert.deepEqual(principal, { kind: "local", actor: "human:fixture", workspaceId: "local-team" });
+});
+
+test("hosted mode fails closed for anonymous and invalid service requests", async () => {
+  const config = { mode: "sites_private", workspaceId: "default", serviceToken };
+  assert.equal(await resolvePrincipal(new Headers(), config), null);
+  assert.equal(await resolvePrincipal(new Headers({ authorization: "Bearer wrong-token" }), config), null);
+});
+
+test("a valid internal service request carries trusted actor and workspace context", async () => {
+  const principal = await resolvePrincipal(new Headers({
+    authorization: `Bearer ${serviceToken}`,
+    "x-nocanva-actor-id": "agent:release-bot",
+    "x-nocanva-workspace-id": "team-alpha",
+  }), { mode: "sites_private", workspaceId: "default", serviceToken });
+  assert.deepEqual(principal, { kind: "service", actor: "agent:release-bot", workspaceId: "team-alpha" });
+});
+
+test("Sites identity ignores spoofed actor and workspace headers", async () => {
+  const principal = await resolvePrincipal(new Headers({
+    "oai-authenticated-user-id": "user-123",
+    "x-nocanva-actor-id": "agent:spoofed",
+    "x-nocanva-workspace-id": "other-team",
+  }), { mode: "sites_private", workspaceId: "trusted-team", serviceToken });
+  assert.deepEqual(principal, { kind: "sites-user", actor: "human:user-123", workspaceId: "trusted-team" });
+});
+
+test("every media API route except health enforces the application boundary", async () => {
+  const routes = [
+    "brands/route.ts", "brands/[id]/route.ts", "templates/route.ts", "posts/route.ts", "posts/[id]/route.ts",
+    "drafts/route.ts", "drafts/[id]/route.ts", "drafts/[id]/revisions/route.ts", "drafts/[id]/review/route.ts",
+    "drafts/[id]/approval/route.ts", "drafts/[id]/archive/route.ts", "renders/route.ts", "renders/[id]/route.ts",
+    "renders/[id]/asset/route.ts",
+  ];
+  for (const route of routes) {
+    const source = await readFile(new URL(`../app/api/${route}`, import.meta.url), "utf8");
+    assert.match(source, /authorizeApi/, `${route} must authorize requests`);
+  }
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  assert.match(layout, /requireNoCanvaViewer/);
+});
