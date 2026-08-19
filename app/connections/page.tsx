@@ -27,13 +27,15 @@ export default async function ConnectionsPage() {
       <div className="connection-grid">
         <article className="connection-panel">
           <p className="kicker">Local development</p><h2>STDIO MCP</h2>
-          <p>The MCP process talks to the local application at port 3000. This remains the fastest development setup.</p>
-          <pre>codex mcp add nocanva --env NOCANVA_BASE_URL=http://localhost:3000 -- npm run mcp:dev</pre>
+          <p>One command configures Codex or Claude Code. The MCP process talks to the local application at port 3000.</p>
+          <pre>npm run connect -- codex</pre>
+          <pre>npm run connect -- claude</pre>
         </article>
         <article className="connection-panel">
           <p className="kicker">Remote and self-hosted</p><h2>Streamable HTTP</h2>
-          <p>Use a workspace bearer token. The token stays in your agent environment and is never stored in this page.</p>
-          <pre>codex mcp add nocanva --url https://YOUR_HOST/mcp --bearer-token-env-var NOCANVA_MCP_TOKEN</pre>
+          <p>Export a workspace bearer token, then connect. Shared configuration references the environment variable rather than committing the secret.</p>
+          <pre>NOCANVA_MCP_TOKEN=... npm run connect -- codex --remote</pre>
+          <pre>NOCANVA_MCP_TOKEN=... npm run connect -- claude --remote</pre>
           <p className="connection-note">Check the sidecar at <code>/healthz</code> and authenticated configuration at <code>/diagnostics</code>.</p>
         </article>
       </div>

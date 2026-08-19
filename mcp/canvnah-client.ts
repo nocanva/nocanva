@@ -146,9 +146,16 @@ export class CanvnahClient {
   async reviewDraft(id: string, reviewer = "agent:mcp", notes?: string): Promise<{ draft: DraftResult; review: ReviewResult }> {
     const draft = await this.getDraft(id);
     const capture = await this.capturePayload(draft.payload, draft.templateVersionId);
+    const form = new FormData();
+    form.set("expectedRevision", String(draft.currentRevision));
+    form.set("reviewer", reviewer);
+    if (notes) form.set("notes", notes);
+    form.set("checks", JSON.stringify(capture.review.checks));
+    const pngBytes = new Uint8Array(capture.png.byteLength);
+    pngBytes.set(capture.png);
+    form.set("png", new Blob([pngBytes.buffer], { type: "image/png" }), renderFilename(draft.payload));
     const data = await this.request<{ draft: Omit<DraftResult, "workspaceUrl"> }>(`/api/drafts/${encodeURIComponent(id)}/review`, {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ expectedRevision: draft.currentRevision, reviewer, notes, checks: capture.review.checks }),
+      method: "POST", body: form,
     });
     return { draft: this.presentDraft(data.draft), review: { ...capture.review, imageBase64: Buffer.from(capture.png).toString("base64") } };
   }
@@ -170,7 +177,12 @@ export class CanvnahClient {
   async renderDraft(id: string): Promise<RenderResult> {
     const draft = await this.getDraft(id);
     if (draft.status !== "approved" && draft.status !== "rendered") throw new Error("Approve the current draft revision before rendering it.");
-    return this.renderPayload(draft.payload, undefined, undefined, { draftRevisionId: draft.revisionId, templateVersionId: draft.templateVersionId });
+    const form = new FormData();
+    form.set("payload", JSON.stringify(draft.payload));
+    form.set("draftRevisionId", draft.revisionId);
+    form.set("templateVersionId", draft.templateVersionId);
+    const data = await this.request<{ render: ApiRender }>("/api/renders", { method: "POST", headers: { "x-canvnah-created-by": "agent:mcp" }, body: form });
+    return this.presentRender(data.render);
   }
 
   async listRenders(limit = 30): Promise<RenderResult[]> {

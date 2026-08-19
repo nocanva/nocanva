@@ -77,6 +77,11 @@ export const draftReviews = sqliteTable("draft_reviews", {
   status: text("status").notNull(),
   notes: text("notes"),
   checksJson: text("checks_json").notNull(),
+  assetKey: text("asset_key"),
+  assetContentType: text("asset_content_type"),
+  width: integer("width"),
+  height: integer("height"),
+  sha256: text("sha256"),
   createdAt: integer("created_at").notNull(),
 }, (table) => [index("idx_draft_reviews_revision").on(table.draftRevisionId)]);
 
@@ -84,11 +89,12 @@ export const draftApprovals = sqliteTable("draft_approvals", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull().default("default"),
   draftRevisionId: text("draft_revision_id").notNull().references(() => draftRevisions.id),
+  reviewId: text("review_id").references(() => draftReviews.id),
   actor: text("actor").notNull(),
   decision: text("decision").notNull(),
   notes: text("notes"),
   createdAt: integer("created_at").notNull(),
-}, (table) => [index("idx_draft_approvals_revision").on(table.draftRevisionId)]);
+}, (table) => [index("idx_draft_approvals_revision").on(table.draftRevisionId), index("idx_draft_approvals_review").on(table.reviewId)]);
 
 export const workspaceEvents = sqliteTable("workspace_events", {
   id: text("id").primaryKey(),

@@ -36,6 +36,7 @@
     "mcp:fixture": "node scripts/test-mcp-fixture.mjs",
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
+    "connect": "node scripts/connect-agent.mjs",
     "self-host": "node scripts/self-host.mjs",
     "self-host:token": "node scripts/show-self-host-token.mjs",
     "seed": "node scripts/seed.mjs",
