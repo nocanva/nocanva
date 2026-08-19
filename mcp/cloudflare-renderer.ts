@@ -10,7 +10,7 @@ export function createCloudflareRenderer(binding: BrowserWorker): MediaRenderer 
       if (Object.keys(input.headers).length) await page.setExtraHTTPHeaders(input.headers);
       page.setDefaultTimeout(input.timeoutMs);
       page.setDefaultNavigationTimeout(input.timeoutMs);
-      const response = await page.goto(input.previewUrl, { waitUntil: "networkidle", timeout: input.timeoutMs });
+      const response = await page.goto(input.previewUrl, { waitUntil: "load", timeout: input.timeoutMs });
       if (!response?.ok()) throw new Error(`The hosted render preview returned HTTP ${response?.status() ?? "unknown"}.`);
       await page.evaluate(() => document.fonts.ready);
       const target = page.locator("[data-render-root]");
