@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
@@ -9,6 +10,7 @@ const port = Number(process.env.NOCANVA_HTTP_FIXTURE_PORT ?? 3199);
 const token = process.env.NOCANVA_HTTP_FIXTURE_TOKEN ?? "ncv_http_fixture_0123456789abcdef0123456789abcdef";
 const baseUrl = process.env.NOCANVA_BASE_URL ?? "http://localhost:3000";
 const externalEndpoint = process.env.NOCANVA_HTTP_FIXTURE_ENDPOINT;
+const imageOutput = process.env.NOCANVA_HTTP_FIXTURE_IMAGE;
 const endpoint = externalEndpoint?.replace(/\/$/, "").replace(/\/mcp$/, "") ?? `http://127.0.0.1:${port}`;
 const child = externalEndpoint ? null : spawn(process.execPath, [tsx, "mcp/http-server.ts"], {
   cwd: root,
@@ -73,7 +75,13 @@ try {
       },
     },
   }));
-  const reviewed = structured(await client.callTool({ name: "nocanva_review_draft", arguments: { draftId: created.draft.id } }));
+  const reviewResult = await client.callTool({ name: "nocanva_review_draft", arguments: { draftId: created.draft.id } });
+  if (imageOutput) {
+    const image = reviewResult.content?.find((item) => item.type === "image");
+    assert.ok(image?.data, "The review did not return a PNG for visual inspection.");
+    await writeFile(imageOutput, Buffer.from(image.data, "base64"));
+  }
+  const reviewed = structured(reviewResult);
   assert.equal(reviewed.review.passed, true);
   const approved = structured(await client.callTool({
     name: "nocanva_approve_draft",
