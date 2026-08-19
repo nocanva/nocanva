@@ -25,6 +25,11 @@ export type RenderRecord = {
   templateVersionId: string; templateVersion: number; payload: PostPayload; width: number; height: number; sha256: string;
   createdAt: number; assetUrl: string;
 };
+export type ActivationSummary = {
+  brandCount: number; templateCount: number; agentActivity: boolean; draftsCreated: number; draftsOpened: number; rendersCompleted: number;
+  firstDraftAt: number | null; firstRenderAt: number | null; timeToFirstRenderMs: number | null;
+};
+export type ManagedMcpToken = { id: string; name: string; tokenPrefix: string; createdBy: string; createdAt: number; lastUsedAt: number | null; revokedAt: number | null };
 
 let initialized: Promise<void> | undefined;
 const seededWorkspaces = new Map<string, Promise<void>>();
@@ -87,6 +92,7 @@ async function initializeDatabase() {
     `CREATE TABLE IF NOT EXISTS draft_reviews (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), reviewer TEXT NOT NULL, status TEXT NOT NULL, notes TEXT, checks_json TEXT NOT NULL, asset_key TEXT, asset_content_type TEXT, width INTEGER, height INTEGER, sha256 TEXT, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS draft_approvals (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), review_id TEXT REFERENCES draft_reviews(id), actor TEXT NOT NULL, decision TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS workspace_events (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, actor TEXT NOT NULL, metadata_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS mcp_tokens (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, name TEXT NOT NULL, token_hash TEXT NOT NULL, token_prefix TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL, last_used_at INTEGER, revoked_at INTEGER)`,
     `CREATE TABLE IF NOT EXISTS renders (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', post_id TEXT NOT NULL REFERENCES posts(id), draft_revision_id TEXT REFERENCES draft_revisions(id), template_version_id TEXT NOT NULL REFERENCES template_versions(id), parent_render_id TEXT, asset_key TEXT NOT NULL, asset_content_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, input_snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE INDEX IF NOT EXISTS idx_templates_brand_id ON templates(brand_id)`,
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_template_versions_template_version ON template_versions(template_id, version)`,
@@ -97,6 +103,8 @@ async function initializeDatabase() {
     `CREATE INDEX IF NOT EXISTS idx_draft_reviews_revision ON draft_reviews(draft_revision_id)`,
     `CREATE INDEX IF NOT EXISTS idx_draft_approvals_revision ON draft_approvals(draft_revision_id)`,
     `CREATE INDEX IF NOT EXISTS idx_workspace_events_created_at ON workspace_events(workspace_id, created_at)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_mcp_tokens_hash ON mcp_tokens(token_hash)`,
+    `CREATE INDEX IF NOT EXISTS idx_mcp_tokens_workspace ON mcp_tokens(workspace_id, created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_created_at ON renders(created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_post_id ON renders(post_id)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_parent_render_id ON renders(parent_render_id)`,
@@ -151,6 +159,81 @@ async function recordWorkspaceEvent(workspaceId: string, action: string, entityT
   await database().prepare("INSERT INTO workspace_events (id, workspace_id, action, entity_type, entity_id, actor, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(crypto.randomUUID(), workspaceId, action, entityType, entityId, actor, JSON.stringify(metadata), createdAt).run();
   console.log(JSON.stringify({ timestamp: new Date(createdAt).toISOString(), service: "nocanva", event: action, workspaceId, entityType, entityId, actor, ...metadata }));
+}
+
+export async function recordDraftOpened(id: string, actor: string, workspaceId = defaultWorkspaceId()) {
+  await ensureMediaDatabase(workspaceId);
+  const draft = await getDraftById(id, workspaceId);
+  if (!draft) return;
+  await recordWorkspaceEvent(workspaceId, "draft_opened", "draft", id, actor, { revision: draft.currentRevision, status: draft.status });
+}
+
+export async function getActivationSummary(workspaceId = defaultWorkspaceId()): Promise<ActivationSummary> {
+  await ensureMediaDatabase(workspaceId);
+  const [counts, events] = await Promise.all([
+    database().prepare("SELECT (SELECT COUNT(*) FROM brands WHERE workspace_id = ?) AS brand_count, (SELECT COUNT(*) FROM templates WHERE workspace_id = ?) AS template_count").bind(workspaceId, workspaceId).first<D1Row>(),
+    database().prepare(`SELECT
+      COUNT(DISTINCT CASE WHEN action = 'draft_created' THEN entity_id END) AS drafts_created,
+      COUNT(DISTINCT CASE WHEN action = 'draft_opened' THEN entity_id END) AS drafts_opened,
+      COUNT(DISTINCT CASE WHEN action = 'render_completed' THEN entity_id END) AS renders_completed,
+      MIN(CASE WHEN action = 'draft_created' THEN created_at END) AS first_draft_at,
+      MIN(CASE WHEN action = 'render_completed' AND created_at >= (SELECT MIN(created_at) FROM workspace_events draft_events WHERE draft_events.workspace_id = ? AND draft_events.action = 'draft_created') THEN created_at END) AS first_render_at,
+      MAX(CASE WHEN actor LIKE 'agent:%' THEN 1 ELSE 0 END) AS agent_activity
+      FROM workspace_events WHERE workspace_id = ?`).bind(workspaceId, workspaceId).first<D1Row>(),
+  ]);
+  const firstDraftAt = events?.first_draft_at == null ? null : Number(events.first_draft_at);
+  const firstRenderAt = events?.first_render_at == null ? null : Number(events.first_render_at);
+  return {
+    brandCount: Number(counts?.brand_count ?? 0), templateCount: Number(counts?.template_count ?? 0), agentActivity: Number(events?.agent_activity ?? 0) === 1,
+    draftsCreated: Number(events?.drafts_created ?? 0), draftsOpened: Number(events?.drafts_opened ?? 0), rendersCompleted: Number(events?.renders_completed ?? 0),
+    firstDraftAt, firstRenderAt, timeToFirstRenderMs: firstDraftAt != null && firstRenderAt != null && firstRenderAt >= firstDraftAt ? firstRenderAt - firstDraftAt : null,
+  };
+}
+
+export async function listManagedMcpTokens(workspaceId = defaultWorkspaceId()): Promise<ManagedMcpToken[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare("SELECT id, name, token_prefix, created_by, created_at, last_used_at, revoked_at FROM mcp_tokens WHERE workspace_id = ? ORDER BY created_at DESC").bind(workspaceId).all<D1Row>();
+  return result.results.map(mapManagedMcpToken);
+}
+
+export async function createManagedMcpToken(name: string, actor: string, workspaceId = defaultWorkspaceId()): Promise<{ token: string; record: ManagedMcpToken }> {
+  await ensureMediaDatabase(workspaceId);
+  const normalizedName = name.trim();
+  if (!normalizedName || normalizedName.length > 60) throw new Error("Token name must contain 1 to 60 characters.");
+  const random = new Uint8Array(32);
+  crypto.getRandomValues(random);
+  const token = `ncv_${bytesToBase64Url(random)}`;
+  const tokenHash = await sha256Text(token);
+  const id = crypto.randomUUID();
+  const now = Date.now();
+  await database().prepare("INSERT INTO mcp_tokens (id, workspace_id, name, token_hash, token_prefix, created_by, created_at, last_used_at, revoked_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL)")
+    .bind(id, workspaceId, normalizedName, tokenHash, `${token.slice(0, 12)}…`, actor, now).run();
+  await recordWorkspaceEvent(workspaceId, "mcp_token_created", "mcp_token", id, actor, { name: normalizedName });
+  return { token, record: { id, name: normalizedName, tokenPrefix: `${token.slice(0, 12)}…`, createdBy: actor, createdAt: now, lastUsedAt: null, revokedAt: null } };
+}
+
+export async function revokeManagedMcpToken(id: string, actor: string, workspaceId = defaultWorkspaceId()): Promise<ManagedMcpToken> {
+  await ensureMediaDatabase(workspaceId);
+  const now = Date.now();
+  await database().prepare("UPDATE mcp_tokens SET revoked_at = COALESCE(revoked_at, ?) WHERE id = ? AND workspace_id = ?").bind(now, id, workspaceId).run();
+  const row = await database().prepare("SELECT id, name, token_prefix, created_by, created_at, last_used_at, revoked_at FROM mcp_tokens WHERE id = ? AND workspace_id = ? LIMIT 1").bind(id, workspaceId).first<D1Row>();
+  if (!row) throw new Error("The MCP token does not exist.");
+  await recordWorkspaceEvent(workspaceId, "mcp_token_revoked", "mcp_token", id, actor);
+  return mapManagedMcpToken(row);
+}
+
+export async function authenticateManagedMcpToken(token: string): Promise<{ id: string; workspaceId: string } | null> {
+  await ensureMediaDatabase();
+  if (token.length < 24) return null;
+  const tokenHash = await sha256Text(token);
+  const row = await database().prepare("SELECT id, workspace_id FROM mcp_tokens WHERE token_hash = ? AND revoked_at IS NULL LIMIT 1").bind(tokenHash).first<D1Row>();
+  if (!row) return null;
+  await database().prepare("UPDATE mcp_tokens SET last_used_at = ? WHERE id = ?").bind(Date.now(), row.id).run();
+  return { id: String(row.id), workspaceId: String(row.workspace_id) };
+}
+
+function mapManagedMcpToken(row: D1Row): ManagedMcpToken {
+  return { id: String(row.id), name: String(row.name), tokenPrefix: String(row.token_prefix), createdBy: String(row.created_by), createdAt: Number(row.created_at), lastUsedAt: row.last_used_at == null ? null : Number(row.last_used_at), revokedAt: row.revoked_at == null ? null : Number(row.revoked_at) };
 }
 
 export async function listBrands(workspaceId = defaultWorkspaceId()): Promise<BrandRecord[]> {
@@ -563,4 +646,14 @@ function validatePng(buffer: ArrayBuffer, width: number, height: number) {
 async function sha256Hex(buffer: ArrayBuffer) {
   const hash = await crypto.subtle.digest("SHA-256", buffer);
   return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256Text(value: string) {
+  return sha256Hex(new TextEncoder().encode(value).buffer);
+}
+
+function bytesToBase64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }

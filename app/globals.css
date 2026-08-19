@@ -258,6 +258,39 @@ button { color: inherit; }
 .connection-panel pre { overflow: auto; margin: 22px 0 0; padding: 16px; color: #e7e5df; background: #23231f; font: 10px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .connection-panel code { color: var(--ink); font: 9px ui-monospace, monospace; }
 .connection-note { margin-bottom: 0; }
+.activation-panel { margin-bottom: 18px; padding: 28px; border: 1px solid var(--line); background: #fff; }
+.collection-heading.compact { margin-bottom: 24px; }
+.collection-heading.compact h2 { margin: 0; font: 600 32px/1.08 var(--font-serif), serif; }
+.activation-list { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.activation-list li { min-height: 104px; padding: 16px; border: 1px solid var(--line); background: var(--paper); }
+.activation-list li > span { display: block; margin-bottom: 18px; color: var(--muted); font: 700 9px ui-monospace, monospace; }
+.activation-list li strong, .activation-list li small { display: block; }
+.activation-list li strong { font-size: 11px; }
+.activation-list li small { margin-top: 6px; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.activation-list li.done { border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
+.activation-list li.done > span { color: var(--green); }
+.activation-list li.current { border-color: color-mix(in srgb, var(--red) 45%, var(--line)); }
+.activation-metrics { display: grid; grid-template-columns: repeat(3,1fr); margin-top: 12px; border: 1px solid var(--line); }
+.activation-metrics > div { padding: 14px 16px; border-right: 1px solid var(--line); }
+.activation-metrics > div:last-child { border-right: 0; }
+.activation-metrics span, .activation-metrics strong { display: block; }
+.activation-metrics span { color: var(--muted); font-size: 8px; }
+.activation-metrics strong { margin-top: 7px; font: 600 20px/1 var(--font-serif), serif; }
+.token-panel { display: grid; grid-template-columns: minmax(0,.8fr) minmax(260px,.65fr); gap: 18px 28px; margin-bottom: 18px; padding: 28px; border: 1px solid var(--line); background: #fff; }
+.token-panel h2 { margin: 0; font: 600 32px/1.08 var(--font-serif), serif; }
+.token-panel p { color: var(--muted); font-size: 10px; }
+.token-create { display: flex; align-items: center; gap: 8px; }
+.token-create input { min-width: 0; flex: 1; padding: 13px; border: 1px solid var(--line); background: var(--paper); font: inherit; }
+.token-create .primary-button { width: auto; flex: 0 0 auto; }
+.token-secret { grid-column: 1/-1; display: flex; align-items: center; gap: 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--green) 40%, var(--line)); background: color-mix(in srgb, var(--green) 6%, #fff); }
+.token-secret code { min-width: 0; flex: 1; overflow: auto; font: 10px ui-monospace, monospace; }
+.token-secret button, .token-list button { border: 0; color: var(--red); background: transparent; font: 700 8px ui-monospace, monospace; text-transform: uppercase; cursor: pointer; }
+.token-list { grid-column: 1/-1; border-top: 1px solid var(--line); }
+.token-list > div { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.token-list strong, .token-list small { display: block; }
+.token-list strong { font-size: 10px; }
+.token-list small { margin-top: 4px; color: var(--muted); font-size: 8px; }
+.token-list em { color: var(--muted); font: 700 8px ui-monospace, monospace; text-transform: uppercase; }
 
 @media (max-width: 1150px) {
   .workspace { grid-template-columns: 180px minmax(400px,1fr); }
@@ -281,7 +314,11 @@ button { color: inherit; }
   .post-support { font-size: 11px; }
   .collection-page, .render-detail-page { padding: 38px 16px 70px; }
   .history-heading { align-items: start; flex-direction: column; }
-  .template-library, .render-history-grid, .draft-grid, .connection-grid, .connection-status-grid { grid-template-columns: 1fr; }
+  .template-library, .render-history-grid, .draft-grid, .connection-grid, .connection-status-grid, .activation-list, .activation-metrics { grid-template-columns: 1fr; }
+  .activation-metrics > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .activation-metrics > div:last-child { border-bottom: 0; }
+  .token-panel { grid-template-columns: 1fr; }
+  .token-secret, .token-list { grid-column: 1; }
   .template-library-card { grid-template-columns: 120px 1fr; padding: 15px; gap: 16px; }
   .library-preview { width: 120px; height: 150px; }
   .library-preview .post-canvas.export { transform: scale(.1111111111); }

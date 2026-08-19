@@ -107,6 +107,18 @@ export const workspaceEvents = sqliteTable("workspace_events", {
   createdAt: integer("created_at").notNull(),
 }, (table) => [index("idx_workspace_events_created_at").on(table.workspaceId, table.createdAt)]);
 
+export const mcpTokens = sqliteTable("mcp_tokens", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  tokenPrefix: text("token_prefix").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+  lastUsedAt: integer("last_used_at"),
+  revokedAt: integer("revoked_at"),
+}, (table) => [uniqueIndex("idx_mcp_tokens_hash").on(table.tokenHash), index("idx_mcp_tokens_workspace").on(table.workspaceId, table.createdAt)]);
+
 export const renders = sqliteTable("renders", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull().default("default"),

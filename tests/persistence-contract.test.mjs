@@ -5,7 +5,7 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("migration defines the durable media graph and query indexes", async () => {
-  const sql = `${await readFile(new URL("drizzle/0000_flippant_omega_flight.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0001_trustworthy_drafts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0002_workspace_events.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0004_review_artifacts.sql", root), "utf8")}`;
+  const sql = `${await readFile(new URL("drizzle/0000_flippant_omega_flight.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0001_trustworthy_drafts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0002_workspace_events.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0004_review_artifacts.sql", root), "utf8")}\n${await readFile(new URL("drizzle/0005_mcp_tokens.sql", root), "utf8")}`;
   for (const table of ["brands", "templates", "template_versions", "posts", "renders"]) {
     assert.match(sql, new RegExp(`CREATE TABLE .${table}.`));
   }
@@ -23,6 +23,8 @@ test("migration defines the durable media graph and query indexes", async () => 
   assert.match(sql, /asset_key/);
   assert.match(sql, /review_id/);
   assert.match(sql, /idx_draft_approvals_review/);
+  assert.match(sql, /CREATE TABLE .mcp_tokens./);
+  assert.match(sql, /idx_mcp_tokens_hash/);
 });
 
 test("hosting binds relational data and immutable assets", async () => {
