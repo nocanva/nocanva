@@ -37,7 +37,7 @@ async function waitForHealth() {
 }
 
 function structured(result) {
-  assert.equal(result.isError, undefined);
+  assert.equal(result.isError, undefined, JSON.stringify(result.content));
   assert.ok(result.structuredContent && typeof result.structuredContent === "object");
   return result.structuredContent;
 }
