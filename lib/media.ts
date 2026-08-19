@@ -8,7 +8,7 @@ export const brandConfigSchema = z.object({
   name: z.string().trim().min(1).max(60),
   tagline: z.string().trim().min(1).max(80),
   website: z.string().trim().min(1).max(100),
-  colors: z.object({ paper: hexColorSchema, ink: hexColorSchema, signal: hexColorSchema, muted: hexColorSchema }),
+  colors: z.object({ paper: hexColorSchema, ink: hexColorSchema, signal: hexColorSchema, muted: hexColorSchema, accent: hexColorSchema.optional() }),
   safeArea: z.number().int().min(40).max(140),
 });
 
@@ -26,6 +26,7 @@ export const brand: BrandConfig = {
 export const templates = {
   statement: { id: "statement", name: "Editorial statement", description: "One strong idea with a sharp supporting line.", version: 1 },
   signal: { id: "signal", name: "Signal card", description: "A numbered claim for a recurring evidence series.", version: 1 },
+  bloom: { id: "bloom", name: "Bloom card", description: "An illustrated card with a serif headline, leaf motifs and a channel footer.", version: 1 },
 } as const;
 
 export const formats = {
@@ -38,7 +39,7 @@ export const templateInputSchema = z.object({
   brandId: slugSchema,
   name: z.string().trim().min(1).max(80),
   description: z.string().trim().min(1).max(180),
-  rendererKey: z.enum(["statement", "signal"]),
+  rendererKey: z.enum(["statement", "signal", "bloom"]),
 });
 
 export type TemplateInput = z.infer<typeof templateInputSchema>;
@@ -57,6 +58,20 @@ export const postPayloadSchema = z.object({
 export type PostPayload = z.infer<typeof postPayloadSchema>;
 export type TemplateId = keyof typeof templates;
 export type FormatId = PostPayload["format"];
+
+export const draftStatusSchema = z.enum(["draft", "in_review", "approved", "rendered"]);
+export type DraftStatus = z.infer<typeof draftStatusSchema>;
+
+export const draftCreateInputSchema = z.object({
+  payload: postPayloadSchema,
+  prompt: z.string().trim().max(500).optional().nullable(),
+});
+
+export const draftUpdateInputSchema = draftCreateInputSchema.extend({
+  expectedRevision: z.number().int().positive(),
+});
+
+export const draftDecisionSchema = z.enum(["approved", "rejected"]);
 
 export const defaultPostPayload: PostPayload = {
   brandId: "blindspot",

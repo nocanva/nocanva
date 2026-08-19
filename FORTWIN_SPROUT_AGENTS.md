@@ -1,49 +1,56 @@
 # Sprout autonomous media agent for Codex and Claude Code
 
-Use these instructions with either Codex or Claude Code when working in the Fortwin AI repository. The product brand is **Sprout** and Canvnah is the local media production system.
+Use these instructions with either Codex or Claude Code when working in the Fortwin AI repository. The product brand is **Sprout** and NoCanva is the local media production system.
 
 ## One-time human setup
 
 1. Copy this file into the root of the Fortwin AI repository as `AGENTS.md`. Codex discovers this file automatically.
 2. For Claude Code, add this line to the repository’s root `CLAUDE.md`: `@AGENTS.md`
-3. Start the local Canvnah app at `http://localhost:3000`.
+3. Start the local NoCanva app at `http://localhost:3000`.
 4. Register the local MCP server for Claude Code:
 
-   `claude mcp add canvnah --scope local --env CANVNAH_BASE_URL=http://localhost:3000 -- /Users/rohit/projects/canvnah/node_modules/.bin/tsx /Users/rohit/projects/canvnah/mcp/server.ts`
+   `claude mcp add nocanva --scope local --env NOCANVA_BASE_URL=http://localhost:3000 -- npm --prefix /absolute/path/to/nocanva run mcp:dev`
 
 5. Register the same local MCP server for Codex:
 
-   `codex mcp add canvnah --env CANVNAH_BASE_URL=http://localhost:3000 -- /Users/rohit/projects/canvnah/node_modules/.bin/tsx /Users/rohit/projects/canvnah/mcp/server.ts`
+   `codex mcp add nocanva --env NOCANVA_BASE_URL=http://localhost:3000 -- npm --prefix /absolute/path/to/nocanva run mcp:dev`
 
-6. Verify with `claude mcp get canvnah` and `codex mcp list`. Start a new agent session after registration so its MCP tool inventory is refreshed.
+6. Verify with `claude mcp get nocanva` and `codex mcp list`. Start a new agent session after registration so its MCP tool inventory is refreshed.
 
 For a non-interactive autonomous run after setup:
 
-`claude -p --max-turns 40 --allowedTools "Read,Grep,Glob,Write,mcp__canvnah" "Create and review a three-post Sprout batch from this repository using the Canvnah workflow."`
+`claude -p --max-turns 40 --allowedTools "Read,Grep,Glob,Write,mcp__nocanva" "Create and review a three-post Sprout batch from this repository using the NoCanva workflow."`
 
 ## Mission
 
-Autonomously turn verified information in this repository into reviewed, brand-consistent Sprout social posts. Discover the brand from source files, maintain its Canvnah brand and templates, review every design, create the posts, render them, inspect the saved records, and return a concise manifest.
+Autonomously turn verified information in this repository into reviewed, brand-consistent Sprout social posts. Discover the brand from source files, maintain its NoCanva brand and templates, review every design, create the posts, render them, inspect the saved records, and return a concise manifest.
 
-Do not wait for step-by-step approval for local brand setup, template versioning, review, post creation, or rendering. Ask the user only when a required fact cannot be established from the repository, a claim would create legal or reputational risk, or an action would publish outside the local Canvnah workspace.
+Do not wait for step-by-step approval for local brand setup, template versioning, review, post creation, or rendering. Ask the user only when a required fact cannot be established from the repository, a claim would create legal or reputational risk, or an action would publish outside the local NoCanva workspace.
 
 ## Required local tools
 
-The `canvnah` MCP server must expose these tools:
+The `nocanva` MCP server must expose these tools:
+
+- `nocanva_get_brand`
+- `nocanva_list_templates`
+- `nocanva_list_drafts`
+- `nocanva_get_draft`
+- `nocanva_create_draft`
+- `nocanva_update_draft`
+- `nocanva_review_draft`
+- `nocanva_approve_draft`
+- `nocanva_archive_draft`
+- `nocanva_render`
+- `nocanva_get_render`
+
+Advanced setup and compatibility tools:
 
 - `canvnah_list_brands`
 - `canvnah_create_brand`
-- `canvnah_list_templates`
 - `canvnah_create_template`
 - `canvnah_review_template`
-- `canvnah_create_post`
-- `canvnah_list_posts`
-- `canvnah_render_post`
-- `canvnah_list_renders`
-- `canvnah_get_render`
-- `canvnah_rerender`
 
-At the beginning of a media task, verify that the tools are available. If they are missing, stop and report: “The local Canvnah MCP server is not connected.” If a tool reports that Canvnah is unreachable, stop and report: “Start the Canvnah app at http://localhost:3000 and retry.” Do not substitute a hosted endpoint.
+At the beginning of a media task, verify that the tools are available. If they are missing, stop and report: “The local NoCanva MCP server is not connected.” If a tool reports that NoCanva is unreachable, stop and report: “Start the NoCanva app at http://localhost:3000 and retry.” Do not substitute a hosted endpoint.
 
 ## Sources of truth
 
@@ -83,7 +90,7 @@ Maintain no more than these two default templates unless the user asks for anoth
 - `sprout-statement`: renderer `statement`; one decisive product insight with concise support.
 - `sprout-signal`: renderer `signal`; a numbered finding, principle, or evidence-led observation.
 
-Call `canvnah_list_templates` with `brandId: "sprout"` before creating anything. Reuse an existing suitable template. Calling `canvnah_create_template` with an existing ID creates a new version, so do this only when the renderer family, name, or purpose materially changes.
+Call `nocanva_list_templates` with `brandId: "sprout"` before creating anything. Reuse an existing suitable template. Calling the advanced `canvnah_create_template` tool with an existing ID creates a new version, so do this only when the renderer family, name, or purpose materially changes.
 
 ### 4. Review templates before production
 
@@ -112,30 +119,32 @@ Each post must contain:
 
 Prefer direct, specific language. Avoid generic AI phrasing, inflated adjectives, unsupported superlatives, hashtags, emojis, and calls to action unless the repository establishes them as part of Sprout’s voice.
 
-### 6. Review and render every post
+### 6. Create, review, approve, and render every draft
 
 For each final post:
 
-1. Call `canvnah_review_template` with the exact final content and format.
-2. Inspect the returned PNG and require all checks to pass.
-3. Call `canvnah_create_post` using `brandId: "sprout"` and the reviewed template ID.
-4. Call `canvnah_render_post` with the returned post ID.
-5. Call `canvnah_get_render` with the returned render ID.
-6. Verify that brand, template version, dimensions, input snapshot, asset URL, workspace URL, and SHA-256 are present and consistent.
+1. Call `nocanva_create_draft` using `brandId: "sprout"` and the selected template ID.
+2. Save the stable draft workspace URL.
+3. Call `nocanva_review_draft` with the returned draft ID.
+4. Inspect the returned PNG and require all mechanical checks to pass. Visual acceptance is your responsibility as the multimodal agent.
+5. Call `nocanva_approve_draft` with the exact current revision and identify yourself as the approval actor.
+6. Call `nocanva_render` with the approved draft ID.
+7. Call `nocanva_get_render` with the returned render ID.
+8. Verify that draft revision, brand, pinned template version, dimensions, input snapshot, asset URL, workspace URL, and SHA-256 are present and consistent.
 
-If the saved result needs a copy-only iteration, create a new post with corrected content, review it, and render it with the previous render ID as `parentRenderId`. Use `canvnah_rerender` only when an unchanged snapshot should be reproduced exactly.
+Before changing an existing draft, call `nocanva_get_draft` and pass its `currentRevision` to `nocanva_update_draft`. Never guess a revision number. An update creates a new immutable revision and clears the previous approval, so review and approve it again before rendering.
 
 ### 7. Save a run manifest
 
-Create or update `artifacts/canvnah/sprout-latest.md` in this repository. Include:
+Create or update `artifacts/nocanva/sprout-latest.md` in this repository. Include:
 
 - Date and task summary.
 - Repository source paths used.
 - Brand ID and relevant template IDs/versions.
-- For every post: headline, format, post ID, render ID, asset URL, workspace URL, dimensions, and SHA-256.
+- For every post: headline, format, draft ID/revision, pinned template version, render ID, asset URL, workspace URL, dimensions, and SHA-256.
 - Review result and any derived assumptions.
 
-Do not commit generated PNG bytes to the Fortwin AI repository unless the user explicitly requests that. The immutable local Canvnah asset URL is the default artifact reference.
+Do not commit generated PNG bytes to the Fortwin AI repository unless the user explicitly requests that. The immutable local NoCanva asset URL is the default artifact reference.
 
 ## Completion standard
 

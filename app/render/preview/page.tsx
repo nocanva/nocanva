@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { PostArtwork } from "../../post-artwork";
 import { defaultPostPayload, postPayloadSchema } from "../../../lib/media";
-import { getBrandById, getTemplateById } from "../../../lib/server/media-repository";
+import { getBrandById, getTemplateById, getTemplateVersionById } from "../../../lib/server/media-repository";
+import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
 
-export const metadata: Metadata = { title: "Canvnah render", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "NoCanva render", robots: { index: false, follow: false } };
 
 function decodePayload(raw?: string) {
   if (!raw) return defaultPostPayload;
@@ -15,10 +16,14 @@ function decodePayload(raw?: string) {
   }
 }
 
-export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string }> }) {
-  const { payload } = await searchParams;
+export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string; templateVersionId?: string }> }) {
+  const principal = await requireNoCanvaViewer("/render/preview");
+  const { payload, templateVersionId } = await searchParams;
   const decoded = decodePayload(payload);
-  const [brandRecord, templateRecord] = await Promise.all([getBrandById(decoded.brandId), getTemplateById(decoded.templateId)]);
+  const [brandRecord, templateRecord] = await Promise.all([
+    getBrandById(decoded.brandId, principal.workspaceId),
+    templateVersionId ? getTemplateVersionById(templateVersionId, principal.workspaceId) : getTemplateById(decoded.templateId, principal.workspaceId),
+  ]);
   if (!brandRecord || !templateRecord || templateRecord.brandId !== brandRecord.id) {
     return <main className="render-route"><p>Brand or template not found.</p></main>;
   }

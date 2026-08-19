@@ -1,21 +1,47 @@
 import { env } from "cloudflare:workers";
-import { brand, brandConfigSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type PostPayload, type TemplateInput } from "../media";
+import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type TemplateInput } from "../media";
 
 type D1Row = Record<string, unknown>;
 
 export type BrandRecord = { id: string; name: string; config: BrandConfig; createdAt: number };
-export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal"; contentSchema: Record<string, unknown>; createdAt: number };
+export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal" | "bloom"; contentSchema: Record<string, unknown>; createdAt: number };
 export type PostRecord = {
   id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload;
   createdBy: string; createdAt: number;
 };
+export type DraftCheck = { id: string; passed: boolean; detail: string };
+export type DraftReviewRecord = { id: string; reviewer: string; status: "passed" | "changes_requested"; notes: string | null; checks: DraftCheck[]; createdAt: number };
+export type DraftApprovalRecord = { id: string; actor: string; decision: "approved" | "rejected"; notes: string | null; createdAt: number };
+export type DraftRecord = {
+  id: string; brandId: string; brandName: string; templateId: string; templateName: string;
+  templateVersionId: string; templateVersion: number; currentRevision: number; revisionId: string;
+  status: DraftStatus; approvalPolicy: "agent_allowed" | "human_required"; archivedAt: number | null; prompt: string | null; payload: PostPayload;
+  createdBy: string; revisionCreatedBy: string; createdAt: number; updatedAt: number;
+  review: DraftReviewRecord | null; approval: DraftApprovalRecord | null;
+};
+export type DraftRevisionRecord = { id: string; revision: number; templateVersionId: string; format: PostPayload["format"]; content: PostPayload["content"]; prompt: string | null; createdBy: string; createdAt: number };
 export type RenderRecord = {
-  id: string; postId: string; parentRenderId: string | null; brandName: string; templateName: string;
-  templateVersion: number; payload: PostPayload; width: number; height: number; sha256: string;
+  id: string; postId: string; draftRevisionId: string | null; parentRenderId: string | null; brandName: string; templateName: string;
+  templateVersionId: string; templateVersion: number; payload: PostPayload; width: number; height: number; sha256: string;
   createdAt: number; assetUrl: string;
 };
 
 let initialized: Promise<void> | undefined;
+const seededWorkspaces = new Map<string, Promise<void>>();
+
+function defaultWorkspaceId() {
+  return env.NOCANVA_WORKSPACE_ID ?? "default";
+}
+
+function physicalId(workspaceId: string, logicalId: string) {
+  return workspaceId === "default" ? logicalId : `${workspaceId}::${logicalId}`;
+}
+
+function logicalId(workspaceId: string, storedId: unknown) {
+  const value = String(storedId);
+  const prefix = `${workspaceId}::`;
+  return value.startsWith(prefix) ? value.slice(prefix.length) : value;
+}
 
 function database(): D1Database {
   if (!env.DB) throw new Error("D1 binding DB is unavailable.");
@@ -27,117 +53,346 @@ function mediaBucket(): R2Bucket {
   return env.MEDIA;
 }
 
-export function ensureMediaDatabase(): Promise<void> {
+function approvalPolicy(): "agent_allowed" | "human_required" {
+  return env.NOCANVA_APPROVAL_MODE === "human_required" ? "human_required" : "agent_allowed";
+}
+
+export async function ensureMediaDatabase(workspaceId = defaultWorkspaceId()): Promise<void> {
   initialized ??= initializeDatabase();
-  return initialized;
+  await initialized;
+  let seed = seededWorkspaces.get(workspaceId);
+  if (!seed) {
+    seed = seedWorkspace(workspaceId);
+    seededWorkspaces.set(workspaceId, seed);
+  }
+  await seed;
+}
+
+export async function checkMediaHealth() {
+  await ensureMediaDatabase();
+  await database().prepare("SELECT 1 AS ok").first();
+  await mediaBucket().head("__nocanva_healthcheck__");
+  return { database: "ok" as const, objectStorage: "ok" as const };
 }
 
 async function initializeDatabase() {
   const db = database();
   const statements = [
-    `CREATE TABLE IF NOT EXISTS brands (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, config_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY NOT NULL, brand_id TEXT NOT NULL REFERENCES brands(id), name TEXT NOT NULL, type TEXT NOT NULL, content_schema_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS template_versions (id TEXT PRIMARY KEY NOT NULL, template_id TEXT NOT NULL REFERENCES templates(id), version INTEGER NOT NULL, renderer_key TEXT NOT NULL, config_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, brand_id TEXT NOT NULL REFERENCES brands(id), template_id TEXT NOT NULL REFERENCES templates(id), prompt TEXT, content_json TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS renders (id TEXT PRIMARY KEY NOT NULL, post_id TEXT NOT NULL REFERENCES posts(id), template_version_id TEXT NOT NULL REFERENCES template_versions(id), parent_render_id TEXT, asset_key TEXT NOT NULL, asset_content_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, input_snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS brands (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL, config_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS templates (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', brand_id TEXT NOT NULL REFERENCES brands(id), name TEXT NOT NULL, type TEXT NOT NULL, content_schema_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS template_versions (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', template_id TEXT NOT NULL REFERENCES templates(id), version INTEGER NOT NULL, renderer_key TEXT NOT NULL, config_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', brand_id TEXT NOT NULL REFERENCES brands(id), template_id TEXT NOT NULL REFERENCES templates(id), prompt TEXT, content_json TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', brand_id TEXT NOT NULL REFERENCES brands(id), template_id TEXT NOT NULL REFERENCES templates(id), current_revision INTEGER NOT NULL, status TEXT NOT NULL, archived_at INTEGER, created_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS draft_revisions (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_id TEXT NOT NULL REFERENCES drafts(id), revision INTEGER NOT NULL, template_version_id TEXT NOT NULL REFERENCES template_versions(id), format TEXT NOT NULL, content_json TEXT NOT NULL, prompt TEXT, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS draft_reviews (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), reviewer TEXT NOT NULL, status TEXT NOT NULL, notes TEXT, checks_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS draft_approvals (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), actor TEXT NOT NULL, decision TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS workspace_events (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, actor TEXT NOT NULL, metadata_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS renders (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', post_id TEXT NOT NULL REFERENCES posts(id), draft_revision_id TEXT REFERENCES draft_revisions(id), template_version_id TEXT NOT NULL REFERENCES template_versions(id), parent_render_id TEXT, asset_key TEXT NOT NULL, asset_content_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, input_snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE INDEX IF NOT EXISTS idx_templates_brand_id ON templates(brand_id)`,
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_template_versions_template_version ON template_versions(template_id, version)`,
     `CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_drafts_updated_at ON drafts(updated_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_drafts_brand_id ON drafts(brand_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_draft_revisions_draft_revision ON draft_revisions(draft_id, revision)`,
+    `CREATE INDEX IF NOT EXISTS idx_draft_reviews_revision ON draft_reviews(draft_revision_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_draft_approvals_revision ON draft_approvals(draft_revision_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_workspace_events_created_at ON workspace_events(workspace_id, created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_created_at ON renders(created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_post_id ON renders(post_id)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_parent_render_id ON renders(parent_render_id)`,
   ];
   await db.batch(statements.map((statement) => db.prepare(statement)));
+  for (const table of ["brands", "templates", "template_versions", "posts", "drafts", "draft_revisions", "draft_reviews", "draft_approvals", "renders"]) {
+    const columns = await db.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>();
+    if (!columns.results.some((column) => column.name === "workspace_id")) {
+      await db.prepare(`ALTER TABLE ${table} ADD COLUMN workspace_id TEXT NOT NULL DEFAULT 'default'`).run();
+    }
+  }
+  const renderColumns = await db.prepare("PRAGMA table_info(renders)").all<{ name: string }>();
+  if (!renderColumns.results.some((column) => column.name === "draft_revision_id")) {
+    await db.prepare("ALTER TABLE renders ADD COLUMN draft_revision_id TEXT REFERENCES draft_revisions(id)").run();
+  }
 
-  const createdAt = Date.UTC(2026, 7, 18);
-  const contentSchema = JSON.stringify({ eyebrow: { type: "string", maxLength: 28 }, headline: { type: "string", maxLength: 84 }, support: { type: "string", maxLength: 150 } });
   await db.batch([
-    db.prepare("INSERT OR IGNORE INTO brands (id, name, config_json, created_at) VALUES (?, ?, ?, ?)").bind(brand.id, brand.name, JSON.stringify(brand), createdAt),
-    db.prepare("INSERT OR IGNORE INTO templates (id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind("statement", brand.id, templates.statement.name, "statement", contentSchema, createdAt),
-    db.prepare("INSERT OR IGNORE INTO templates (id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind("signal", brand.id, templates.signal.name, "signal", contentSchema, createdAt),
-    db.prepare("INSERT OR IGNORE INTO template_versions (id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind("statement@1", "statement", 1, "statement", JSON.stringify(templates.statement), createdAt),
-    db.prepare("INSERT OR IGNORE INTO template_versions (id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind("signal@1", "signal", 1, "signal", JSON.stringify(templates.signal), createdAt),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_brands_workspace ON brands(workspace_id, name)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_templates_workspace ON templates(workspace_id, brand_id)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_posts_workspace ON posts(workspace_id, created_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_drafts_workspace ON drafts(workspace_id, updated_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_renders_workspace ON renders(workspace_id, created_at)"),
   ]);
   await db.prepare("PRAGMA optimize").run();
 }
 
-export async function listBrands(): Promise<BrandRecord[]> {
-  await ensureMediaDatabase();
-  const result = await database().prepare("SELECT id, name, config_json, created_at FROM brands ORDER BY name").all<D1Row>();
-  return result.results.map((row) => ({ id: String(row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) }));
+async function seedWorkspace(workspaceId: string) {
+  const db = database();
+  const createdAt = Date.UTC(2026, 7, 18);
+  const contentSchema = JSON.stringify({ eyebrow: { type: "string", maxLength: 28 }, headline: { type: "string", maxLength: 84 }, support: { type: "string", maxLength: 150 } });
+  const brandId = physicalId(workspaceId, brand.id);
+  const statementId = physicalId(workspaceId, "statement");
+  const signalId = physicalId(workspaceId, "signal");
+  await db.batch([
+    db.prepare("INSERT OR IGNORE INTO brands (id, workspace_id, name, config_json, created_at) VALUES (?, ?, ?, ?, ?)").bind(brandId, workspaceId, brand.name, JSON.stringify(brand), createdAt),
+    db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(statementId, workspaceId, brandId, templates.statement.name, "statement", contentSchema, createdAt),
+    db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(signalId, workspaceId, brandId, templates.signal.name, "signal", contentSchema, createdAt),
+    db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${statementId}@1`, workspaceId, statementId, 1, "statement", JSON.stringify(templates.statement), createdAt),
+    db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${signalId}@1`, workspaceId, signalId, 1, "signal", JSON.stringify(templates.signal), createdAt),
+  ]);
 }
 
-export async function getBrandById(id: string): Promise<BrandRecord | null> {
-  await ensureMediaDatabase();
-  const row = await database().prepare("SELECT id, name, config_json, created_at FROM brands WHERE id = ? LIMIT 1").bind(id).first<D1Row>();
-  return row ? { id: String(row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) } : null;
+async function recordWorkspaceEvent(workspaceId: string, action: string, entityType: string, entityId: string, actor: string, metadata: Record<string, unknown> = {}) {
+  const createdAt = Date.now();
+  await database().prepare("INSERT INTO workspace_events (id, workspace_id, action, entity_type, entity_id, actor, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(crypto.randomUUID(), workspaceId, action, entityType, entityId, actor, JSON.stringify(metadata), createdAt).run();
+  console.log(JSON.stringify({ timestamp: new Date(createdAt).toISOString(), service: "nocanva", event: action, workspaceId, entityType, entityId, actor, ...metadata }));
 }
 
-export async function createBrand(value: unknown): Promise<BrandRecord> {
-  await ensureMediaDatabase();
+export async function listBrands(workspaceId = defaultWorkspaceId()): Promise<BrandRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare("SELECT id, name, config_json, created_at FROM brands WHERE workspace_id = ? ORDER BY name").bind(workspaceId).all<D1Row>();
+  return result.results.map((row) => ({ id: logicalId(workspaceId, row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) }));
+}
+
+export async function getBrandById(id: string, workspaceId = defaultWorkspaceId()): Promise<BrandRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare("SELECT id, name, config_json, created_at FROM brands WHERE id = ? AND workspace_id = ? LIMIT 1").bind(physicalId(workspaceId, id), workspaceId).first<D1Row>();
+  return row ? { id: logicalId(workspaceId, row.id), name: String(row.name), config: brandConfigSchema.parse(JSON.parse(String(row.config_json))), createdAt: Number(row.created_at) } : null;
+}
+
+export async function createBrand(value: unknown, workspaceId = defaultWorkspaceId()): Promise<BrandRecord> {
+  await ensureMediaDatabase(workspaceId);
   const config = brandConfigSchema.parse(value);
   const now = Date.now();
-  await database().prepare("INSERT INTO brands (id, name, config_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, config_json = excluded.config_json").bind(config.id, config.name, JSON.stringify(config), now).run();
-  const record = await getBrandById(config.id);
+  await database().prepare("INSERT INTO brands (id, workspace_id, name, config_json, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, config_json = excluded.config_json").bind(physicalId(workspaceId, config.id), workspaceId, config.name, JSON.stringify(config), now).run();
+  const record = await getBrandById(config.id, workspaceId);
   if (!record) throw new Error("The brand record could not be read after creation.");
   return record;
 }
 
-export async function listTemplates(): Promise<TemplateRecord[]> {
-  await ensureMediaDatabase();
-  const result = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id ORDER BY t.name, tv.version DESC`).all<D1Row>();
+export async function listTemplates(workspaceId = defaultWorkspaceId()): Promise<TemplateRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id WHERE t.workspace_id = ? AND tv.workspace_id = ? ORDER BY t.name, tv.version DESC`).bind(workspaceId, workspaceId).all<D1Row>();
   return result.results.map((row) => ({
-    id: String(row.id), brandId: String(row.brand_id), name: String(row.name), type: String(row.type),
+    id: logicalId(workspaceId, row.id), brandId: logicalId(workspaceId, row.brand_id), name: String(row.name), type: String(row.type),
     description: String((JSON.parse(String(row.config_json)) as { description?: unknown }).description ?? "Structured editorial template."),
     version: Number(row.version), rendererKey: templateInputSchema.shape.rendererKey.parse(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
   }));
 }
 
-export async function getTemplateById(id: string): Promise<TemplateRecord | null> {
-  const records = await listTemplates();
-  return records.find((record) => record.id === id) ?? null;
+export async function getTemplateById(id: string, workspaceId = defaultWorkspaceId()): Promise<TemplateRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id WHERE t.id = ? AND t.workspace_id = ? AND tv.workspace_id = ? ORDER BY tv.version DESC LIMIT 1`).bind(physicalId(workspaceId, id), workspaceId, workspaceId).first<D1Row>();
+  return row ? mapTemplate(row, workspaceId) : null;
 }
 
-export async function createTemplate(value: unknown): Promise<TemplateRecord> {
-  await ensureMediaDatabase();
+export async function getTemplateVersionById(id: string, workspaceId = defaultWorkspaceId()): Promise<TemplateRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const separator = id.lastIndexOf("@");
+  const storedId = separator < 0 ? physicalId(workspaceId, id) : `${physicalId(workspaceId, id.slice(0, separator))}${id.slice(separator)}`;
+  const row = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id WHERE tv.id = ? AND t.workspace_id = ? AND tv.workspace_id = ? LIMIT 1`).bind(storedId, workspaceId, workspaceId).first<D1Row>();
+  return row ? mapTemplate(row, workspaceId) : null;
+}
+
+function mapTemplate(row: D1Row, workspaceId: string): TemplateRecord {
+  return {
+    id: logicalId(workspaceId, row.id), brandId: logicalId(workspaceId, row.brand_id), name: String(row.name), type: String(row.type),
+    description: String((JSON.parse(String(row.config_json)) as { description?: unknown }).description ?? "Structured editorial template."),
+    version: Number(row.version), rendererKey: templateInputSchema.shape.rendererKey.parse(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
+  };
+}
+
+export async function createTemplate(value: unknown, workspaceId = defaultWorkspaceId()): Promise<TemplateRecord> {
+  await ensureMediaDatabase(workspaceId);
   const input: TemplateInput = templateInputSchema.parse(value);
-  const brandRecord = await getBrandById(input.brandId);
+  const brandRecord = await getBrandById(input.brandId, workspaceId);
   if (!brandRecord) throw new Error("Create the brand before creating its template.");
   const db = database();
-  const existing = await db.prepare("SELECT id, brand_id FROM templates WHERE id = ? LIMIT 1").bind(input.id).first<D1Row>();
-  if (existing && String(existing.brand_id) !== input.brandId) throw new Error("That template ID belongs to another brand.");
-  const latest = await db.prepare("SELECT MAX(version) AS version FROM template_versions WHERE template_id = ?").bind(input.id).first<{ version: number | null }>();
+  const storedTemplateId = physicalId(workspaceId, input.id);
+  const storedBrandId = physicalId(workspaceId, input.brandId);
+  const existing = await db.prepare("SELECT id, brand_id FROM templates WHERE id = ? AND workspace_id = ? LIMIT 1").bind(storedTemplateId, workspaceId).first<D1Row>();
+  if (existing && String(existing.brand_id) !== storedBrandId) throw new Error("That template ID belongs to another brand.");
+  const latest = await db.prepare("SELECT MAX(version) AS version FROM template_versions WHERE template_id = ? AND workspace_id = ?").bind(storedTemplateId, workspaceId).first<{ version: number | null }>();
   const version = Number(latest?.version ?? 0) + 1;
   const now = Date.now();
   const contentSchema = JSON.stringify({ eyebrow: { type: "string", maxLength: 28 }, headline: { type: "string", maxLength: 84 }, support: { type: "string", maxLength: 150 } });
   const statements = [
-    db.prepare("INSERT INTO template_versions (id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(`${input.id}@${version}`, input.id, version, input.rendererKey, JSON.stringify({ description: input.description }), now),
+    db.prepare("INSERT INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@${version}`, workspaceId, storedTemplateId, version, input.rendererKey, JSON.stringify({ description: input.description }), now),
   ];
   if (existing) {
-    statements.unshift(db.prepare("UPDATE templates SET name = ?, type = ?, content_schema_json = ? WHERE id = ?").bind(input.name, input.rendererKey, contentSchema, input.id));
+    statements.unshift(db.prepare("UPDATE templates SET name = ?, type = ?, content_schema_json = ? WHERE id = ? AND workspace_id = ?").bind(input.name, input.rendererKey, contentSchema, storedTemplateId, workspaceId));
   } else {
-    statements.unshift(db.prepare("INSERT INTO templates (id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(input.id, input.brandId, input.name, input.rendererKey, contentSchema, now));
+    statements.unshift(db.prepare("INSERT INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(storedTemplateId, workspaceId, storedBrandId, input.name, input.rendererKey, contentSchema, now));
   }
   await db.batch(statements);
-  const record = await getTemplateById(input.id);
+  const record = await getTemplateById(input.id, workspaceId);
   if (!record) throw new Error("The template record could not be read after creation.");
   return record;
 }
 
-async function validatePayloadReferences(payload: PostPayload) {
-  const [brandRecord, templateRecord] = await Promise.all([getBrandById(payload.brandId), getTemplateById(payload.templateId)]);
+async function validatePayloadReferences(payload: PostPayload, workspaceId: string) {
+  const [brandRecord, templateRecord] = await Promise.all([getBrandById(payload.brandId, workspaceId), getTemplateById(payload.templateId, workspaceId)]);
   if (!brandRecord) throw new Error("The selected brand does not exist.");
   if (!templateRecord) throw new Error("The selected template does not exist.");
   if (templateRecord.brandId !== brandRecord.id) throw new Error("The selected template does not belong to the selected brand.");
 }
 
+const draftSelect = `SELECT d.id, d.brand_id, d.template_id, d.current_revision, d.status, d.archived_at, d.created_by, d.created_at, d.updated_at, dr.id AS revision_id, dr.template_version_id, dr.format, dr.content_json, dr.prompt, dr.created_by AS revision_created_by, tv.version AS template_version, b.name AS brand_name, t.name AS template_name FROM drafts d JOIN draft_revisions dr ON dr.draft_id = d.id AND dr.revision = d.current_revision JOIN template_versions tv ON tv.id = dr.template_version_id JOIN brands b ON b.id = d.brand_id JOIN templates t ON t.id = d.template_id`;
+
+async function mapDraft(row: D1Row, workspaceId: string): Promise<DraftRecord> {
+  const revisionId = String(row.revision_id);
+  const [reviewRow, approvalRow] = await Promise.all([
+    database().prepare("SELECT id, reviewer, status, notes, checks_json, created_at FROM draft_reviews WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
+    database().prepare("SELECT id, actor, decision, notes, created_at FROM draft_approvals WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
+  ]);
+  const payload = postPayloadSchema.parse({
+    brandId: logicalId(workspaceId, row.brand_id),
+    templateId: logicalId(workspaceId, row.template_id),
+    format: row.format,
+    content: JSON.parse(String(row.content_json)),
+  });
+  return {
+    id: String(row.id), brandId: payload.brandId, brandName: String(row.brand_name), templateId: payload.templateId,
+    templateName: String(row.template_name), templateVersionId: logicalId(workspaceId, row.template_version_id), templateVersion: Number(row.template_version),
+    currentRevision: Number(row.current_revision), revisionId, status: draftStatusSchema.parse(row.status), approvalPolicy: approvalPolicy(),
+    archivedAt: row.archived_at == null ? null : Number(row.archived_at), prompt: row.prompt ? String(row.prompt) : null, payload,
+    createdBy: String(row.created_by), revisionCreatedBy: String(row.revision_created_by), createdAt: Number(row.created_at), updatedAt: Number(row.updated_at),
+    review: reviewRow ? {
+      id: String(reviewRow.id), reviewer: String(reviewRow.reviewer), status: reviewRow.status === "passed" ? "passed" : "changes_requested",
+      notes: reviewRow.notes ? String(reviewRow.notes) : null, checks: JSON.parse(String(reviewRow.checks_json)) as DraftCheck[], createdAt: Number(reviewRow.created_at),
+    } : null,
+    approval: approvalRow ? {
+      id: String(approvalRow.id), actor: String(approvalRow.actor), decision: approvalRow.decision === "approved" ? "approved" : "rejected",
+      notes: approvalRow.notes ? String(approvalRow.notes) : null, createdAt: Number(approvalRow.created_at),
+    } : null,
+  };
+}
+
+export async function listDrafts(limit = 30, includeArchived = false, workspaceId = defaultWorkspaceId()): Promise<DraftRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const where = includeArchived ? " WHERE d.workspace_id = ?" : " WHERE d.workspace_id = ? AND d.archived_at IS NULL";
+  const result = await database().prepare(`${draftSelect}${where} ORDER BY d.updated_at DESC LIMIT ?`).bind(workspaceId, Math.min(Math.max(limit, 1), 100)).all<D1Row>();
+  return Promise.all(result.results.map((row) => mapDraft(row, workspaceId)));
+}
+
+export async function getDraftById(id: string, workspaceId = defaultWorkspaceId()): Promise<DraftRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare(`${draftSelect} WHERE d.id = ? AND d.workspace_id = ? LIMIT 1`).bind(id, workspaceId).first<D1Row>();
+  return row ? mapDraft(row, workspaceId) : null;
+}
+
+export async function listDraftRevisions(id: string, workspaceId = defaultWorkspaceId()): Promise<DraftRevisionRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare("SELECT id, revision, template_version_id, format, content_json, prompt, created_by, created_at FROM draft_revisions WHERE draft_id = ? AND workspace_id = ? ORDER BY revision DESC").bind(id, workspaceId).all<D1Row>();
+  return result.results.map((row) => ({
+    id: String(row.id), revision: Number(row.revision), templateVersionId: logicalId(workspaceId, row.template_version_id),
+    format: postPayloadSchema.shape.format.parse(row.format), content: postPayloadSchema.shape.content.parse(JSON.parse(String(row.content_json))),
+    prompt: row.prompt ? String(row.prompt) : null, createdBy: String(row.created_by), createdAt: Number(row.created_at),
+  }));
+}
+
+export async function createDraft(input: { value: unknown; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+  await ensureMediaDatabase(workspaceId);
+  const parsed = draftCreateInputSchema.parse(input.value);
+  await validatePayloadReferences(parsed.payload, workspaceId);
+  const template = await getTemplateById(parsed.payload.templateId, workspaceId);
+  if (!template) throw new Error("The selected template does not exist.");
+  const id = crypto.randomUUID();
+  const revision = 1;
+  const now = Date.now();
+  const actor = input.createdBy ?? "human:workspace";
+  await database().batch([
+    database().prepare("INSERT INTO drafts (id, workspace_id, brand_id, template_id, current_revision, status, archived_at, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id, workspaceId, physicalId(workspaceId, parsed.payload.brandId), physicalId(workspaceId, parsed.payload.templateId), revision, "draft", null, actor, now, now),
+    database().prepare("INSERT INTO draft_revisions (id, workspace_id, draft_id, revision, template_version_id, format, content_json, prompt, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(`${id}@${revision}`, workspaceId, id, revision, `${physicalId(workspaceId, template.id)}@${template.version}`, parsed.payload.format, JSON.stringify(parsed.payload.content), parsed.prompt?.trim() || null, actor, now),
+  ]);
+  const record = await getDraftById(id, workspaceId);
+  if (!record) throw new Error("The draft could not be read after creation.");
+  await recordWorkspaceEvent(workspaceId, "draft_created", "draft", id, actor, { revision, templateVersionId: record.templateVersionId });
+  return record;
+}
+
+export async function updateDraft(id: string, input: { value: unknown; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+  await ensureMediaDatabase(workspaceId);
+  const parsed = draftUpdateInputSchema.parse(input.value);
+  const current = await getDraftById(id, workspaceId);
+  if (!current) throw new Error("The draft does not exist.");
+  if (current.archivedAt) throw new Error("Restore the draft before editing it.");
+  if (parsed.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${parsed.expectedRevision}, current revision is ${current.currentRevision}.`);
+  await validatePayloadReferences(parsed.payload, workspaceId);
+  const template = await getTemplateById(parsed.payload.templateId, workspaceId);
+  if (!template) throw new Error("The selected template does not exist.");
+  const revision = current.currentRevision + 1;
+  const now = Date.now();
+  const actor = input.createdBy ?? "human:workspace";
+  const db = database();
+  await db.batch([
+    db.prepare("INSERT INTO draft_revisions (id, workspace_id, draft_id, revision, template_version_id, format, content_json, prompt, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(`${id}@${revision}`, workspaceId, id, revision, `${physicalId(workspaceId, template.id)}@${template.version}`, parsed.payload.format, JSON.stringify(parsed.payload.content), parsed.prompt?.trim() || null, actor, now),
+    db.prepare("UPDATE drafts SET brand_id = ?, template_id = ?, current_revision = ?, status = 'draft', updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(physicalId(workspaceId, parsed.payload.brandId), physicalId(workspaceId, parsed.payload.templateId), revision, now, id, workspaceId, current.currentRevision),
+  ]);
+  const record = await getDraftById(id, workspaceId);
+  if (!record || record.currentRevision !== revision) throw new Error("The draft changed while the update was being saved.");
+  await recordWorkspaceEvent(workspaceId, "draft_updated", "draft", id, actor, { revision, templateVersionId: record.templateVersionId });
+  return record;
+}
+
+export async function recordDraftReview(id: string, input: { expectedRevision: number; reviewer: string; notes?: string | null; checks: DraftCheck[] }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+  await ensureMediaDatabase(workspaceId);
+  const current = await getDraftById(id, workspaceId);
+  if (!current) throw new Error("The draft does not exist.");
+  if (current.archivedAt) throw new Error("Restore the draft before reviewing it.");
+  if (input.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${input.expectedRevision}, current revision is ${current.currentRevision}.`);
+  if (!input.checks.length) throw new Error("Review checks are required.");
+  const passed = input.checks.every((check) => check.passed);
+  const now = Date.now();
+  const db = database();
+  await db.batch([
+    db.prepare("INSERT INTO draft_reviews (id, workspace_id, draft_revision_id, reviewer, status, notes, checks_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), workspaceId, current.revisionId, input.reviewer, passed ? "passed" : "changes_requested", input.notes?.trim() || null, JSON.stringify(input.checks), now),
+    db.prepare("UPDATE drafts SET status = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(passed ? "in_review" : "draft", now, id, workspaceId, current.currentRevision),
+  ]);
+  const record = await getDraftById(id, workspaceId);
+  if (!record) throw new Error("The reviewed draft could not be read.");
+  await recordWorkspaceEvent(workspaceId, "draft_reviewed", "draft", id, input.reviewer, { revision: current.currentRevision, passed });
+  return record;
+}
+
+export async function decideDraft(id: string, input: { expectedRevision: number; actor: string; decision: unknown; notes?: string | null }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+  await ensureMediaDatabase(workspaceId);
+  const decision = draftDecisionSchema.parse(input.decision);
+  const current = await getDraftById(id, workspaceId);
+  if (!current) throw new Error("The draft does not exist.");
+  if (current.archivedAt) throw new Error("Restore the draft before approving it.");
+  if (input.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${input.expectedRevision}, current revision is ${current.currentRevision}.`);
+  if (decision === "approved" && current.review?.status !== "passed") throw new Error("A passing mechanical review is required before approval.");
+  if (decision === "approved" && approvalPolicy() === "human_required" && !input.actor.startsWith("human:")) throw new Error("This workspace requires a human approval actor.");
+  const now = Date.now();
+  const db = database();
+  await db.batch([
+    db.prepare("INSERT INTO draft_approvals (id, workspace_id, draft_revision_id, actor, decision, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), workspaceId, current.revisionId, input.actor, decision, input.notes?.trim() || null, now),
+    db.prepare("UPDATE drafts SET status = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(decision === "approved" ? "approved" : "draft", now, id, workspaceId, current.currentRevision),
+  ]);
+  const record = await getDraftById(id, workspaceId);
+  if (!record) throw new Error("The approved draft could not be read.");
+  await recordWorkspaceEvent(workspaceId, "draft_decided", "draft", id, input.actor, { revision: current.currentRevision, decision });
+  return record;
+}
+
+export async function setDraftArchived(id: string, archived: boolean, actor = "human:workspace", workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+  await ensureMediaDatabase(workspaceId);
+  const current = await getDraftById(id, workspaceId);
+  if (!current) throw new Error("The draft does not exist.");
+  const now = Date.now();
+  await database().prepare("UPDATE drafts SET archived_at = ?, updated_at = ? WHERE id = ? AND workspace_id = ?").bind(archived ? now : null, now, id, workspaceId).run();
+  const record = await getDraftById(id, workspaceId);
+  if (!record) throw new Error("The archived draft could not be read.");
+  await recordWorkspaceEvent(workspaceId, archived ? "draft_archived" : "draft_restored", "draft", id, actor);
+  return record;
+}
+
 const postSelect = `SELECT id, brand_id, template_id, prompt, content_json, created_by, created_at FROM posts`;
 
-function mapPost(row: D1Row): PostRecord {
+function mapPost(row: D1Row, workspaceId: string): PostRecord {
   const stored = JSON.parse(String(row.content_json)) as { format?: unknown; content?: unknown } | PostPayload["content"];
   const payload = postPayloadSchema.parse({
-    brandId: row.brand_id,
-    templateId: row.template_id,
+    brandId: logicalId(workspaceId, row.brand_id),
+    templateId: logicalId(workspaceId, row.template_id),
     format: "format" in stored ? stored.format : "portrait",
     content: "content" in stored ? stored.content : stored,
   });
@@ -147,103 +402,123 @@ function mapPost(row: D1Row): PostRecord {
   };
 }
 
-export async function listPosts(limit = 30): Promise<PostRecord[]> {
-  await ensureMediaDatabase();
-  const result = await database().prepare(`${postSelect} ORDER BY created_at DESC LIMIT ?`).bind(Math.min(Math.max(limit, 1), 100)).all<D1Row>();
-  return result.results.map(mapPost);
+export async function listPosts(limit = 30, workspaceId = defaultWorkspaceId()): Promise<PostRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare(`${postSelect} WHERE workspace_id = ? ORDER BY created_at DESC LIMIT ?`).bind(workspaceId, Math.min(Math.max(limit, 1), 100)).all<D1Row>();
+  return result.results.map((row) => mapPost(row, workspaceId));
 }
 
-export async function getPostById(id: string): Promise<PostRecord | null> {
-  await ensureMediaDatabase();
-  const row = await database().prepare(`${postSelect} WHERE id = ? LIMIT 1`).bind(id).first<D1Row>();
-  return row ? mapPost(row) : null;
+export async function getPostById(id: string, workspaceId = defaultWorkspaceId()): Promise<PostRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare(`${postSelect} WHERE id = ? AND workspace_id = ? LIMIT 1`).bind(id, workspaceId).first<D1Row>();
+  return row ? mapPost(row, workspaceId) : null;
 }
 
-export async function createPost(input: { payload: unknown; prompt?: string | null; createdBy?: string }): Promise<PostRecord> {
-  await ensureMediaDatabase();
+export async function createPost(input: { payload: unknown; prompt?: string | null; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<PostRecord> {
+  await ensureMediaDatabase(workspaceId);
   const payload = postPayloadSchema.parse(input.payload);
-  await validatePayloadReferences(payload);
+  await validatePayloadReferences(payload, workspaceId);
   const id = crypto.randomUUID();
   const now = Date.now();
-  await database().prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, payload.brandId, payload.templateId, input.prompt?.trim() || null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now)
+  await database().prepare("INSERT INTO posts (id, workspace_id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, workspaceId, physicalId(workspaceId, payload.brandId), physicalId(workspaceId, payload.templateId), input.prompt?.trim() || null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now)
     .run();
-  const record = await getPostById(id);
+  const record = await getPostById(id, workspaceId);
   if (!record) throw new Error("The post record could not be read after creation.");
   return record;
 }
 
-const renderSelect = `SELECT r.id, r.post_id, r.parent_render_id, r.width, r.height, r.sha256, r.created_at, r.input_snapshot_json, b.name AS brand_name, t.name AS template_name, tv.version AS template_version FROM renders r JOIN posts p ON p.id = r.post_id JOIN brands b ON b.id = p.brand_id JOIN templates t ON t.id = p.template_id JOIN template_versions tv ON tv.id = r.template_version_id`;
+const renderSelect = `SELECT r.id, r.post_id, r.draft_revision_id, r.template_version_id, r.parent_render_id, r.width, r.height, r.sha256, r.created_at, r.input_snapshot_json, b.name AS brand_name, t.name AS template_name, tv.version AS template_version FROM renders r JOIN posts p ON p.id = r.post_id JOIN brands b ON b.id = p.brand_id JOIN templates t ON t.id = p.template_id JOIN template_versions tv ON tv.id = r.template_version_id`;
 
-function mapRender(row: D1Row): RenderRecord {
+function mapRender(row: D1Row, workspaceId: string): RenderRecord {
   const payload = postPayloadSchema.parse(JSON.parse(String(row.input_snapshot_json)));
   const id = String(row.id);
   return {
-    id, postId: String(row.post_id), parentRenderId: row.parent_render_id ? String(row.parent_render_id) : null,
+    id, postId: String(row.post_id), draftRevisionId: row.draft_revision_id ? String(row.draft_revision_id) : null,
+    templateVersionId: logicalId(workspaceId, row.template_version_id), parentRenderId: row.parent_render_id ? String(row.parent_render_id) : null,
     brandName: String(row.brand_name), templateName: String(row.template_name), templateVersion: Number(row.template_version),
     payload, width: Number(row.width), height: Number(row.height), sha256: String(row.sha256), createdAt: Number(row.created_at),
     assetUrl: `/api/renders/${id}/asset`,
   };
 }
 
-export async function listRenders(limit = 30): Promise<RenderRecord[]> {
-  await ensureMediaDatabase();
-  const result = await database().prepare(`${renderSelect} ORDER BY r.created_at DESC LIMIT ?`).bind(Math.min(Math.max(limit, 1), 100)).all<D1Row>();
-  return result.results.map(mapRender);
+export async function listRenders(limit = 30, workspaceId = defaultWorkspaceId()): Promise<RenderRecord[]> {
+  await ensureMediaDatabase(workspaceId);
+  const result = await database().prepare(`${renderSelect} WHERE r.workspace_id = ? ORDER BY r.created_at DESC LIMIT ?`).bind(workspaceId, Math.min(Math.max(limit, 1), 100)).all<D1Row>();
+  return result.results.map((row) => mapRender(row, workspaceId));
 }
 
-export async function getRenderById(id: string): Promise<RenderRecord | null> {
-  await ensureMediaDatabase();
-  const row = await database().prepare(`${renderSelect} WHERE r.id = ? LIMIT 1`).bind(id).first<D1Row>();
-  return row ? mapRender(row) : null;
+export async function getRenderById(id: string, workspaceId = defaultWorkspaceId()): Promise<RenderRecord | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare(`${renderSelect} WHERE r.id = ? AND r.workspace_id = ? LIMIT 1`).bind(id, workspaceId).first<D1Row>();
+  return row ? mapRender(row, workspaceId) : null;
 }
 
-export async function createRender(input: { payload: unknown; png: ArrayBuffer; postId?: string | null; parentRenderId?: string | null; createdBy?: string }): Promise<RenderRecord> {
-  await ensureMediaDatabase();
+export async function createRender(input: { payload: unknown; png: ArrayBuffer; postId?: string | null; draftRevisionId?: string | null; templateVersionId?: string | null; parentRenderId?: string | null; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<RenderRecord> {
+  await ensureMediaDatabase(workspaceId);
   const payload = postPayloadSchema.parse(input.payload);
-  await validatePayloadReferences(payload);
+  await validatePayloadReferences(payload, workspaceId);
   const dimensions = formats[payload.format];
   validatePng(input.png, dimensions.width, dimensions.height);
 
   const now = Date.now();
   const postId = input.postId ?? crypto.randomUUID();
   const renderId = crypto.randomUUID();
-  const assetKey = `renders/${renderId}.png`;
+  const assetKey = `workspaces/${workspaceId}/renders/${renderId}.png`;
   const hash = await crypto.subtle.digest("SHA-256", input.png);
   const sha256 = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
   const db = database();
+  const currentTemplate = await getTemplateById(payload.templateId, workspaceId);
+  const logicalTemplateVersionId = input.templateVersionId ?? (currentTemplate ? `${currentTemplate.id}@${currentTemplate.version}` : null);
+  if (!logicalTemplateVersionId) throw new Error("The selected template version does not exist.");
+  const templateVersion = await getTemplateVersionById(logicalTemplateVersionId, workspaceId);
+  if (!templateVersion || templateVersion.id !== payload.templateId) throw new Error("The pinned template version does not belong to the render payload.");
+  const separator = logicalTemplateVersionId.lastIndexOf("@");
+  const templateVersionId = `${physicalId(workspaceId, logicalTemplateVersionId.slice(0, separator))}${logicalTemplateVersionId.slice(separator)}`;
+  let draftForRender: DraftRecord | null = null;
+  if (input.draftRevisionId) {
+    const revision = await db.prepare("SELECT draft_id FROM draft_revisions WHERE id = ? AND workspace_id = ? LIMIT 1").bind(input.draftRevisionId, workspaceId).first<{ draft_id: string }>();
+    if (!revision) throw new Error("The draft revision does not exist.");
+    draftForRender = await getDraftById(revision.draft_id, workspaceId);
+    if (!draftForRender || draftForRender.revisionId !== input.draftRevisionId) throw new Error("Only the current draft revision can be rendered.");
+    if (!['approved', 'rendered'].includes(draftForRender.status)) throw new Error("Approve the current draft revision before rendering it.");
+    if (draftForRender.templateVersionId !== logicalTemplateVersionId) throw new Error("The render must use the draft's pinned template version.");
+    if (JSON.stringify(draftForRender.payload) !== JSON.stringify(payload)) throw new Error("The render payload must match the stored draft revision.");
+  }
   if (input.postId) {
-    const post = await getPostById(input.postId);
+    const post = await getPostById(input.postId, workspaceId);
     if (!post) throw new Error("The post does not exist.");
     if (JSON.stringify(post.payload) !== JSON.stringify(payload)) throw new Error("The render payload must match the stored post.");
   }
   if (input.parentRenderId) {
-    const parent = await db.prepare("SELECT id FROM renders WHERE id = ? LIMIT 1").bind(input.parentRenderId).first();
+    const parent = await db.prepare("SELECT id FROM renders WHERE id = ? AND workspace_id = ? LIMIT 1").bind(input.parentRenderId, workspaceId).first();
     if (!parent) throw new Error("The parent render does not exist.");
   }
 
   await mediaBucket().put(assetKey, input.png, { httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { sha256 } });
   try {
     const statements = [
-      db.prepare("INSERT INTO renders (id, post_id, template_version_id, parent_render_id, asset_key, asset_content_type, width, height, input_snapshot_json, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(renderId, postId, `${payload.templateId}@1`, input.parentRenderId ?? null, assetKey, "image/png", dimensions.width, dimensions.height, JSON.stringify(payload), sha256, now),
+      db.prepare("INSERT INTO renders (id, workspace_id, post_id, draft_revision_id, template_version_id, parent_render_id, asset_key, asset_content_type, width, height, input_snapshot_json, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(renderId, workspaceId, postId, input.draftRevisionId ?? null, templateVersionId, input.parentRenderId ?? null, assetKey, "image/png", dimensions.width, dimensions.height, JSON.stringify(payload), sha256, now),
     ];
     if (!input.postId) {
-      statements.unshift(db.prepare("INSERT INTO posts (id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(postId, payload.brandId, payload.templateId, null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now));
+      statements.unshift(db.prepare("INSERT INTO posts (id, workspace_id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(postId, workspaceId, physicalId(workspaceId, payload.brandId), physicalId(workspaceId, payload.templateId), null, JSON.stringify({ format: payload.format, content: payload.content }), input.createdBy ?? "human:workspace", now));
     }
+    if (draftForRender) statements.push(db.prepare("UPDATE drafts SET status = 'rendered', updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(now, draftForRender.id, workspaceId, draftForRender.currentRevision));
     await db.batch(statements);
   } catch (error) {
     await mediaBucket().delete(assetKey);
     throw error;
   }
 
-  const record = await getRenderById(renderId);
+  const record = await getRenderById(renderId, workspaceId);
   if (!record) throw new Error("The render record could not be read after creation.");
+  await recordWorkspaceEvent(workspaceId, "render_completed", "render", renderId, input.createdBy ?? "human:workspace", { draftRevisionId: input.draftRevisionId ?? null, sha256, width: dimensions.width, height: dimensions.height });
   return record;
 }
 
-export async function getRenderAsset(id: string): Promise<R2ObjectBody | null> {
-  await ensureMediaDatabase();
-  const row = await database().prepare("SELECT asset_key FROM renders WHERE id = ? LIMIT 1").bind(id).first<{ asset_key: string }>();
+export async function getRenderAsset(id: string, workspaceId = defaultWorkspaceId()): Promise<R2ObjectBody | null> {
+  await ensureMediaDatabase(workspaceId);
+  const row = await database().prepare("SELECT asset_key FROM renders WHERE id = ? AND workspace_id = ? LIMIT 1").bind(id, workspaceId).first<{ asset_key: string }>();
   return row ? mediaBucket().get(row.asset_key) : null;
 }
 

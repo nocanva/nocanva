@@ -5,7 +5,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const tsx = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url));
-const baseUrl = process.env.CANVNAH_BASE_URL ?? "http://localhost:3000";
+const baseUrl = process.env.NOCANVA_BASE_URL ?? process.env.CANVNAH_BASE_URL ?? "http://localhost:3000";
 const transport = new StdioClientTransport({
   command: process.execPath,
   args: [tsx, "mcp/server.ts"],
@@ -69,17 +69,20 @@ try {
       content: sampleContent,
     },
   }));
-  assert.equal(created.post.createdBy, "agent:mcp");
+  assert.equal(created.post.createdBy, process.env.NOCANVA_ACTOR_ID ?? "agent:mcp");
 
   const rendered = structured(await client.callTool({ name: "canvnah_render_post", arguments: { postId: created.post.id } }));
   assert.equal(rendered.render.width, 1080);
   assert.equal(rendered.render.height, 1350);
-  assert.match(rendered.render.assetUrl, /^http:\/\/localhost:3000\/api\/renders\//);
-  assert.match(rendered.render.workspaceUrl, /^http:\/\/localhost:3000\/renders\//);
+  assert.equal(new URL(rendered.render.assetUrl).origin, new URL(baseUrl).origin);
+  assert.match(new URL(rendered.render.assetUrl).pathname, /^\/api\/renders\//);
+  assert.equal(new URL(rendered.render.workspaceUrl).origin, new URL(baseUrl).origin);
+  assert.match(new URL(rendered.render.workspaceUrl).pathname, /^\/renders\//);
 
   const inspected = structured(await client.callTool({ name: "canvnah_get_render", arguments: { renderId: rendered.render.id } }));
   assert.equal(inspected.render.sha256, rendered.render.sha256);
-  assert.equal(inspected.render.templateVersion, 1);
+  assert.equal(inspected.render.templateVersion, template.template.version);
+  assert.equal(inspected.render.templateVersionId, `${template.template.id}@${template.template.version}`);
 
   const rerendered = structured(await client.callTool({ name: "canvnah_rerender", arguments: { renderId: rendered.render.id } }));
   assert.equal(rerendered.render.parentRenderId, rendered.render.id);

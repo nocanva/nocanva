@@ -1,0 +1,22 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getBrandById, getDraftById, getTemplateVersionById, listDraftRevisions } from "../../../lib/server/media-repository";
+import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
+import { DraftWorkspace } from "./workspace";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const principal = await requireNoCanvaViewer(`/drafts/${id}`);
+  const draft = await getDraftById(id, principal.workspaceId);
+  return draft ? { title: `${draft.payload.content.headline} — NoCanva draft` } : { title: "Draft not found — NoCanva" };
+}
+
+export default async function DraftPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const principal = await requireNoCanvaViewer(`/drafts/${id}`);
+  const draft = await getDraftById(id, principal.workspaceId);
+  if (!draft) notFound();
+  const [brand, template, revisions] = await Promise.all([getBrandById(draft.brandId, principal.workspaceId), getTemplateVersionById(draft.templateVersionId, principal.workspaceId), listDraftRevisions(draft.id, principal.workspaceId)]);
+  if (!brand || !template) notFound();
+  return <DraftWorkspace key={draft.revisionId} initialDraft={draft} initialRevisions={revisions} brand={brand} template={template} />;
+}

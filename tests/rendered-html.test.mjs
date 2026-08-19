@@ -4,7 +4,7 @@ import test from "node:test";
 
 const root = new URL("../", import.meta.url);
 
-test("Canvnah Studio exposes the durable render workflow", async () => {
+test("NoCanva Studio exposes the durable render workflow", async () => {
   const [studio, header, packageJson] = await Promise.all([
     readFile(new URL("app/studio.tsx", root), "utf8"),
     readFile(new URL("app/workspace-header.tsx", root), "utf8"),
@@ -15,8 +15,25 @@ test("Canvnah Studio exposes the durable render workflow", async () => {
   assert.match(studio, /\/api\/renders/);
   assert.match(header, /href="\/brands"/);
   assert.match(header, /href="\/templates"/);
+  assert.match(header, /href="\/drafts"/);
   assert.match(header, /href="\/renders"/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+});
+
+test("draft workspace exposes stable editable lifecycle actions", async () => {
+  const [page, workspace, renderDetail] = await Promise.all([
+    readFile(new URL("app/drafts/[id]/page.tsx", root), "utf8"),
+    readFile(new URL("app/drafts/[id]/workspace.tsx", root), "utf8"),
+    readFile(new URL("app/renders/[id]/page.tsx", root), "utf8"),
+  ]);
+  assert.match(page, /getDraftById/);
+  assert.match(workspace, /Save new revision/);
+  assert.match(workspace, /Run mechanical review/);
+  assert.match(workspace, /Approve revision/);
+  assert.match(workspace, /Render approved PNG/);
+  assert.match(workspace, /Revision history/);
+  assert.match(renderDetail, /Template version ID/);
+  assert.match(renderDetail, /Draft revision/);
 });
 
 test("automation route uses the shared exact-size artwork", async () => {
@@ -31,4 +48,12 @@ test("automation route uses the shared exact-size artwork", async () => {
   assert.match(css, /width:\s*1080px/);
   assert.match(css, /height:\s*1350px/);
   await access(new URL("dist/server/index.js", root));
+});
+
+test("template library renders the real latest template artwork", async () => {
+  const page = await readFile(new URL("app/templates/page.tsx", root), "utf8");
+  assert.match(page, /<PostArtwork/);
+  assert.match(page, /brandConfig={brandRecord\.config}/);
+  assert.match(page, /seen\.has\(record\.id\)/);
+  assert.doesNotMatch(page, /<i \/><b \/><em \/>/);
 });

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { listBrands } from "../../lib/server/media-repository";
+import { requireNoCanvaViewer } from "../../lib/server/request-auth";
 import { WorkspaceHeader } from "../workspace-header";
 
-export const metadata: Metadata = { title: "Brands — Canvnah", description: "Deterministic brand systems in Canvnah." };
+export const metadata: Metadata = { title: "Brands — NoCanva", description: "Deterministic brand systems in NoCanva." };
 
 export default async function BrandsPage() {
-  const brands = await listBrands();
+  const principal = await requireNoCanvaViewer("/brands");
+  const brands = await listBrands(principal.workspaceId);
   return (
     <main className="studio-shell"><WorkspaceHeader active="brands" /><section className="collection-page">
       <div className="collection-heading"><p className="kicker">Brand systems</p><h1>Define the rules once.</h1><p>Every template and render inherits these non-negotiable brand constraints.</p></div>
