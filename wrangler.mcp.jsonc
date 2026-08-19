@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nocanva-mcp",
+  "main": "mcp/worker.ts",
+  "compatibility_date": "2026-08-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "browser": {
+    "binding": "BROWSER"
+  },
+  "vars": {
+    "NOCANVA_BASE_URL": "https://framewise-studio.sidsaini1196.chatgpt.site"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  }
+}
