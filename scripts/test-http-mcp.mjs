@@ -91,6 +91,7 @@ try {
   const rendered = structured(await client.callTool({ name: "nocanva_render", arguments: { draftId: created.draft.id } }));
   const inspected = structured(await client.callTool({ name: "nocanva_get_render", arguments: { renderId: rendered.render.id } }));
   assert.equal(inspected.render.sha256, rendered.render.sha256);
+  assert.equal(rendered.render.sha256, reviewed.draft.review.sha256);
   assert.equal(inspected.render.draftRevisionId, created.draft.revisionId);
   assert.match(inspected.render.workspaceUrl, /^http/);
 
