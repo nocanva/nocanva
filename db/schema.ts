@@ -119,6 +119,34 @@ export const mcpTokens = sqliteTable("mcp_tokens", {
   revokedAt: integer("revoked_at"),
 }, (table) => [uniqueIndex("idx_mcp_tokens_hash").on(table.tokenHash), index("idx_mcp_tokens_workspace").on(table.workspaceId, table.createdAt)]);
 
+export const carousels = sqliteTable("carousels", {
+  id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), brandId: text("brand_id").notNull().references(() => brands.id),
+  templateId: text("template_id").notNull().references(() => templates.id), currentRevision: integer("current_revision").notNull(), status: text("status").notNull(),
+  archivedAt: integer("archived_at"), createdBy: text("created_by").notNull(), createdAt: integer("created_at").notNull(), updatedAt: integer("updated_at").notNull(),
+}, (table) => [index("idx_carousels_workspace").on(table.workspaceId, table.updatedAt)]);
+
+export const carouselRevisions = sqliteTable("carousel_revisions", {
+  id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), carouselId: text("carousel_id").notNull().references(() => carousels.id),
+  revision: integer("revision").notNull(), templateVersionId: text("template_version_id").notNull().references(() => templateVersions.id), format: text("format").notNull(),
+  slidesJson: text("slides_json").notNull(), prompt: text("prompt"), createdBy: text("created_by").notNull(), createdAt: integer("created_at").notNull(),
+}, (table) => [uniqueIndex("idx_carousel_revisions_revision").on(table.carouselId, table.revision)]);
+
+export const carouselReviews = sqliteTable("carousel_reviews", {
+  id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), carouselRevisionId: text("carousel_revision_id").notNull().references(() => carouselRevisions.id),
+  reviewer: text("reviewer").notNull(), status: text("status").notNull(), notes: text("notes"), checksJson: text("checks_json").notNull(), artifactsJson: text("artifacts_json").notNull(), createdAt: integer("created_at").notNull(),
+}, (table) => [index("idx_carousel_reviews_revision").on(table.carouselRevisionId)]);
+
+export const carouselApprovals = sqliteTable("carousel_approvals", {
+  id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), carouselRevisionId: text("carousel_revision_id").notNull().references(() => carouselRevisions.id),
+  reviewId: text("review_id").references(() => carouselReviews.id), actor: text("actor").notNull(), decision: text("decision").notNull(), notes: text("notes"), createdAt: integer("created_at").notNull(),
+}, (table) => [index("idx_carousel_approvals_revision").on(table.carouselRevisionId), index("idx_carousel_approvals_review").on(table.reviewId)]);
+
+export const carouselRenders = sqliteTable("carousel_renders", {
+  id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), carouselRevisionId: text("carousel_revision_id").notNull().references(() => carouselRevisions.id),
+  templateVersionId: text("template_version_id").notNull().references(() => templateVersions.id), reviewId: text("review_id").notNull().references(() => carouselReviews.id),
+  artifactsJson: text("artifacts_json").notNull(), createdAt: integer("created_at").notNull(),
+}, (table) => [index("idx_carousel_renders_workspace").on(table.workspaceId, table.createdAt), index("idx_carousel_renders_revision").on(table.carouselRevisionId)]);
+
 export const renders = sqliteTable("renders", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull().default("default"),

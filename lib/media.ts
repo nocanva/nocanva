@@ -44,18 +44,21 @@ export const templateInputSchema = z.object({
 
 export type TemplateInput = z.infer<typeof templateInputSchema>;
 
+export const postContentSchema = z.object({
+  eyebrow: z.string().trim().min(1, "Eyebrow is required").max(28),
+  headline: z.string().trim().min(1, "Headline is required").max(84),
+  support: z.string().trim().min(1, "Supporting copy is required").max(150),
+});
+
 export const postPayloadSchema = z.object({
   brandId: slugSchema,
   templateId: slugSchema,
   format: z.enum(["portrait", "square"]),
-  content: z.object({
-    eyebrow: z.string().trim().min(1, "Eyebrow is required").max(28),
-    headline: z.string().trim().min(1, "Headline is required").max(84),
-    support: z.string().trim().min(1, "Supporting copy is required").max(150),
-  }),
+  content: postContentSchema,
 });
 
 export type PostPayload = z.infer<typeof postPayloadSchema>;
+export type PostContent = z.infer<typeof postContentSchema>;
 export type TemplateId = keyof typeof templates;
 export type FormatId = PostPayload["format"];
 
@@ -72,6 +75,17 @@ export const draftUpdateInputSchema = draftCreateInputSchema.extend({
 });
 
 export const draftDecisionSchema = z.enum(["approved", "rejected"]);
+
+export const carouselCreateInputSchema = z.object({
+  brandId: slugSchema,
+  templateId: slugSchema,
+  format: z.enum(["portrait", "square"]),
+  slides: z.array(postContentSchema).min(3).max(7),
+  prompt: z.string().trim().max(500).optional().nullable(),
+});
+
+export const carouselUpdateInputSchema = carouselCreateInputSchema.extend({ expectedRevision: z.number().int().positive() });
+export type CarouselInput = z.infer<typeof carouselCreateInputSchema>;
 
 export const defaultPostPayload: PostPayload = {
   brandId: "blindspot",

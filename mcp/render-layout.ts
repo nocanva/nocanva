@@ -11,5 +11,10 @@ export function inspectRenderLayout(root: Element) {
     const clipsY = ["hidden", "clip"].includes(style.overflowY);
     return (clipsX && region.scrollWidth > region.clientWidth + 1) || (clipsY && region.scrollHeight > region.clientHeight + 1);
   }).length;
-  return { outside, overflowing };
+  const collapsed = regions.filter((region) => {
+    const rect = region.getBoundingClientRect();
+    const role = region.getAttribute("data-render-region");
+    return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
+  }).length;
+  return { outside, overflowing, collapsed };
 }

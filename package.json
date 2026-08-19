@@ -1,6 +1,6 @@
 {
   "name": "nocanva",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Deterministic, agent-native workspace for brand-ready media.",
   "private": true,
   "license": "MIT",
@@ -35,6 +35,7 @@
     "mcp:worker:deploy": "wrangler deploy --config wrangler.mcp.jsonc",
     "mcp:fixture": "node scripts/test-mcp-fixture.mjs",
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
+    "mcp:carousel-fixture": "node scripts/test-carousel-lifecycle.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
     "connect": "node scripts/connect-agent.mjs",
     "self-host": "node scripts/self-host.mjs",
@@ -51,6 +52,7 @@
     "@modelcontextprotocol/server": "^2.0.0",
     "agents": "^0.21.0",
     "drizzle-orm": "0.45.2",
+    "fflate": "^0.8.3",
     "html-to-image": "1.11.13",
     "next": "16.3.1",
     "react": "19.2.6",

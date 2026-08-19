@@ -43,6 +43,10 @@ test("every media API route except health enforces the application boundary", as
     "drafts/route.ts", "drafts/[id]/route.ts", "drafts/[id]/revisions/route.ts", "drafts/[id]/review/route.ts",
     "drafts/[id]/approval/route.ts", "drafts/[id]/archive/route.ts", "renders/route.ts", "renders/[id]/route.ts",
     "renders/[id]/asset/route.ts",
+    "carousels/route.ts", "carousels/[id]/route.ts", "carousels/[id]/revisions/route.ts",
+    "carousels/[id]/review/route.ts", "carousels/[id]/approval/route.ts", "carousels/[id]/archive/route.ts",
+    "carousels/[id]/render/route.ts", "carousels/reviews/[reviewId]/assets/[slideIndex]/route.ts",
+    "carousel-renders/[id]/route.ts", "carousel-renders/[id]/assets/[slideIndex]/route.ts", "carousel-renders/[id]/zip/route.ts",
     "activation/route.ts", "mcp-tokens/route.ts", "mcp-tokens/[id]/route.ts", "internal/mcp/auth/route.ts",
   ];
   for (const route of routes) {
