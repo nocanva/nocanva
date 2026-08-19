@@ -23,16 +23,16 @@ export async function POST(request: Request) {
     const postValue = form.get("postId");
     const draftRevisionValue = form.get("draftRevisionId");
     const templateVersionValue = form.get("templateVersionId");
-    if (typeof payloadValue !== "string" || !(pngValue instanceof File)) {
-      return Response.json({ error: "payload and png are required" }, { status: 400 });
+    if (typeof payloadValue !== "string" || (!(pngValue instanceof File) && typeof draftRevisionValue !== "string")) {
+      return Response.json({ error: "payload and either png or draftRevisionId are required" }, { status: 400 });
     }
-    if (pngValue.type !== "image/png" || pngValue.size > 10 * 1024 * 1024) {
+    if (pngValue instanceof File && (pngValue.type !== "image/png" || pngValue.size > 10 * 1024 * 1024)) {
       return Response.json({ error: "png must be an image/png file no larger than 10 MB" }, { status: 400 });
     }
 
     const render = await createRender({
       payload: JSON.parse(payloadValue),
-      png: await pngValue.arrayBuffer(),
+      png: pngValue instanceof File ? await pngValue.arrayBuffer() : undefined,
       postId: typeof postValue === "string" && postValue ? postValue : null,
       draftRevisionId: typeof draftRevisionValue === "string" && draftRevisionValue ? draftRevisionValue : null,
       templateVersionId: typeof templateVersionValue === "string" && templateVersionValue ? templateVersionValue : null,

@@ -25,21 +25,18 @@ The app starts at `http://localhost:3000`. Local D1 and R2 state is managed by t
 
 ## Local MCP server
 
-Keep the NoCanva app running, then configure an MCP client to spawn:
+Keep the NoCanva app running, then connect an agent in one command:
 
-```json
-{
-  "mcpServers": {
-    "nocanva": {
-      "command": "npm",
-      "args": ["run", "mcp:dev"],
-      "cwd": "/absolute/path/to/nocanva",
-      "env": {
-      "NOCANVA_BASE_URL": "http://localhost:3000"
-      }
-    }
-  }
-}
+```bash
+npm run connect -- codex
+# or
+npm run connect -- claude
+```
+
+For the managed authenticated endpoint, export the workspace token and add `--remote`. The installer keeps the token in `NOCANVA_MCP_TOKEN` rather than writing it to the repository.
+
+```bash
+NOCANVA_MCP_TOKEN=... npm run connect -- codex --remote
 ```
 
 The MCP process uses stdio and accepts loopback URLs by default. For remote self-hosting, run `npm run mcp:http` with `NOCANVA_MCP_TOKEN` and `NOCANVA_BASE_URL`, or use the Docker setup. The managed deployment uses `npm run mcp:worker:deploy`: an authenticated Streamable HTTP Worker plus Cloudflare Browser Rendering, with no Container or embedded LLM.
@@ -74,7 +71,9 @@ The existing `canvnah_*` tool namespace is retained for MCP-client compatibility
 - `canvnah_get_render`
 - `canvnah_rerender`
 
-The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version used for review and rendering. Render tools use local Playwright for self-hosting or Cloudflare Browser Rendering in the managed Worker, verify two identical PNG hashes, save the asset through the same API used by the UI, and return the render ID, revision, dimensions, template version, asset URL, and workspace URL.
+The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version and reviewed PNG. Review tools use local Playwright for self-hosting or Cloudflare Browser Rendering in the managed Worker, verify two identical PNG hashes, and save the checked artifact. Approval pins that review record; rendering promotes the exact reviewed bytes without a second browser capture and returns the render ID, revision, dimensions, template version, asset URL, and workspace URL.
+
+The reusable agent workflow is bundled as [`skills/nocanva-media/SKILL.md`](./skills/nocanva-media/SKILL.md).
 
 For an autonomous Codex or Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENTS.md](./FORTWIN_SPROUT_AGENTS.md) into that repository as `AGENTS.md`. Codex discovers it automatically; import it from Claude Code's project `CLAUDE.md` with `@AGENTS.md`.
 

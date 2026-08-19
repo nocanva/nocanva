@@ -10,8 +10,8 @@ export type PostRecord = {
   createdBy: string; createdAt: number;
 };
 export type DraftCheck = { id: string; passed: boolean; detail: string };
-export type DraftReviewRecord = { id: string; reviewer: string; status: "passed" | "changes_requested"; notes: string | null; checks: DraftCheck[]; createdAt: number };
-export type DraftApprovalRecord = { id: string; actor: string; decision: "approved" | "rejected"; notes: string | null; createdAt: number };
+export type DraftReviewRecord = { id: string; reviewer: string; status: "passed" | "changes_requested"; notes: string | null; checks: DraftCheck[]; width: number; height: number; sha256: string; createdAt: number };
+export type DraftApprovalRecord = { id: string; reviewId: string | null; actor: string; decision: "approved" | "rejected"; notes: string | null; createdAt: number };
 export type DraftRecord = {
   id: string; brandId: string; brandName: string; templateId: string; templateName: string;
   templateVersionId: string; templateVersion: number; currentRevision: number; revisionId: string;
@@ -84,8 +84,8 @@ async function initializeDatabase() {
     `CREATE TABLE IF NOT EXISTS posts (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', brand_id TEXT NOT NULL REFERENCES brands(id), template_id TEXT NOT NULL REFERENCES templates(id), prompt TEXT, content_json TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', brand_id TEXT NOT NULL REFERENCES brands(id), template_id TEXT NOT NULL REFERENCES templates(id), current_revision INTEGER NOT NULL, status TEXT NOT NULL, archived_at INTEGER, created_by TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS draft_revisions (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_id TEXT NOT NULL REFERENCES drafts(id), revision INTEGER NOT NULL, template_version_id TEXT NOT NULL REFERENCES template_versions(id), format TEXT NOT NULL, content_json TEXT NOT NULL, prompt TEXT, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS draft_reviews (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), reviewer TEXT NOT NULL, status TEXT NOT NULL, notes TEXT, checks_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
-    `CREATE TABLE IF NOT EXISTS draft_approvals (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), actor TEXT NOT NULL, decision TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS draft_reviews (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), reviewer TEXT NOT NULL, status TEXT NOT NULL, notes TEXT, checks_json TEXT NOT NULL, asset_key TEXT, asset_content_type TEXT, width INTEGER, height INTEGER, sha256 TEXT, created_at INTEGER NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS draft_approvals (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), review_id TEXT REFERENCES draft_reviews(id), actor TEXT NOT NULL, decision TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS workspace_events (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, actor TEXT NOT NULL, metadata_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS renders (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', post_id TEXT NOT NULL REFERENCES posts(id), draft_revision_id TEXT REFERENCES draft_revisions(id), template_version_id TEXT NOT NULL REFERENCES template_versions(id), parent_render_id TEXT, asset_key TEXT NOT NULL, asset_content_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, input_snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE INDEX IF NOT EXISTS idx_templates_brand_id ON templates(brand_id)`,
@@ -112,6 +112,12 @@ async function initializeDatabase() {
   if (!renderColumns.results.some((column) => column.name === "draft_revision_id")) {
     await db.prepare("ALTER TABLE renders ADD COLUMN draft_revision_id TEXT REFERENCES draft_revisions(id)").run();
   }
+  const reviewColumns = await db.prepare("PRAGMA table_info(draft_reviews)").all<{ name: string }>();
+  for (const [name, type] of [["asset_key", "TEXT"], ["asset_content_type", "TEXT"], ["width", "INTEGER"], ["height", "INTEGER"], ["sha256", "TEXT"]] as const) {
+    if (!reviewColumns.results.some((column) => column.name === name)) await db.prepare(`ALTER TABLE draft_reviews ADD COLUMN ${name} ${type}`).run();
+  }
+  const approvalColumns = await db.prepare("PRAGMA table_info(draft_approvals)").all<{ name: string }>();
+  if (!approvalColumns.results.some((column) => column.name === "review_id")) await db.prepare("ALTER TABLE draft_approvals ADD COLUMN review_id TEXT REFERENCES draft_reviews(id)").run();
 
   await db.batch([
     db.prepare("CREATE INDEX IF NOT EXISTS idx_brands_workspace ON brands(workspace_id, name)"),
@@ -119,6 +125,7 @@ async function initializeDatabase() {
     db.prepare("CREATE INDEX IF NOT EXISTS idx_posts_workspace ON posts(workspace_id, created_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_drafts_workspace ON drafts(workspace_id, updated_at)"),
     db.prepare("CREATE INDEX IF NOT EXISTS idx_renders_workspace ON renders(workspace_id, created_at)"),
+    db.prepare("CREATE INDEX IF NOT EXISTS idx_draft_approvals_review ON draft_approvals(review_id)"),
   ]);
   await db.prepare("PRAGMA optimize").run();
 }
@@ -240,8 +247,8 @@ const draftSelect = `SELECT d.id, d.brand_id, d.template_id, d.current_revision,
 async function mapDraft(row: D1Row, workspaceId: string): Promise<DraftRecord> {
   const revisionId = String(row.revision_id);
   const [reviewRow, approvalRow] = await Promise.all([
-    database().prepare("SELECT id, reviewer, status, notes, checks_json, created_at FROM draft_reviews WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
-    database().prepare("SELECT id, actor, decision, notes, created_at FROM draft_approvals WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
+    database().prepare("SELECT id, reviewer, status, notes, checks_json, width, height, sha256, created_at FROM draft_reviews WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
+    database().prepare("SELECT id, review_id, actor, decision, notes, created_at FROM draft_approvals WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(revisionId, workspaceId).first<D1Row>(),
   ]);
   const payload = postPayloadSchema.parse({
     brandId: logicalId(workspaceId, row.brand_id),
@@ -257,10 +264,11 @@ async function mapDraft(row: D1Row, workspaceId: string): Promise<DraftRecord> {
     createdBy: String(row.created_by), revisionCreatedBy: String(row.revision_created_by), createdAt: Number(row.created_at), updatedAt: Number(row.updated_at),
     review: reviewRow ? {
       id: String(reviewRow.id), reviewer: String(reviewRow.reviewer), status: reviewRow.status === "passed" ? "passed" : "changes_requested",
-      notes: reviewRow.notes ? String(reviewRow.notes) : null, checks: JSON.parse(String(reviewRow.checks_json)) as DraftCheck[], createdAt: Number(reviewRow.created_at),
+      notes: reviewRow.notes ? String(reviewRow.notes) : null, checks: JSON.parse(String(reviewRow.checks_json)) as DraftCheck[],
+      width: Number(reviewRow.width), height: Number(reviewRow.height), sha256: String(reviewRow.sha256 ?? ""), createdAt: Number(reviewRow.created_at),
     } : null,
     approval: approvalRow ? {
-      id: String(approvalRow.id), actor: String(approvalRow.actor), decision: approvalRow.decision === "approved" ? "approved" : "rejected",
+      id: String(approvalRow.id), reviewId: approvalRow.review_id ? String(approvalRow.review_id) : null, actor: String(approvalRow.actor), decision: approvalRow.decision === "approved" ? "approved" : "rejected",
       notes: approvalRow.notes ? String(approvalRow.notes) : null, createdAt: Number(approvalRow.created_at),
     } : null,
   };
@@ -333,23 +341,34 @@ export async function updateDraft(id: string, input: { value: unknown; createdBy
   return record;
 }
 
-export async function recordDraftReview(id: string, input: { expectedRevision: number; reviewer: string; notes?: string | null; checks: DraftCheck[] }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
+export async function recordDraftReview(id: string, input: { expectedRevision: number; reviewer: string; notes?: string | null; checks: DraftCheck[]; png: ArrayBuffer }, workspaceId = defaultWorkspaceId()): Promise<DraftRecord> {
   await ensureMediaDatabase(workspaceId);
   const current = await getDraftById(id, workspaceId);
   if (!current) throw new Error("The draft does not exist.");
   if (current.archivedAt) throw new Error("Restore the draft before reviewing it.");
   if (input.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${input.expectedRevision}, current revision is ${current.currentRevision}.`);
   if (!input.checks.length) throw new Error("Review checks are required.");
+  const dimensions = formats[current.payload.format];
+  validatePng(input.png, dimensions.width, dimensions.height);
   const passed = input.checks.every((check) => check.passed);
   const now = Date.now();
   const db = database();
-  await db.batch([
-    db.prepare("INSERT INTO draft_reviews (id, workspace_id, draft_revision_id, reviewer, status, notes, checks_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), workspaceId, current.revisionId, input.reviewer, passed ? "passed" : "changes_requested", input.notes?.trim() || null, JSON.stringify(input.checks), now),
-    db.prepare("UPDATE drafts SET status = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(passed ? "in_review" : "draft", now, id, workspaceId, current.currentRevision),
-  ]);
+  const reviewId = crypto.randomUUID();
+  const assetKey = `workspaces/${workspaceId}/reviews/${current.revisionId}/${reviewId}.png`;
+  const sha256 = await sha256Hex(input.png);
+  await mediaBucket().put(assetKey, input.png, { httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { sha256 } });
+  try {
+    await db.batch([
+      db.prepare("INSERT INTO draft_reviews (id, workspace_id, draft_revision_id, reviewer, status, notes, checks_json, asset_key, asset_content_type, width, height, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(reviewId, workspaceId, current.revisionId, input.reviewer, passed ? "passed" : "changes_requested", input.notes?.trim() || null, JSON.stringify(input.checks), assetKey, "image/png", dimensions.width, dimensions.height, sha256, now),
+      db.prepare("UPDATE drafts SET status = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(passed ? "in_review" : "draft", now, id, workspaceId, current.currentRevision),
+    ]);
+  } catch (error) {
+    await mediaBucket().delete(assetKey);
+    throw error;
+  }
   const record = await getDraftById(id, workspaceId);
   if (!record) throw new Error("The reviewed draft could not be read.");
-  await recordWorkspaceEvent(workspaceId, "draft_reviewed", "draft", id, input.reviewer, { revision: current.currentRevision, passed });
+  await recordWorkspaceEvent(workspaceId, "draft_reviewed", "draft", id, input.reviewer, { revision: current.currentRevision, reviewId, passed, sha256, width: dimensions.width, height: dimensions.height });
   return record;
 }
 
@@ -365,7 +384,7 @@ export async function decideDraft(id: string, input: { expectedRevision: number;
   const now = Date.now();
   const db = database();
   await db.batch([
-    db.prepare("INSERT INTO draft_approvals (id, workspace_id, draft_revision_id, actor, decision, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), workspaceId, current.revisionId, input.actor, decision, input.notes?.trim() || null, now),
+    db.prepare("INSERT INTO draft_approvals (id, workspace_id, draft_revision_id, review_id, actor, decision, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), workspaceId, current.revisionId, current.review?.id ?? null, input.actor, decision, input.notes?.trim() || null, now),
     db.prepare("UPDATE drafts SET status = ?, updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(decision === "approved" ? "approved" : "draft", now, id, workspaceId, current.currentRevision),
   ]);
   const record = await getDraftById(id, workspaceId);
@@ -454,19 +473,16 @@ export async function getRenderById(id: string, workspaceId = defaultWorkspaceId
   return row ? mapRender(row, workspaceId) : null;
 }
 
-export async function createRender(input: { payload: unknown; png: ArrayBuffer; postId?: string | null; draftRevisionId?: string | null; templateVersionId?: string | null; parentRenderId?: string | null; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<RenderRecord> {
+export async function createRender(input: { payload: unknown; png?: ArrayBuffer; postId?: string | null; draftRevisionId?: string | null; templateVersionId?: string | null; parentRenderId?: string | null; createdBy?: string }, workspaceId = defaultWorkspaceId()): Promise<RenderRecord> {
   await ensureMediaDatabase(workspaceId);
   const payload = postPayloadSchema.parse(input.payload);
   await validatePayloadReferences(payload, workspaceId);
   const dimensions = formats[payload.format];
-  validatePng(input.png, dimensions.width, dimensions.height);
 
   const now = Date.now();
   const postId = input.postId ?? crypto.randomUUID();
   const renderId = crypto.randomUUID();
   const assetKey = `workspaces/${workspaceId}/renders/${renderId}.png`;
-  const hash = await crypto.subtle.digest("SHA-256", input.png);
-  const sha256 = Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
   const db = database();
   const currentTemplate = await getTemplateById(payload.templateId, workspaceId);
   const logicalTemplateVersionId = input.templateVersionId ?? (currentTemplate ? `${currentTemplate.id}@${currentTemplate.version}` : null);
@@ -476,6 +492,7 @@ export async function createRender(input: { payload: unknown; png: ArrayBuffer; 
   const separator = logicalTemplateVersionId.lastIndexOf("@");
   const templateVersionId = `${physicalId(workspaceId, logicalTemplateVersionId.slice(0, separator))}${logicalTemplateVersionId.slice(separator)}`;
   let draftForRender: DraftRecord | null = null;
+  let png = input.png;
   if (input.draftRevisionId) {
     const revision = await db.prepare("SELECT draft_id FROM draft_revisions WHERE id = ? AND workspace_id = ? LIMIT 1").bind(input.draftRevisionId, workspaceId).first<{ draft_id: string }>();
     if (!revision) throw new Error("The draft revision does not exist.");
@@ -484,7 +501,21 @@ export async function createRender(input: { payload: unknown; png: ArrayBuffer; 
     if (!['approved', 'rendered'].includes(draftForRender.status)) throw new Error("Approve the current draft revision before rendering it.");
     if (draftForRender.templateVersionId !== logicalTemplateVersionId) throw new Error("The render must use the draft's pinned template version.");
     if (JSON.stringify(draftForRender.payload) !== JSON.stringify(payload)) throw new Error("The render payload must match the stored draft revision.");
+    if (draftForRender.approval?.decision !== "approved" || !draftForRender.approval.reviewId) throw new Error("Review and approve this revision again before rendering it.");
+    if (!draftForRender.review || draftForRender.review.id !== draftForRender.approval.reviewId) throw new Error("The approval does not pin the current review artifact.");
+    const reviewArtifact = await db.prepare("SELECT asset_key, width, height, sha256 FROM draft_reviews WHERE id = ? AND draft_revision_id = ? AND workspace_id = ? LIMIT 1")
+      .bind(draftForRender.approval.reviewId, input.draftRevisionId, workspaceId).first<{ asset_key: string | null; width: number | null; height: number | null; sha256: string | null }>();
+    if (!reviewArtifact?.asset_key || !reviewArtifact.sha256) throw new Error("The approved review has no immutable PNG artifact. Review and approve this revision again.");
+    if (reviewArtifact.width !== dimensions.width || reviewArtifact.height !== dimensions.height) throw new Error("The approved review artifact dimensions do not match the draft format.");
+    const storedArtifact = await mediaBucket().get(reviewArtifact.asset_key);
+    if (!storedArtifact) throw new Error("The approved review artifact is unavailable.");
+    png = await storedArtifact.arrayBuffer();
+    validatePng(png, dimensions.width, dimensions.height);
+    if (await sha256Hex(png) !== reviewArtifact.sha256) throw new Error("The approved review artifact failed its SHA-256 integrity check.");
   }
+  if (!png) throw new Error("A PNG is required when rendering without an approved draft review artifact.");
+  validatePng(png, dimensions.width, dimensions.height);
+  const sha256 = await sha256Hex(png);
   if (input.postId) {
     const post = await getPostById(input.postId, workspaceId);
     if (!post) throw new Error("The post does not exist.");
@@ -495,7 +526,7 @@ export async function createRender(input: { payload: unknown; png: ArrayBuffer; 
     if (!parent) throw new Error("The parent render does not exist.");
   }
 
-  await mediaBucket().put(assetKey, input.png, { httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { sha256 } });
+  await mediaBucket().put(assetKey, png, { httpMetadata: { contentType: "image/png", cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { sha256 } });
   try {
     const statements = [
       db.prepare("INSERT INTO renders (id, workspace_id, post_id, draft_revision_id, template_version_id, parent_render_id, asset_key, asset_content_type, width, height, input_snapshot_json, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(renderId, workspaceId, postId, input.draftRevisionId ?? null, templateVersionId, input.parentRenderId ?? null, assetKey, "image/png", dimensions.width, dimensions.height, JSON.stringify(payload), sha256, now),
@@ -527,4 +558,9 @@ function validatePng(buffer: ArrayBuffer, width: number, height: number) {
   if (bytes.byteLength < 24 || bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) throw new Error("A valid PNG file is required.");
   const view = new DataView(buffer);
   if (view.getUint32(16) !== width || view.getUint32(20) !== height) throw new Error(`PNG dimensions must be ${width} × ${height}.`);
+}
+
+async function sha256Hex(buffer: ArrayBuffer) {
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

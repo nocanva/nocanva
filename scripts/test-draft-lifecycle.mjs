@@ -78,6 +78,7 @@ try {
   const reviewed = await call("nocanva_review_draft", { draftId: created.draft.id, reviewer: "agent:fixture", notes: "Mechanical checks passed; fixture agent inspected the PNG." });
   assert.equal(reviewed.draft.status, "in_review");
   assert.equal(reviewed.review.passed, true);
+  assert.match(reviewed.draft.review.sha256, /^[a-f0-9]{64}$/);
   assert.equal(reviewed.draft.templateVersionId, pinnedVersion);
 
   const approved = await call("nocanva_approve_draft", { draftId: created.draft.id, expectedRevision: 2, decision: "approved", actor: "agent:fixture" });
@@ -85,6 +86,7 @@ try {
   const rendered = await call("nocanva_render", { draftId: created.draft.id });
   assert.equal(rendered.render.templateVersionId, pinnedVersion);
   assert.equal(rendered.render.draftRevisionId, approved.draft.revisionId);
+  assert.equal(rendered.render.sha256, reviewed.draft.review.sha256);
   const inspected = await call("nocanva_get_render", { renderId: rendered.render.id });
   assert.equal(inspected.render.sha256, rendered.render.sha256);
   assert.equal(inspected.render.templateVersionId, pinnedVersion);
