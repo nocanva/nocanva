@@ -3,13 +3,14 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
-import { formats, postPayloadSchema } from "../../../lib/media";
+import { formats, postPayloadSchema, type PostContent } from "../../../lib/media";
 import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } from "../../../lib/server/media-repository";
+import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { WorkspaceHeader } from "../../workspace-header";
 
-export function DraftWorkspace({ initialDraft, initialRevisions, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; brand: BrandRecord; template: TemplateRecord }) {
+export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
   const [format, setFormat] = useState(initialDraft.payload.format);
@@ -20,8 +21,10 @@ export function DraftWorkspace({ initialDraft, initialRevisions, brand, template
   const [notice, setNotice] = useState("Draft is ready");
   const [busy, setBusy] = useState(false);
   const [revisions, setRevisions] = useState(initialRevisions);
+  const [assets, setAssets] = useState(initialAssets);
+  const [image, setImage] = useState<PostContent["image"]>(initialDraft.payload.content.image);
   const exportRef = useRef<HTMLElement>(null);
-  const payload = { brandId: draft.brandId, templateId: draft.templateId, format, content: { eyebrow, headline, support } };
+  const payload = { brandId: draft.brandId, templateId: draft.templateId, format, content: { eyebrow, headline, support, ...(image ? { image } : {}) } };
   const valid = postPayloadSchema.safeParse(payload).success;
 
   async function request(path: string, init: RequestInit) {
@@ -42,6 +45,24 @@ export function DraftWorkspace({ initialDraft, initialRevisions, brand, template
       if (historyResponse.ok) setRevisions((await historyResponse.json() as { revisions: DraftRevisionRecord[] }).revisions);
       router.refresh();
     } catch (error) { setNotice(error instanceof Error ? error.message : "Save failed."); }
+    finally { setBusy(false); }
+  }
+
+  async function uploadImage(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 750 * 1024) return setNotice("Compress the image below 750 KB before upload.");
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.set("name", file.name);
+      form.set("image", file);
+      const response = await fetch("/api/assets", { method: "POST", body: form });
+      const data = await response.json() as { asset?: WorkspaceAsset; error?: string };
+      if (!response.ok || !data.asset) throw new Error(data.error ?? "Image upload failed.");
+      setAssets((current) => [data.asset!, ...current.filter((asset) => asset.id !== data.asset!.id)]);
+      setImage({ assetId: data.asset.id, alt: "", fit: "cover", focalPoint: { x: 0.5, y: 0.5 }, zoom: 1 });
+      setNotice("Image uploaded. Adjust the crop, then save a new revision.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Image upload failed."); }
     finally { setBusy(false); }
   }
 
@@ -102,6 +123,18 @@ export function DraftWorkspace({ initialDraft, initialRevisions, brand, template
       <label className="field"><span>Headline <small>{headline.length}/84</small></span><textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} /></label>
       <label className="field"><span>Supporting copy <small>{support.length}/150</small></span><textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} /></label>
       <label className="field"><span>Source prompt</span><textarea maxLength={500} rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} /></label>
+      <fieldset className="image-editor"><legend>Image</legend>
+        <label className="image-upload"><span>Upload PNG or JPEG · max 750 KB</span><input accept="image/png,image/jpeg" disabled={busy} onChange={(event) => uploadImage(event.target.files?.[0])} type="file" /></label>
+        {assets.length > 0 && <label className="field"><span>Workspace image</span><select value={image?.assetId ?? ""} onChange={(event) => setImage(event.target.value ? { assetId: event.target.value, alt: "", fit: "cover", focalPoint: { x: .5, y: .5 }, zoom: 1 } : undefined)}><option value="">No image</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name} · {asset.width}×{asset.height}</option>)}</select></label>}
+        {image && <div className="crop-controls">
+          <label><span>Fit</span><select value={image.fit} onChange={(event) => setImage({ ...image, fit: event.target.value === "contain" ? "contain" : "cover" })}><option value="cover">Fill frame</option><option value="contain">Fit whole image</option></select></label>
+          <label><span>Horizontal focus</span><input max="1" min="0" step="0.01" type="range" value={image.focalPoint.x} onChange={(event) => setImage({ ...image, focalPoint: { ...image.focalPoint, x: Number(event.target.value) } })} /></label>
+          <label><span>Vertical focus</span><input max="1" min="0" step="0.01" type="range" value={image.focalPoint.y} onChange={(event) => setImage({ ...image, focalPoint: { ...image.focalPoint, y: Number(event.target.value) } })} /></label>
+          <label><span>Zoom · {image.zoom.toFixed(2)}×</span><input max="3" min="1" step="0.05" type="range" value={image.zoom} onChange={(event) => setImage({ ...image, zoom: Number(event.target.value) })} /></label>
+          <label className="field"><span>Alt text</span><input maxLength={160} value={image.alt} onChange={(event) => setImage({ ...image, alt: event.target.value })} /></label>
+          <button onClick={() => setImage(undefined)} type="button">Remove image</button>
+        </div>}
+      </fieldset>
       <div className="format-switch" aria-label="Draft format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
       <button className="primary-button" disabled={busy || !valid || Boolean(draft.archivedAt)} onClick={save} type="button">Save new revision <span>→</span></button>
       <dl className="draft-meta"><div><dt>Brand</dt><dd>{draft.brandName}</dd></div><div><dt>Template</dt><dd>{draft.templateName} v{draft.templateVersion}</dd></div><div><dt>Created by</dt><dd>{draft.revisionCreatedBy}</dd></div><div><dt>Approval</dt><dd>{draft.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>

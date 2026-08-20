@@ -1,6 +1,6 @@
 {
   "name": "nocanva",
-  "version": "0.3.0",
+  "version": "0.4.0-rc.1",
   "description": "Deterministic, agent-native workspace for brand-ready media.",
   "private": true,
   "license": "MIT",
@@ -22,6 +22,8 @@
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "build:cloudflare": "NOCANVA_DEPLOY_TARGET=cloudflare WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "deploy:cloudflare": "NOCANVA_DEPLOY_TARGET=cloudflare WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext deploy",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "start:self-host": "node scripts/start-self-host.mjs",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
@@ -37,6 +39,7 @@
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
     "mcp:carousel-fixture": "node scripts/test-carousel-lifecycle.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
+    "mcp:hosted-fixture": "node scripts/test-hosted-launch.mjs",
     "connect": "node scripts/connect-agent.mjs",
     "self-host": "node scripts/self-host.mjs",
     "self-host:token": "node scripts/show-self-host-token.mjs",
@@ -78,7 +81,7 @@
     "tsx": "^4.23.12",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
-    "vite": "8.0.13",
+    "vite": "^8.2.1",
     "wrangler": "^4.124.0"
   },
   "type": "module"

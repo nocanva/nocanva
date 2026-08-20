@@ -9,8 +9,14 @@
   "browser": {
     "binding": "BROWSER"
   },
+  "services": [
+    {
+      "binding": "NOCANVA_APP",
+      "service": "nocanva-app"
+    }
+  ],
   "vars": {
-    "NOCANVA_BASE_URL": "https://framewise-studio.sidsaini1196.chatgpt.site"
+    "NOCANVA_BASE_URL": "https://nocanva-app.sidsaini1196.workers.dev"
   },
   "observability": {
     "enabled": true,

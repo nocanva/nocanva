@@ -1,12 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
-import { brandConfigSchema, templateInputSchema } from "../lib/media";
+import { brandConfigSchema, postImageSchema, templateInputSchema } from "../lib/media";
 
 const contentSchema = z.object({
   eyebrow: z.string().trim().min(1).max(28).describe("Short section label, up to 28 characters."),
   headline: z.string().trim().min(1).max(84).describe("Primary claim, up to 84 characters."),
   support: z.string().trim().min(1).max(150).describe("Supporting explanation, up to 150 characters."),
+  image: postImageSchema.optional().describe("Optional immutable workspace image with deterministic crop controls."),
 });
 
 function result(value: Record<string, unknown>) {
@@ -15,7 +16,7 @@ function result(value: Record<string, unknown>) {
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.3.0" },
+    { name: "nocanva", version: "0.4.0-rc.1" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -23,6 +24,20 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     },
   );
   const client = new CanvnahClient(baseUrl, context);
+
+  server.registerTool("nocanva_list_assets", {
+    title: "List NoCanva images",
+    description: "List immutable workspace images available for drafts and carousel slides.",
+    inputSchema: z.object({}),
+    annotations: { readOnlyHint: true },
+  }, async () => result({ assets: await client.listAssets() }));
+
+  server.registerTool("nocanva_upload_asset", {
+    title: "Upload a NoCanva image",
+    description: "Upload a PNG or JPEG screenshot/photo into immutable workspace storage. Use the returned asset ID in structured content crop controls.",
+    inputSchema: z.object({ name: z.string().trim().min(1).max(120), mimeType: z.enum(["image/png", "image/jpeg"]), base64: z.string().min(4).max(1_000_000) }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async ({ name, mimeType, base64 }) => result({ asset: await client.uploadAsset(name, mimeType, base64) }));
 
   server.registerTool("nocanva_get_brand", {
     title: "Get NoCanva brand",

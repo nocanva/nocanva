@@ -119,6 +119,23 @@ export const mcpTokens = sqliteTable("mcp_tokens", {
   revokedAt: integer("revoked_at"),
 }, (table) => [uniqueIndex("idx_mcp_tokens_hash").on(table.tokenHash), index("idx_mcp_tokens_workspace").on(table.workspaceId, table.createdAt)]);
 
+export const workspaceAssets = sqliteTable("workspace_assets", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  name: text("name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  sha256: text("sha256").notNull(),
+  assetKey: text("asset_key").notNull(),
+  archivedAt: integer("archived_at"),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  index("idx_workspace_assets_workspace").on(table.workspaceId, table.createdAt),
+  uniqueIndex("idx_workspace_assets_sha").on(table.workspaceId, table.sha256),
+]);
+
 export const carousels = sqliteTable("carousels", {
   id: text("id").primaryKey(), workspaceId: text("workspace_id").notNull(), brandId: text("brand_id").notNull().references(() => brands.id),
   templateId: text("template_id").notNull().references(() => templates.id), currentRevision: integer("current_revision").notNull(), status: text("status").notNull(),

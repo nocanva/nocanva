@@ -1,19 +1,23 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
-import { sites } from "./build/sites-vite-plugin";
+import { sites } from "./build/sites-vite-plugin.js";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
 
-const { d1, r2 } = hostingConfig;
+const d1 = "DB";
+const r2 = "MEDIA";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
+  vars: {
+    NOCANVA_AUTH_MODE: "disabled",
+    NOCANVA_APPROVAL_MODE: "agent_allowed",
+    NOCANVA_WORKSPACE_ID: "default",
+  },
   d1_databases: d1
     ? [
         {
@@ -43,16 +47,17 @@ export default defineConfig(async () => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
+  const deployToCloudflare = process.env.NOCANVA_DEPLOY_TARGET === "cloudflare";
   return {
     server: isCodexSeatbeltSandbox
       ? { watch: { useFsEvents: false, usePolling: true } }
       : undefined,
     plugins: [
       vinext(),
-      sites(),
+      ...(deployToCloudflare ? [] : [sites()]),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
+        ...(deployToCloudflare ? {} : { config: localBindingConfig }),
       }),
     ],
   };
