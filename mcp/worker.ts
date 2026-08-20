@@ -4,10 +4,15 @@ import { createCloudflareRenderer } from "./cloudflare-renderer";
 import { buildServer } from "./server";
 
 interface Env extends McpWorkerEnv {
+  NOCANVA_APP: Fetcher;
   NOCANVA_APP_TOKEN: string;
   NOCANVA_SITES_BYPASS_TOKEN: string;
   NOCANVA_MCP_TOKEN?: string;
   NOCANVA_MCP_TOKENS?: string;
+}
+
+function applicationRequest(env: Env, path: string, init?: RequestInit) {
+  return env.NOCANVA_APP.fetch(new Request(new URL(path, "https://nocanva.internal"), init));
 }
 
 function json(status: number, value: Record<string, unknown>, headers: HeadersInit = {}) {
@@ -24,7 +29,7 @@ function json(status: number, value: Record<string, unknown>, headers: HeadersIn
 
 async function applicationHealth(env: Env) {
   try {
-    const response = await fetch(new URL("/api/health", env.NOCANVA_BASE_URL), {
+    const response = await applicationRequest(env, "/api/health", {
       headers: {
         authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
         "oai-sites-authorization": `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`,
@@ -39,7 +44,7 @@ async function applicationHealth(env: Env) {
 async function authenticateManagedToken(authorization: string | null, env: Env) {
   const match = authorization?.match(/^Bearer\s+(.+)$/i);
   if (!match || !match[1].startsWith("ncv_")) return null;
-  const response = await fetch(new URL("/api/internal/mcp/auth", env.NOCANVA_BASE_URL), {
+  const response = await applicationRequest(env, "/api/internal/mcp/auth", {
     method: "POST",
     headers: {
       authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
@@ -104,8 +109,8 @@ export default {
     }
 
     if (url.pathname !== "/mcp") return json(404, { error: "Not found." });
-    if (request.method === "POST" && Number(request.headers.get("content-length") ?? 0) > 1_000_000) {
-      return json(413, { error: "MCP request body exceeds the 1 MB limit." });
+    if (request.method === "POST" && Number(request.headers.get("content-length") ?? 0) > 15_000_000) {
+      return json(413, { error: "MCP request body exceeds the 15 MB limit." });
     }
 
     const handler = createMcpHandler(() => buildServer(env.NOCANVA_BASE_URL, {
@@ -116,6 +121,7 @@ export default {
       allowRemote: true,
       render: createCloudflareRenderer(env.BROWSER),
       renderTimeoutMs: 45_000,
+      appFetcher: env.NOCANVA_APP,
     }), {
       route: "/mcp",
       legacy: "stateless",

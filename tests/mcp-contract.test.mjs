@@ -24,6 +24,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["nocanva_list_carousels", "nocanva_get_carousel", "nocanva_create_carousel", "nocanva_update_carousel", "nocanva_review_carousel", "nocanva_approve_carousel", "nocanva_archive_carousel", "nocanva_render_carousel", "nocanva_get_carousel_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
+  for (const tool of ["nocanva_list_assets", "nocanva_upload_asset"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   assert.match(nodeRenderer, /chromium\.launch/);
   assert.match(client, /Repeated PNG hashes match/);
   assert.match(client, /NOCANVA_ALLOW_REMOTE_APP_URL/);

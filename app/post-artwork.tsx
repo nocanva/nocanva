@@ -5,6 +5,17 @@ type RendererKey = "statement" | "signal" | "bloom";
 type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey };
 type PostArtworkProps = { payload: PostPayload; mode?: "preview" | "export"; brandConfig?: BrandConfig; template?: ArtworkTemplate };
 
+function MediaFrame({ image }: { image: NonNullable<PostPayload["content"]["image"]> }) {
+  const imageStyle = {
+    objectFit: image.fit,
+    objectPosition: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
+    transform: `scale(${image.zoom})`,
+  } as CSSProperties;
+  // The original immutable asset is required here; optimization would make render bytes provider-dependent.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <figure className="post-media" data-render-region="media"><img alt={image.alt} crossOrigin="anonymous" src={`/api/assets/${image.assetId}/content`} style={imageStyle} /></figure>;
+}
+
 function BrandMark() {
   return (
     <svg className="bloom-mark" viewBox="0 0 64 64" fill="none" aria-hidden>
@@ -71,6 +82,7 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
         <span className="bloom-brand"><BrandMark />{brandConfig.name}</span>
         <span className="bloom-channel"><WhatsAppGlyph />{brandConfig.tagline}</span>
       </header>
+      {content.image && <MediaFrame image={content.image} />}
       <div className="post-content" data-render-region="content">
         <p className="post-eyebrow"><i className="bloom-dot" />{content.eyebrow}</p>
         <h2 data-render-region="headline">{content.headline}<BloomUnderline /></h2>
@@ -115,7 +127,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey}${content.image ? " has-media" : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
@@ -129,6 +141,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
             <span className="post-logo">{brandConfig.name.toUpperCase()}<span>●</span></span>
             <span className="post-format">{dimensions.width} × {dimensions.height}</span>
           </header>
+          {content.image && <MediaFrame image={content.image} />}
           <div className="post-content" data-render-region="content">
             <p className="post-eyebrow">{content.eyebrow}</p>
             {resolvedTemplate.rendererKey === "signal" && <span className="signal-number">01</span>}

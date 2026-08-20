@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { carouselUpdateInputSchema, formats, type PostContent } from "../../../lib/media";
 import type { CarouselRecord, CarouselRevisionRecord } from "../../../lib/server/carousel-repository";
 import type { BrandRecord, TemplateRecord } from "../../../lib/server/media-repository";
+import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { WorkspaceHeader } from "../../workspace-header";
 
-export function CarouselWorkspace({ initialCarousel, initialRevisions, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; brand: BrandRecord; template: TemplateRecord }) {
+export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAssets, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
   const [carousel, setCarousel] = useState(initialCarousel);
   const [format, setFormat] = useState(initialCarousel.format);
@@ -20,6 +21,7 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, brand, te
   const [notice, setNotice] = useState("Carousel is ready");
   const [busy, setBusy] = useState(false);
   const [revisions, setRevisions] = useState(initialRevisions);
+  const [assets, setAssets] = useState(initialAssets);
   const exportRefs = useRef<Array<HTMLElement | null>>([]);
   const updateInput = { expectedRevision: carousel.currentRevision, brandId: carousel.brandId, templateId: carousel.templateId, format, slides, prompt };
   const valid = carouselUpdateInputSchema.safeParse(updateInput).success;
@@ -35,6 +37,26 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, brand, te
 
   function updateSlide(field: keyof PostContent, value: string) {
     setSlides((items) => items.map((slide, index) => index === activeSlide ? { ...slide, [field]: value } : slide));
+  }
+
+  function updateCurrent(values: Partial<PostContent>) {
+    setSlides((items) => items.map((slide, index) => index === activeSlide ? { ...slide, ...values } : slide));
+  }
+
+  async function uploadImage(file: File | undefined) {
+    if (!file) return;
+    if (file.size > 750 * 1024) return setNotice("Compress the image below 750 KB before upload.");
+    setBusy(true);
+    try {
+      const form = new FormData(); form.set("name", file.name); form.set("image", file);
+      const response = await fetch("/api/assets", { method: "POST", body: form });
+      const data = await response.json() as { asset?: WorkspaceAsset; error?: string };
+      if (!response.ok || !data.asset) throw new Error(data.error ?? "Image upload failed.");
+      setAssets((items) => [data.asset!, ...items.filter((asset) => asset.id !== data.asset!.id)]);
+      updateCurrent({ image: { assetId: data.asset.id, alt: "", fit: "cover", focalPoint: { x: .5, y: .5 }, zoom: 1 } });
+      setNotice(`Image added to slide ${activeSlide + 1}. Save the carousel to create a revision.`);
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Image upload failed."); }
+    finally { setBusy(false); }
   }
 
   function addSlide() {
@@ -124,6 +146,18 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, brand, te
       <label className="field"><span>Eyebrow <small>{current.eyebrow.length}/28</small></span><input maxLength={28} value={current.eyebrow} onChange={(event) => updateSlide("eyebrow", event.target.value)} /></label>
       <label className="field"><span>Headline <small>{current.headline.length}/84</small></span><textarea maxLength={84} rows={3} value={current.headline} onChange={(event) => updateSlide("headline", event.target.value)} /></label>
       <label className="field"><span>Supporting copy <small>{current.support.length}/150</small></span><textarea maxLength={150} rows={4} value={current.support} onChange={(event) => updateSlide("support", event.target.value)} /></label>
+      <fieldset className="image-editor"><legend>Slide image</legend>
+        <label className="image-upload"><span>Upload PNG or JPEG · max 750 KB</span><input accept="image/png,image/jpeg" disabled={busy} onChange={(event) => uploadImage(event.target.files?.[0])} type="file" /></label>
+        {assets.length > 0 && <label className="field"><span>Workspace image</span><select value={current.image?.assetId ?? ""} onChange={(event) => updateCurrent({ image: event.target.value ? { assetId: event.target.value, alt: "", fit: "cover", focalPoint: { x: .5, y: .5 }, zoom: 1 } : undefined })}><option value="">No image</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name} · {asset.width}×{asset.height}</option>)}</select></label>}
+        {current.image && <div className="crop-controls">
+          <label><span>Fit</span><select value={current.image.fit} onChange={(event) => updateCurrent({ image: { ...current.image!, fit: event.target.value === "contain" ? "contain" : "cover" } })}><option value="cover">Fill frame</option><option value="contain">Fit whole image</option></select></label>
+          <label><span>Horizontal focus</span><input max="1" min="0" step="0.01" type="range" value={current.image.focalPoint.x} onChange={(event) => updateCurrent({ image: { ...current.image!, focalPoint: { ...current.image!.focalPoint, x: Number(event.target.value) } } })} /></label>
+          <label><span>Vertical focus</span><input max="1" min="0" step="0.01" type="range" value={current.image.focalPoint.y} onChange={(event) => updateCurrent({ image: { ...current.image!, focalPoint: { ...current.image!.focalPoint, y: Number(event.target.value) } } })} /></label>
+          <label><span>Zoom · {current.image.zoom.toFixed(2)}×</span><input max="3" min="1" step="0.05" type="range" value={current.image.zoom} onChange={(event) => updateCurrent({ image: { ...current.image!, zoom: Number(event.target.value) } })} /></label>
+          <label className="field"><span>Alt text</span><input maxLength={160} value={current.image.alt} onChange={(event) => updateCurrent({ image: { ...current.image!, alt: event.target.value } })} /></label>
+          <button onClick={() => updateCurrent({ image: undefined })} type="button">Remove from slide</button>
+        </div>}
+      </fieldset>
       <label className="field"><span>Source prompt</span><textarea maxLength={500} rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} /></label>
       <div className="format-switch" aria-label="Carousel format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
       <button className="primary-button" disabled={busy || !valid || Boolean(carousel.archivedAt)} onClick={save} type="button">Save all slides as one revision <span>→</span></button>

@@ -45,6 +45,8 @@ The MCP process uses stdio and accepts loopback URLs by default. For remote self
 
 Primary daily-use tools:
 
+- `nocanva_list_assets`
+- `nocanva_upload_asset`
 - `nocanva_get_brand`
 - `nocanva_list_templates`
 - `nocanva_list_drafts`
@@ -85,6 +87,14 @@ The existing `canvnah_*` tool namespace is retained for MCP-client compatibility
 The draft workflow gives every agent-created draft a stable `/drafts/:id` URL, creates immutable revisions, prevents stale edits with `expectedRevision`, records review and approval actors, and pins the exact template version and reviewed PNG. Review tools use local Playwright for self-hosting or Cloudflare Browser Rendering in the managed Worker, verify two identical PNG hashes, and save the checked artifact. Approval pins that review record; rendering promotes the exact reviewed bytes without a second browser capture and returns the render ID, revision, dimensions, template version, asset URL, and workspace URL.
 
 The carousel workflow applies that same lifecycle to 3–7 slides under one brand, format, template, and pinned template version. A review captures and checks every slide, approval pins the complete artifact set, and rendering promotes those exact bytes into immutable per-slide PNGs plus a ZIP download. Stable workspaces live at `/carousels/:id` and immutable exports at `/carousel-renders/:id`.
+
+Drafts and individual carousel slides can reference immutable PNG/JPEG workspace images. Humans and agents can select an image, choose cover or contain, set a normalized focal point, and apply a constrained 1–3× zoom. Those crop instructions live in the immutable revision and are reproduced by every renderer. Uploads are currently limited to 750 KB so the same contract works through local, Workers, and remote MCP request boundaries.
+
+## Managed release candidate
+
+The private release-candidate app runs at [nocanva-app.sidsaini1196.workers.dev](https://nocanva-app.sidsaini1196.workers.dev) with dedicated D1 and R2 bindings. Its APIs fail closed for anonymous requests. The authenticated MCP endpoint is [nocanva-mcp.sidsaini1196.workers.dev/mcp](https://nocanva-mcp.sidsaini1196.workers.dev/mcp) and reaches the app through a Cloudflare service binding.
+
+The current Workers URL is service/agent accessible. Human UI access remains on the private Sites deployment until a custom domain is attached and protected by Cloudflare Access. Do not switch the Workers app to anonymous mode.
 
 The reusable agent workflow is bundled as [`skills/nocanva-media/SKILL.md`](./skills/nocanva-media/SKILL.md).
 

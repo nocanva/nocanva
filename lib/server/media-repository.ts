@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type TemplateInput } from "../media";
+import { validateContentAssets } from "./asset-repository";
 
 type D1Row = Record<string, unknown>;
 
@@ -93,6 +94,7 @@ async function initializeDatabase() {
     `CREATE TABLE IF NOT EXISTS draft_approvals (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', draft_revision_id TEXT NOT NULL REFERENCES draft_revisions(id), review_id TEXT REFERENCES draft_reviews(id), actor TEXT NOT NULL, decision TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS workspace_events (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, actor TEXT NOT NULL, metadata_json TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS mcp_tokens (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, name TEXT NOT NULL, token_hash TEXT NOT NULL, token_prefix TEXT NOT NULL, created_by TEXT NOT NULL, created_at INTEGER NOT NULL, last_used_at INTEGER, revoked_at INTEGER)`,
+    `CREATE TABLE IF NOT EXISTS workspace_assets (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL, name TEXT NOT NULL, mime_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, sha256 TEXT NOT NULL, asset_key TEXT NOT NULL, archived_at INTEGER, created_by TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS renders (id TEXT PRIMARY KEY NOT NULL, workspace_id TEXT NOT NULL DEFAULT 'default', post_id TEXT NOT NULL REFERENCES posts(id), draft_revision_id TEXT REFERENCES draft_revisions(id), template_version_id TEXT NOT NULL REFERENCES template_versions(id), parent_render_id TEXT, asset_key TEXT NOT NULL, asset_content_type TEXT NOT NULL, width INTEGER NOT NULL, height INTEGER NOT NULL, input_snapshot_json TEXT NOT NULL, sha256 TEXT NOT NULL, created_at INTEGER NOT NULL)`,
     `CREATE INDEX IF NOT EXISTS idx_templates_brand_id ON templates(brand_id)`,
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_template_versions_template_version ON template_versions(template_id, version)`,
@@ -105,6 +107,8 @@ async function initializeDatabase() {
     `CREATE INDEX IF NOT EXISTS idx_workspace_events_created_at ON workspace_events(workspace_id, created_at)`,
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_mcp_tokens_hash ON mcp_tokens(token_hash)`,
     `CREATE INDEX IF NOT EXISTS idx_mcp_tokens_workspace ON mcp_tokens(workspace_id, created_at)`,
+    `CREATE INDEX IF NOT EXISTS idx_workspace_assets_workspace ON workspace_assets(workspace_id, created_at)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_assets_sha ON workspace_assets(workspace_id, sha256)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_created_at ON renders(created_at)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_post_id ON renders(post_id)`,
     `CREATE INDEX IF NOT EXISTS idx_renders_parent_render_id ON renders(parent_render_id)`,
@@ -323,6 +327,7 @@ async function validatePayloadReferences(payload: PostPayload, workspaceId: stri
   if (!brandRecord) throw new Error("The selected brand does not exist.");
   if (!templateRecord) throw new Error("The selected template does not exist.");
   if (templateRecord.brandId !== brandRecord.id) throw new Error("The selected template does not belong to the selected brand.");
+  await validateContentAssets([payload.content], workspaceId);
 }
 
 const draftSelect = `SELECT d.id, d.brand_id, d.template_id, d.current_revision, d.status, d.archived_at, d.created_by, d.created_at, d.updated_at, dr.id AS revision_id, dr.template_version_id, dr.format, dr.content_json, dr.prompt, dr.created_by AS revision_created_by, tv.version AS template_version, b.name AS brand_name, t.name AS template_name FROM drafts d JOIN draft_revisions dr ON dr.draft_id = d.id AND dr.revision = d.current_revision JOIN template_versions tv ON tv.id = dr.template_version_id JOIN brands b ON b.id = d.brand_id JOIN templates t ON t.id = d.template_id`;

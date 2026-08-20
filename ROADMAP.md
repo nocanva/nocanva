@@ -111,9 +111,9 @@ One automated fixture must:
 
 NoCanva is a trustworthy local agent workspace rather than only a rendering utility. The complete agent-to-workspace loop is machine-testable and provenance is reliable.
 
-## Sprint 2 — Open-source distribution and NoCanva Cloud foundation — self-host complete
+## Sprint 2 — Open-source distribution and NoCanva Cloud foundation — complete
 
-Implementation status: the open-source distribution, authenticated remote MCP contract, operator tooling, and cloud-ready authentication/observability foundations are complete and release-candidate tested. The managed multi-tenant cloud service is not deployed yet; it still requires a selected container host, production domain, end-user UI/API authentication, true application-data workspace isolation, secrets, and a cloud-target contract run.
+Implementation status: the open-source distribution and the private managed release candidate are deployed and contract-tested. The app runs on Cloudflare Workers with dedicated D1/R2 storage; MCP runs on a separate Worker with Browser Rendering and a service binding to the app. Workspace-scoped managed tokens, human-required approval, and anonymous fail-closed behavior are active. A custom domain plus Cloudflare Access is still required before replacing the private Sites URL for human access.
 
 ### Outcome
 
@@ -145,20 +145,20 @@ Cloud authentication and operational code must remain outside or cleanly layered
 
 A clean environment must start NoCanva, connect a fresh MCP client, create a draft, render it, and open the returned workspace URL without manual database or server configuration. The same contract suite must run against local stdio, self-hosted HTTP, and NoCanva Cloud.
 
-### Release-candidate verification — 2026-08-19
+### Release-candidate verification — 2026-08-20
 
 - Production build, TypeScript, lint, schema, persistence, UI-contract, MCP-authentication, and render-contract suites pass.
 - The full draft lifecycle passes over local stdio and authenticated Streamable HTTP.
 - A clean Docker stack builds, becomes healthy, completes an authenticated draft-to-render workflow, and preserves the exact PNG hash through the documented stop/restore/restart procedure.
 - The application loads agent-created brands, real template previews, editable draft workspaces, and immutable render details without browser console errors.
 - Six visually reviewed 1080 × 1350 campaign assets were created for ScamDB India and Parakhi using one locked template per brand.
-- The NoCanva Cloud run remains pending until the managed deployment and multi-tenant controls above exist.
+- The hosted contract uploaded a real immutable image through MCP, rendered and mechanically reviewed it with Cloudflare Browser Rendering, crossed a separate human-required approval boundary, promoted the exact reviewed bytes, and retrieved the immutable 1080 × 1350 render with a matching SHA-256.
 
 ### NoCanva after Sprint 2
 
 NoCanva is a usable, release-candidate-tested open-source self-hosted product with a cloud-ready service foundation. Managed convenience will use the same agent workflow after the remaining deployment, UI/API authentication, and data-isolation work is complete.
 
-## Sprint 2B — Secure public release — in progress
+## Sprint 2B — Secure public release — release candidate complete
 
 ### Outcome
 
@@ -168,12 +168,13 @@ Publish the open-source release and operate a private hosted NoCanva without tru
 
 - **Application boundary — implemented:** local mode remains frictionless; hosted mode requires a private Sites identity or the internal application service token. MCP token identity and workspace are forwarded as trusted server context, and hosted actors cannot spoof review or approval attribution.
 - **Workspace isolation — implemented:** every durable record and query is scoped by authenticated workspace, reusable slug IDs are physically namespaced, and R2 assets use workspace-prefixed keys. A two-workspace container contract proved isolated lists, independent matching slugs, denied cross-workspace reads/writes, and denied render-asset access.
-- **Cloud contract — pending:** configure private hosted secrets, deploy the application and MCP sidecar, and run the complete remote contract suite.
-- **Open-source release — pending:** clean release history, fresh-clone installation proof, public repository publication, and tagged `v0.2.0` release.
+- **Cloud contract — complete:** the Workers app, D1, R2, Browser Rendering MCP Worker, secrets, service binding, and hosted image lifecycle proof are live on free-tier-compatible resources.
+- **Open-source release — prepared, owner action pending:** release documentation and the `v0.4.0-rc.1` candidate are ready. Repository visibility remains private and no public release/tag is created without the owner’s explicit decision.
+- **Human cloud access — owner action pending:** attach the chosen custom domain and protect it with Cloudflare Access. Until then, the private Sites deployment remains the human UI and the Workers app remains agent/service-only.
 
 No public deployment is allowed until all four gates pass.
 
-## Sprint 3 — Product-launch media wedge
+## Sprint 3 — Product-launch media wedge — core media complete
 
 ### Outcome
 
@@ -181,12 +182,12 @@ Developer and startup teams can turn repositories, changelogs, release notes, do
 
 ### Scope
 
-- Add a first-class carousel/deck model with 3–7 ordered slides.
+- Add a first-class carousel/deck model with 3–7 ordered slides. **Complete.**
 - Support `cover`, `body`, and `cta` slide roles.
 - Store slide revisions and render references independently.
 - Produce a deck-level hash from ordered slide hashes.
 - Reuse unchanged slide renders byte-for-byte.
-- Add screenshot/image upload, focal point, and deterministic cropping.
+- Add screenshot/image upload, focal point, fit, zoom, and deterministic cropping for cards and individual carousel slides. **Complete.**
 - Support Instagram portrait and LinkedIn social-card dimensions.
 - Provide PNG export initially.
 - Ship three excellent launch templates:
@@ -197,6 +198,8 @@ Developer and startup teams can turn repositories, changelogs, release notes, do
 - Extract candidate colors and assets, recommend fonts, and generate two or three constrained templates for review before activation.
 
 Brand onboarding may use the calling agent for extraction and creative recommendations. The saved brand and rendering path remain deterministic and do not require an embedded NoCanva LLM.
+
+Remaining Sprint 3 work is narrower: named slide roles and partial slide reuse, LinkedIn dimensions, three launch-specific template compositions, assisted brand onboarding, and design-partner observation.
 
 ### Agent-first exit test
 

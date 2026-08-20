@@ -3,6 +3,7 @@ import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
 export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal" | "bloom"; contentSchema: unknown; createdAt: number };
+export type AssetResult = { id: string; name: string; mimeType: "image/png" | "image/jpeg"; width: number; height: number; sha256: string; archivedAt: number | null; createdBy: string; createdAt: number; contentUrl: string };
 export type PostResult = { id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload; createdBy: string; createdAt: number };
 export type DraftResult = {
   id: string; brandId: string; brandName: string; templateId: string; templateName: string;
@@ -69,6 +70,7 @@ export type CanvnahClientContext = {
   allowRemote?: boolean;
   render?: MediaRenderer;
   renderTimeoutMs?: number;
+  appFetcher?: Fetcher;
 };
 
 export class CanvnahClient {
@@ -88,6 +90,23 @@ export class CanvnahClient {
   async listBrands(): Promise<BrandResult[]> {
     const data = await this.request<{ brands: BrandResult[] }>("/api/brands");
     return data.brands;
+  }
+
+  async listAssets(): Promise<AssetResult[]> {
+    const data = await this.request<{ assets: AssetResult[] }>("/api/assets");
+    return data.assets.map((asset) => ({ ...asset, contentUrl: new URL(asset.contentUrl, `${this.baseUrl}/`).href }));
+  }
+
+  async uploadAsset(name: string, mimeType: "image/png" | "image/jpeg", base64: string): Promise<AssetResult> {
+    const bytes = Buffer.from(base64, "base64");
+    if (!bytes.length || bytes.length > 750 * 1024) throw new Error("Decoded image must be between 1 byte and 750 KB. Compress large screenshots before upload.");
+    const form = new FormData();
+    form.set("name", name);
+    const copy = new Uint8Array(bytes.byteLength);
+    copy.set(bytes);
+    form.set("image", new Blob([copy.buffer], { type: mimeType }), name);
+    const data = await this.request<{ asset: AssetResult }>("/api/assets", { method: "POST", body: form });
+    return { ...data.asset, contentUrl: new URL(data.asset.contentUrl, `${this.baseUrl}/`).href };
   }
 
   async getBrand(id: string): Promise<BrandResult> {
@@ -395,7 +414,8 @@ export class CanvnahClient {
     try {
       const requestHeaders = new Headers(init?.headers);
       for (const [name, value] of Object.entries(this.trustedHeaders())) requestHeaders.set(name, value);
-      response = await fetch(`${this.baseUrl}${path}`, { ...init, headers: requestHeaders });
+      const request = new Request(`${this.baseUrl}${path}`, { ...init, headers: requestHeaders });
+      response = this.context.appFetcher ? await this.context.appFetcher.fetch(request) : await fetch(request);
     } catch (error) {
       throw new Error(`NoCanva is not reachable at ${this.baseUrl}. Start the local app before using its MCP tools.`, { cause: error });
     }

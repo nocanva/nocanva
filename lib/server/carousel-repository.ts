@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { carouselCreateInputSchema, carouselUpdateInputSchema, draftDecisionSchema, draftStatusSchema, formats, postContentSchema, type DraftStatus, type PostContent } from "../media";
 import { ensureMediaDatabase, getBrandById, getTemplateById, type DraftCheck } from "./media-repository";
+import { validateContentAssets } from "./asset-repository";
 
 type D1Row = Record<string, unknown>;
 type StoredArtifact = { slideIndex: number; assetKey: string; width: number; height: number; sha256: string };
@@ -138,6 +139,7 @@ export async function createCarousel(value: unknown, actor = "agent:mcp", worksp
   await ensureCarouselDatabase(workspaceId);
   const input = carouselCreateInputSchema.parse(value);
   const template = await validateReferences(input.brandId, input.templateId, workspaceId);
+  await validateContentAssets(input.slides, workspaceId);
   const id = crypto.randomUUID();
   const now = Date.now();
   const revisionId = `${id}@1`;
@@ -159,6 +161,7 @@ export async function updateCarousel(id: string, value: unknown, actor = "agent:
   if (current.archivedAt) throw new Error("Restore the carousel before editing it.");
   if (input.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${input.expectedRevision}, current revision is ${current.currentRevision}.`);
   const template = await validateReferences(input.brandId, input.templateId, workspaceId);
+  await validateContentAssets(input.slides, workspaceId);
   const revision = current.currentRevision + 1;
   const now = Date.now();
   await database().batch([

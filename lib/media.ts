@@ -44,10 +44,22 @@ export const templateInputSchema = z.object({
 
 export type TemplateInput = z.infer<typeof templateInputSchema>;
 
+export const postImageSchema = z.object({
+  assetId: z.string().uuid(),
+  alt: z.string().trim().max(160).default(""),
+  fit: z.enum(["cover", "contain"]).default("cover"),
+  focalPoint: z.object({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  }).default({ x: 0.5, y: 0.5 }),
+  zoom: z.number().min(1).max(3).default(1),
+});
+
 export const postContentSchema = z.object({
   eyebrow: z.string().trim().min(1, "Eyebrow is required").max(28),
   headline: z.string().trim().min(1, "Headline is required").max(84),
   support: z.string().trim().min(1, "Supporting copy is required").max(150),
+  image: postImageSchema.optional(),
 });
 
 export const postPayloadSchema = z.object({
