@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { Client } from "@modelcontextprotocol/client";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -8,7 +8,14 @@ const tsx = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.met
 const baseUrl = process.env.NOCANVA_BASE_URL ?? process.env.CANVNAH_BASE_URL ?? "http://localhost:3000";
 const appToken = process.env.NOCANVA_APP_TOKEN;
 const workspaceId = process.env.NOCANVA_WORKSPACE_ID;
-const transport = new StdioClientTransport({ command: process.execPath, args: [tsx, "mcp/stdio.ts"], cwd: root, env: { ...process.env, CANVNAH_BASE_URL: baseUrl }, stderr: "inherit" });
+const externalEndpoint = process.env.NOCANVA_HTTP_FIXTURE_ENDPOINT;
+const remoteToken = process.env.NOCANVA_HTTP_FIXTURE_TOKEN;
+const transport = externalEndpoint
+  ? new StreamableHTTPClientTransport(new URL(`${externalEndpoint.replace(/\/$/, "").replace(/\/mcp$/, "")}/mcp`), { authProvider: { token: async () => {
+      if (!remoteToken) throw new Error("NOCANVA_HTTP_FIXTURE_TOKEN is required for a remote carousel fixture.");
+      return remoteToken;
+    } } })
+  : new StdioClientTransport({ command: process.execPath, args: [tsx, "mcp/stdio.ts"], cwd: root, env: { ...process.env, CANVNAH_BASE_URL: baseUrl }, stderr: "inherit" });
 const client = new Client({ name: "nocanva-carousel-lifecycle-fixture", version: "0.1.0" });
 
 function structured(result) {
@@ -69,13 +76,15 @@ try {
 
   const inspected = await call("nocanva_get_carousel_render", { renderId: rendered.render.id });
   assert.deepEqual(inspected.render.artifacts.map((artifact) => artifact.sha256), rendered.render.artifacts.map((artifact) => artifact.sha256));
-  const zipResponse = await fetch(inspected.render.zipUrl, { headers: {
+  const zipResponse = externalEndpoint ? null : await fetch(inspected.render.zipUrl, { headers: {
     ...(appToken ? { authorization: `Bearer ${appToken}` } : {}),
     ...(workspaceId ? { "x-nocanva-workspace-id": workspaceId } : {}),
   } });
-  assert.equal(zipResponse.status, 200);
-  assert.match(zipResponse.headers.get("content-type") ?? "", /application\/zip/);
-  assert.ok((await zipResponse.arrayBuffer()).byteLength > 1_000);
+  if (zipResponse) {
+    assert.equal(zipResponse.status, 200);
+    assert.match(zipResponse.headers.get("content-type") ?? "", /application\/zip/);
+    assert.ok((await zipResponse.arrayBuffer()).byteLength > 1_000);
+  }
 
   const edited = await call("nocanva_update_carousel", { carouselId: created.carousel.id, expectedRevision: 1, brandId: "carousel-fixture", templateId: "carousel-fixture-statement", format: "square", slides: slides.map((slide, index) => index === 2 ? { ...slide, headline: "A new revision invalidates the whole approval set." } : slide) });
   assert.equal(edited.carousel.currentRevision, 2);
