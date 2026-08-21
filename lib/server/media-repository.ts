@@ -1,12 +1,12 @@
 import { env } from "cloudflare:workers";
 import { compositionFromTemplateId, compositionTemplateIds, compositions, type CompositionId } from "../compositions";
-import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type RendererKey, type TemplateInput } from "../media";
+import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, posterLayoutSchema, rendererKeySchema, templateCreateSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type PosterLayout, type RendererKey, type TemplateInput } from "../media";
 import { validateContentAssets } from "./asset-repository";
 
 type D1Row = Record<string, unknown>;
 
 export type BrandRecord = { id: string; name: string; config: BrandConfig; createdAt: number };
-export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; contentSchema: Record<string, unknown>; createdAt: number };
+export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; layout?: PosterLayout; contentSchema: Record<string, unknown>; createdAt: number };
 export type PostRecord = {
   id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload;
   createdBy: string; createdAt: number;
@@ -283,11 +283,7 @@ export async function createBrand(value: unknown, workspaceId = defaultWorkspace
 export async function listTemplates(workspaceId = defaultWorkspaceId()): Promise<TemplateRecord[]> {
   await ensureMediaDatabase(workspaceId);
   const result = await database().prepare(`SELECT t.id, t.brand_id, t.name, t.type, t.content_schema_json, t.created_at, tv.version, tv.renderer_key, tv.config_json FROM templates t JOIN template_versions tv ON tv.template_id = t.id WHERE t.workspace_id = ? AND tv.workspace_id = ? ORDER BY t.name, tv.version DESC`).bind(workspaceId, workspaceId).all<D1Row>();
-  return result.results.map((row) => ({
-    id: logicalId(workspaceId, row.id), brandId: logicalId(workspaceId, row.brand_id), name: String(row.name), type: String(row.type),
-    description: String((JSON.parse(String(row.config_json)) as { description?: unknown }).description ?? "Structured editorial template."),
-    version: Number(row.version), rendererKey: templateInputSchema.shape.rendererKey.parse(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
-  }));
+  return result.results.map((row) => mapTemplate(row, workspaceId));
 }
 
 export async function getTemplateById(id: string, workspaceId = defaultWorkspaceId()): Promise<TemplateRecord | null> {
@@ -305,16 +301,18 @@ export async function getTemplateVersionById(id: string, workspaceId = defaultWo
 }
 
 function mapTemplate(row: D1Row, workspaceId: string): TemplateRecord {
+  const config = JSON.parse(String(row.config_json)) as { description?: unknown; layout?: unknown };
   return {
     id: logicalId(workspaceId, row.id), brandId: logicalId(workspaceId, row.brand_id), name: String(row.name), type: String(row.type),
-    description: String((JSON.parse(String(row.config_json)) as { description?: unknown }).description ?? "Structured editorial template."),
-    version: Number(row.version), rendererKey: templateInputSchema.shape.rendererKey.parse(row.renderer_key), contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
+    description: String(config.description ?? "Structured editorial template."),
+    version: Number(row.version), rendererKey: rendererKeySchema.parse(row.renderer_key), layout: config.layout ? posterLayoutSchema.parse(config.layout) : undefined,
+    contentSchema: JSON.parse(String(row.content_schema_json)), createdAt: Number(row.created_at),
   };
 }
 
 export async function createTemplate(value: unknown, workspaceId = defaultWorkspaceId()): Promise<TemplateRecord> {
   await ensureMediaDatabase(workspaceId);
-  const input: TemplateInput = templateInputSchema.parse(value);
+  const input: TemplateInput = templateCreateSchema.parse(value);
   const brandRecord = await getBrandById(input.brandId, workspaceId);
   if (!brandRecord) throw new Error("Create the brand before creating its template.");
   const db = database();
@@ -327,7 +325,7 @@ export async function createTemplate(value: unknown, workspaceId = defaultWorksp
   const now = Date.now();
   const contentSchema = JSON.stringify({ eyebrow: { type: "string", maxLength: 28 }, headline: { type: "string", maxLength: 84 }, support: { type: "string", maxLength: 150 } });
   const statements = [
-    db.prepare("INSERT INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@${version}`, workspaceId, storedTemplateId, version, input.rendererKey, JSON.stringify({ description: input.description }), now),
+    db.prepare("INSERT INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@${version}`, workspaceId, storedTemplateId, version, input.rendererKey, JSON.stringify({ description: input.description, layout: input.layout }), now),
   ];
   if (existing) {
     statements.unshift(db.prepare("UPDATE templates SET name = ?, type = ?, content_schema_json = ? WHERE id = ? AND workspace_id = ?").bind(input.name, input.rendererKey, contentSchema, storedTemplateId, workspaceId));

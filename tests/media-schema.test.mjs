@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { defaultPostPayload, formats, parsePostPayload, renderFilename } from "../lib/media.ts";
+import { defaultPostPayload, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
 import { compositions, compositionFromTemplateId, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
@@ -53,4 +53,12 @@ test("keeps the Blindspot benchmark and approved visual references measurable", 
   assert.equal(references.qaCandidates.length, 5);
   assert.ok([...references.references, ...references.qaCandidates].every((reference) => reference.width === 1080 && reference.height === 1350 && /^[a-f0-9]{64}$/.test(reference.sha256)));
   assert.ok(references.qaCandidates.every((reference) => reference.templateVersionId.endsWith("@2")));
+});
+
+test("accepts bounded HTML/CSS layout templates and rejects incomplete generic layouts", () => {
+  const layout = posterLayoutSchema.parse({ family: "grid", mediaPosition: "left", alignment: "right", headlineScale: 1.12, mediaSplit: .42, signature: "rail" });
+  assert.equal(layout.family, "grid");
+  assert.equal(layout.mediaSplit, .42);
+  assert.throws(() => templateCreateSchema.parse({ id: "grid", brandId: "blindspot", name: "Evidence grid", description: "A split evidence poster.", rendererKey: "layout" }));
+  assert.doesNotThrow(() => templateCreateSchema.parse({ id: "grid", brandId: "blindspot", name: "Evidence grid", description: "A split evidence poster.", rendererKey: "layout", layout }));
 });

@@ -62,6 +62,36 @@ try {
   }));
   assert.equal(squareReview.review.passed, true);
 
+  const layoutTemplate = structured(await client.callTool({
+    name: "canvnah_create_template",
+    arguments: {
+      id: "sprout-evidence-grid",
+      brandId: "sprout",
+      name: "Sprout evidence grid",
+      description: "A bounded, right-aligned evidence layout for concise product claims.",
+      rendererKey: "layout",
+      layout: {
+        family: "grid",
+        mediaPosition: "none",
+        alignment: "right",
+        focalRegion: "headline",
+        density: "balanced",
+        headlineScale: 1.08,
+        mediaSplit: 0.42,
+        showIndex: true,
+        indexPlacement: "rail",
+        signature: "rail",
+      },
+    },
+  }));
+  assert.equal(layoutTemplate.template.rendererKey, "layout");
+  assert.equal(layoutTemplate.template.layout.family, "grid");
+  const layoutReview = structured(await client.callTool({
+    name: "canvnah_review_template",
+    arguments: { brandId: "sprout", templateId: "sprout-evidence-grid", format: "portrait", content: sampleContent },
+  }));
+  assert.equal(layoutReview.review.passed, true);
+
   const created = structured(await client.callTool({
     name: "canvnah_create_post",
     arguments: {
@@ -91,7 +121,7 @@ try {
   assert.equal(rerendered.render.parentRenderId, rendered.render.id);
   assert.equal(rerendered.render.sha256, rendered.render.sha256);
 
-  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, brandId: brand.brand.id, templateId: template.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, brandId: brand.brand.id, templateId: template.template.id, layoutTemplateId: layoutTemplate.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
 } finally {
   await client.close();
 }

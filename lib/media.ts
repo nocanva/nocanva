@@ -56,12 +56,26 @@ export const templates = {
   explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 2 },
 } as const;
 
+export const posterLayoutSchema = z.object({
+  family: z.enum(["statement", "signal", "bloom", "split", "grid"]).default("statement"),
+  mediaPosition: z.enum(["auto", "none", "top", "bottom", "left", "right", "full-bleed"]).default("auto"),
+  alignment: z.enum(["left", "center", "right"]).default("left"),
+  focalRegion: z.enum(["headline", "media", "content"]).default("headline"),
+  density: z.enum(["airy", "balanced", "dense"]).default("balanced"),
+  headlineScale: z.number().min(0.75).max(1.5).default(1),
+  mediaSplit: z.number().min(0.25).max(0.75).default(0.46),
+  showIndex: z.boolean().default(false),
+  indexPlacement: z.enum(["rail", "inline", "corner"]).default("inline"),
+  signature: z.enum(["rule", "rail", "underline", "wash", "none"]).default("rule"),
+});
+export type PosterLayout = z.infer<typeof posterLayoutSchema>;
+
 export const formats = {
   portrait: { id: "portrait", label: "4:5", width: 1080, height: 1350 },
   square: { id: "square", label: "1:1", width: 1080, height: 1080 },
 } as const;
 
-export const rendererKeySchema = z.enum(["statement", "signal", "bloom", "terminal", "split", "ledger", "claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
+export const rendererKeySchema = z.enum(["statement", "signal", "bloom", "terminal", "split", "ledger", "claim", "real_but", "receipt", "whats_missing", "product", "explainer", "layout"]);
 export type RendererKey = z.infer<typeof rendererKeySchema>;
 
 export const templateInputSchema = z.object({
@@ -70,9 +84,16 @@ export const templateInputSchema = z.object({
   name: z.string().trim().min(1).max(80),
   description: z.string().trim().min(1).max(180),
   rendererKey: rendererKeySchema,
+  layout: posterLayoutSchema.optional().describe("HTML/CSS layout parameters used by the generic layout renderer."),
 });
 
 export type TemplateInput = z.infer<typeof templateInputSchema>;
+
+export const templateCreateSchema = templateInputSchema.superRefine((value, context) => {
+  if (value.rendererKey === "layout" && !value.layout) {
+    context.addIssue({ code: "custom", path: ["layout"], message: "The layout renderer requires a layout spec." });
+  }
+});
 
 export const postImageSchema = z.object({
   assetId: z.string().uuid(),

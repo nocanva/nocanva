@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostContent, type PostPayload, type RendererKey, type TemplateInput } from "../lib/media";
+import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateCreateSchema, type BrandConfig, type PostContent, type PostPayload, type TemplateInput, type PosterLayout, type RendererKey } from "../lib/media";
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
-export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; contentSchema: unknown; createdAt: number };
+export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; layout?: PosterLayout; contentSchema: unknown; createdAt: number };
 export type AssetResult = { id: string; name: string; mimeType: "image/png" | "image/jpeg"; width: number; height: number; sha256: string; archivedAt: number | null; createdBy: string; createdAt: number; contentUrl: string };
 export type PostResult = { id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload; createdBy: string; createdAt: number };
 export type DraftResult = {
@@ -129,7 +129,7 @@ export class CanvnahClient {
   }
 
   async createTemplate(value: unknown): Promise<TemplateResult> {
-    const input: TemplateInput = templateInputSchema.parse(value);
+    const input: TemplateInput = templateCreateSchema.parse(value);
     const data = await this.request<{ template: TemplateResult }>("/api/templates", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input),
     });

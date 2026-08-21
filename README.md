@@ -100,6 +100,8 @@ The current Workers URL is service/agent accessible. Human UI access remains on 
 
 The reusable agent workflow is bundled as [`skills/nocanva-media/SKILL.md`](./skills/nocanva-media/SKILL.md).
 
+The layout-authoring skill is bundled as [`skills/nocanva-layout/SKILL.md`](./skills/nocanva-layout/SKILL.md). It lets a calling agent generate distinct HTML/CSS poster directions and create versioned `rendererKey: "layout"` templates without editing the renderer for every composition.
+
 For an autonomous Codex or Claude Code workflow that derives the Sprout brand and content from the Fortwin AI repository, copy [FORTWIN_SPROUT_AGENTS.md](./FORTWIN_SPROUT_AGENTS.md) into that repository as `AGENTS.md`. Codex discovers it automatically; import it from Claude Code's project `CLAUDE.md` with `@AGENTS.md`.
 
 ## Validation
