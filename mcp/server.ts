@@ -233,7 +233,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("canvnah_create_template", {
     title: "Create a NoCanva template version",
-    description: "Create a local brand template. Reusing its ID creates a new immutable version after review.",
+    description: "Create a local brand template. Use rendererKey 'layout' with a bounded layout object for agent-authored HTML/CSS composition. Reusing its ID creates a new immutable version after review.",
     inputSchema: templateInputSchema,
     annotations: { destructiveHint: false, idempotentHint: false },
   }, async (template) => result({ template: await client.createTemplate(template) }));
