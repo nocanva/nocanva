@@ -4,6 +4,8 @@ NoCanva turns structured ideas into deterministic, brand-ready social media. It 
 
 NoCanva does not make embedded LLM calls. Codex, Claude Code, or another calling agent supplies copy and visual judgment; the workspace enforces structure, brand constraints, provenance, review state, and reproducible rendering.
 
+For the complete product rationale, workflows, architecture, boundaries, and positioning, read [What is NoCanva?](./docs/WHAT_IS_NOCANVA.md). The active product priority is the [Blindspot-first creative engine](./docs/BLINDSPOT_CREATIVE_ENGINE.md).
+
 ## Self-host in two minutes
 
 ```bash

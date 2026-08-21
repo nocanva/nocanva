@@ -4,14 +4,15 @@ NoCanva Cloud must remain private until every gate below passes.
 
 ## Application boundary
 
-- Set `NOCANVA_AUTH_MODE=sites_private` on the application.
+- Set `NOCANVA_AUTH_MODE=cloudflare_access` for a Worker protected by Cloudflare Access. Keep `sites_private` only for ChatGPT Sites hosting.
+- Set `NOCANVA_ACCESS_TEAM_DOMAIN` and `NOCANVA_ACCESS_AUD` from the Access application. Hostname-based Access JWTs are verified against the team JWKS before identity headers are injected.
 - Store an independent random `NOCANVA_APP_TOKEN` as an application and MCP Worker secret.
 - Store agent-facing MCP tokens separately in `NOCANVA_MCP_TOKENS`.
 - Store the Sites dispatch credential only as `NOCANVA_SITES_BYPASS_TOKEN` on the MCP Worker.
-- Deploy the Sites application privately so browser routes receive authenticated-user headers.
+- Protect the application Worker with an Access allow policy. The Worker reads the verified identity from `ctx.access`, strips spoofable inbound identity headers, and forwards only trusted identity fields to the application router.
 - Expose only the TLS-protected MCP `/mcp` route from the sidecar. Keep the application origin private where the platform permits it.
 
-In hosted mode, anonymous API and page requests fail closed. Sites users are attributed from the platform user ID. The MCP Worker authenticates the external bearer token, then forwards only its trusted token ID and workspace through the internal application credential. Hosted screenshots use the Cloudflare Browser Rendering binding; the application itself still makes no LLM calls.
+In hosted mode, anonymous API and page requests fail closed. Cloudflare Access users are attributed from the verified Access identity; Sites users remain supported on ChatGPT Sites deployments. The MCP Worker authenticates the external bearer token, then forwards only its trusted token ID and workspace through the internal application credential. Hosted screenshots use the Cloudflare Browser Rendering binding; the application itself still makes no LLM calls.
 
 ## Workspace isolation
 

@@ -21,7 +21,9 @@
     }
   ],
   "vars": {
-    "NOCANVA_AUTH_MODE": "sites_private",
+    "NOCANVA_AUTH_MODE": "cloudflare_access",
+    "NOCANVA_ACCESS_TEAM_DOMAIN": "https://example.cloudflareaccess.com",
+    "NOCANVA_ACCESS_AUD": "REDACTED_CLOUDFLARE_ACCESS_AUDIENCE",
     "NOCANVA_APPROVAL_MODE": "human_required",
     "NOCANVA_WORKSPACE_ID": "default"
   },

@@ -4,11 +4,13 @@ import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
 import { formats, postPayloadSchema, type PostContent } from "../../../lib/media";
+import { compositionFromTemplateId } from "../../../lib/compositions";
 import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } from "../../../lib/server/media-repository";
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { WorkspaceHeader } from "../../workspace-header";
+import { PuckCompositionEditor } from "./puck-composition-editor";
 
 export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
@@ -23,8 +25,11 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   const [revisions, setRevisions] = useState(initialRevisions);
   const [assets, setAssets] = useState(initialAssets);
   const [image, setImage] = useState<PostContent["image"]>(initialDraft.payload.content.image);
+  const [compositionContent, setCompositionContent] = useState<PostContent>(initialDraft.payload.content);
   const exportRef = useRef<HTMLElement>(null);
-  const payload = { brandId: draft.brandId, templateId: draft.templateId, format, content: { eyebrow, headline, support, ...(image ? { image } : {}) } };
+  const compositionId = initialDraft.payload.compositionId ?? compositionFromTemplateId(draft.templateId);
+  const content = { ...compositionContent, eyebrow, headline, support, ...(image ? { image } : { image: undefined }) };
+  const payload = { brandId: draft.brandId, templateId: draft.templateId, ...(compositionId ? { compositionId } : {}), format, content };
   const valid = postPayloadSchema.safeParse(payload).success;
 
   async function request(path: string, init: RequestInit) {
@@ -35,11 +40,12 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
     return data;
   }
 
-  async function save() {
-    if (!valid) return setNotice("Fix the structured content before saving.");
+  async function save(contentOverride?: PostContent) {
+    const payloadToSave = contentOverride ? { ...payload, content: contentOverride } : payload;
+    if (!postPayloadSchema.safeParse(payloadToSave).success) return setNotice("Fix the structured content before saving.");
     setBusy(true);
     try {
-      await request(`/api/drafts/${draft.id}`, { method: "PUT", headers: { "content-type": "application/json", "x-nocanva-created-by": "human:workspace" }, body: JSON.stringify({ expectedRevision: draft.currentRevision, payload, prompt }) });
+      await request(`/api/drafts/${draft.id}`, { method: "PUT", headers: { "content-type": "application/json", "x-nocanva-created-by": "human:workspace" }, body: JSON.stringify({ expectedRevision: draft.currentRevision, payload: payloadToSave, prompt }) });
       setNotice("Saved as a new revision. Previous approval was cleared.");
       const historyResponse = await fetch(`/api/drafts/${draft.id}/revisions`);
       if (historyResponse.ok) setRevisions((await historyResponse.json() as { revisions: DraftRevisionRecord[] }).revisions);
@@ -118,10 +124,11 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
 
   return <main className="studio-shell"><WorkspaceHeader active="drafts" /><section className="draft-workspace">
     <div className="draft-workspace-heading"><div><p className="kicker">Stable draft · revision {draft.currentRevision}</p><h1>{headline}</h1><p>{notice}</p></div><span className={`draft-status ${draft.status}`}>{draft.archivedAt ? "archived" : draft.status.replace("_", " ")}</span></div>
-    <div className="draft-workspace-grid"><section className="draft-form panel">
+    <div className={compositionId ? "draft-workspace-grid composition-editor-active" : "draft-workspace-grid"}><section className="draft-form panel">
+      {compositionId ? <PuckCompositionEditor content={content} compositionId={compositionId} payloadBase={{ brandId: draft.brandId, templateId: draft.templateId, format }} brandConfig={brand.config} template={template} disabled={busy || Boolean(draft.archivedAt)} onChange={(next) => { setCompositionContent(next); setEyebrow(next.eyebrow); setHeadline(next.headline); setSupport(next.support); }} onPublish={(next) => { setCompositionContent(next); setEyebrow(next.eyebrow); setHeadline(next.headline); setSupport(next.support); void save(next); }} /> : <>
       <label className="field"><span>Eyebrow <small>{eyebrow.length}/28</small></span><input maxLength={28} value={eyebrow} onChange={(event) => setEyebrow(event.target.value)} /></label>
       <label className="field"><span>Headline <small>{headline.length}/84</small></span><textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} /></label>
-      <label className="field"><span>Supporting copy <small>{support.length}/150</small></span><textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} /></label>
+      <label className="field"><span>Supporting copy <small>{support.length}/150</small></span><textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} /></label></>}
       <label className="field"><span>Source prompt</span><textarea maxLength={500} rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} /></label>
       <fieldset className="image-editor"><legend>Image</legend>
         <label className="image-upload"><span>Upload PNG or JPEG · max 750 KB</span><input accept="image/png,image/jpeg" disabled={busy} onChange={(event) => uploadImage(event.target.files?.[0])} type="file" /></label>
@@ -136,7 +143,7 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
         </div>}
       </fieldset>
       <div className="format-switch" aria-label="Draft format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
-      <button className="primary-button" disabled={busy || !valid || Boolean(draft.archivedAt)} onClick={save} type="button">Save new revision <span>→</span></button>
+      <button className="primary-button" disabled={busy || !valid || Boolean(draft.archivedAt)} onClick={() => save()} type="button">Save new revision <span>→</span></button>
       <dl className="draft-meta"><div><dt>Brand</dt><dd>{draft.brandName}</dd></div><div><dt>Template</dt><dd>{draft.templateName} v{draft.templateVersion}</dd></div><div><dt>Created by</dt><dd>{draft.revisionCreatedBy}</dd></div><div><dt>Approval</dt><dd>{draft.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>
       <div className="revision-history"><p className="section-label">Revision history</p>{revisions.map((revision) => <div key={revision.id}><strong>v{revision.revision}</strong><span>{revision.createdBy}</span><time>{new Date(revision.createdAt).toISOString().replace("T", " ").slice(0, 16)} UTC</time></div>)}</div>
     </section><aside className="draft-preview-panel">

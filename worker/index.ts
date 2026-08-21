@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { identityFromValidatedAccessJwt, verifyCloudflareAccessJwt } from "../lib/server/cloudflare-access";
 
 interface Env {
   ASSETS: Fetcher;
@@ -12,11 +13,39 @@ interface Env {
       };
     };
   };
+  NOCANVA_AUTH_MODE?: string;
+  NOCANVA_ACCESS_TEAM_DOMAIN?: string;
+  NOCANVA_ACCESS_AUD?: string;
 }
 
-interface ExecutionContext {
-  waitUntil(promise: Promise<unknown>): void;
-  passThroughOnException(): void;
+const ACCESS_ID_HEADER = "x-nocanva-access-user-id";
+const ACCESS_EMAIL_HEADER = "x-nocanva-access-user-email";
+const ACCESS_NAME_HEADER = "x-nocanva-access-user-name";
+
+async function requestWithAccessIdentity(request: Request, env: Env, ctx: ExecutionContext) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(ACCESS_ID_HEADER);
+  requestHeaders.delete(ACCESS_EMAIL_HEADER);
+  requestHeaders.delete(ACCESS_NAME_HEADER);
+
+  let identity: CloudflareAccessIdentity | undefined;
+  try {
+    identity = await ctx.access?.getIdentity();
+  } catch (error) {
+    console.error(JSON.stringify({ event: "access_identity_lookup_failed", error: error instanceof Error ? error.message : "Unknown error" }));
+  }
+  const accessJwt = request.headers.get("cf-access-jwt-assertion");
+  const jwtIdentity = ctx.access
+    ? identityFromValidatedAccessJwt(accessJwt)
+    : await verifyCloudflareAccessJwt(accessJwt, env.NOCANVA_ACCESS_TEAM_DOMAIN ?? "", env.NOCANVA_ACCESS_AUD ?? "");
+  const userId = identity?.user_uuid?.trim() || identity?.email?.trim() || jwtIdentity?.userId;
+  if (userId) requestHeaders.set(ACCESS_ID_HEADER, userId);
+  const email = identity?.email?.trim() || jwtIdentity?.email;
+  const name = identity?.name?.trim() || jwtIdentity?.name;
+  if (email) requestHeaders.set(ACCESS_EMAIL_HEADER, email);
+  if (name) requestHeaders.set(ACCESS_NAME_HEADER, name);
+  if (ctx.access && !userId) console.error(JSON.stringify({ event: "access_identity_missing", aud: ctx.access.aud }));
+  return new Request(request, { headers: requestHeaders });
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -40,7 +69,11 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    const authenticatedRequest = await requestWithAccessIdentity(request, env, ctx);
+    if (env.NOCANVA_AUTH_MODE === "cloudflare_access" && !authenticatedRequest.headers.has(ACCESS_ID_HEADER) && !authenticatedRequest.headers.get("authorization")?.startsWith("Bearer ")) {
+      return new Response("Cloudflare Access identity validation failed.", { status: 403, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+    }
+    return handler.fetch(authenticatedRequest, env, ctx);
   },
 };
 

@@ -28,6 +28,9 @@ try {
   for (const name of ["canvnah_list_brands", "canvnah_create_brand", "canvnah_list_templates", "canvnah_create_template", "canvnah_review_template", "canvnah_create_post", "canvnah_render_post", "canvnah_get_render", "canvnah_rerender"]) {
     assert.ok(toolNames.includes(name), `Missing MCP tool: ${name}`);
   }
+  assert.ok(toolNames.includes("nocanva_list_compositions"), "Missing MCP tool: nocanva_list_compositions");
+  const compositionResult = structured(await client.callTool({ name: "nocanva_list_compositions", arguments: { brandId: "blindspot", recentLimit: 20 } }));
+  assert.deepEqual(compositionResult.compositions.map((composition) => composition.id), ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
 
   const brand = structured(await client.callTool({
     name: "canvnah_create_brand",

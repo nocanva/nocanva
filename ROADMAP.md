@@ -1,5 +1,11 @@
 # NoCanva product and delivery roadmap
 
+## Current priority — Blindspot creative engine
+
+Platform expansion is frozen. The immediate release gate is the Blindspot-first workflow documented in [`docs/BLINDSPOT_CREATIVE_ENGINE.md`](docs/BLINDSPOT_CREATIVE_ENGINE.md): six semantic composition families, a constrained Puck editing adapter over canonical NoCanva data, shared React artwork for editor and renderer, recent-post variety guidance, a fixed eight-question multimodal review loop, and a 20-task outcome benchmark.
+
+Success means at least 70% of benchmark outputs are publishable without design edits and median human effort is below two minutes. Scheduling, collaboration, video, marketplaces, additional auth/storage work, and new brand expansion stay frozen until that gate passes. The historical milestones below remain useful infrastructure context, not the active product backlog.
+
 NoCanva is the open-source creative workspace for AI agents. An agent turns repository evidence, release notes, documentation, or a campaign brief into brand-ready media; NoCanva supplies deterministic rendering, reviewable drafts, reproducible assets, and a shared workspace.
 
 Users can self-host the complete core product or use NoCanva Cloud for managed infrastructure, authenticated remote access, teams, storage, and operational reliability. NoCanva does not require a built-in LLM. Codex, Claude Code, or another multimodal agent supplies copy, creative reasoning, and visual critique.

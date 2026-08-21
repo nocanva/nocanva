@@ -1,14 +1,22 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
-import { brandConfigSchema, postImageSchema, templateInputSchema } from "../lib/media";
+import { brandConfigSchema, postContentSchema, templateInputSchema } from "../lib/media";
+import { compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
 
-const contentSchema = z.object({
-  eyebrow: z.string().trim().min(1).max(28).describe("Short section label, up to 28 characters."),
-  headline: z.string().trim().min(1).max(84).describe("Primary claim, up to 84 characters."),
-  support: z.string().trim().min(1).max(150).describe("Supporting explanation, up to 150 characters."),
-  image: postImageSchema.optional().describe("Optional immutable workspace image with deterministic crop controls."),
-});
+const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
+const draftPayloadInputSchema = z.object({
+  brandId: z.string(),
+  templateId: z.string().optional().describe("Existing template ID. Prefer compositionId for Blindspot creative work."),
+  compositionId: compositionIdSchema.optional().describe("Approved semantic composition family."),
+  format: z.enum(["portrait", "square"]),
+  content: contentSchema,
+}).refine((value) => value.templateId || value.compositionId, { message: "Provide compositionId or templateId." });
+
+function resolveDraftPayload(input: z.infer<typeof draftPayloadInputSchema>) {
+  const templateId = input.compositionId ? compositionTemplateIds[input.compositionId] : input.templateId!;
+  return { brandId: input.brandId, templateId, ...(input.compositionId ? { compositionId: input.compositionId } : {}), format: input.format, content: input.content };
+}
 
 function result(value: Record<string, unknown>) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }], structuredContent: value };
@@ -20,7 +28,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     {
       capabilities: { tools: {} },
       instructions:
-        "Primary workflow: get the approved brand, list and reuse templates, create a stable draft or 3–7 slide carousel, review its pinned revision and visually inspect every returned PNG, approve that exact review, render it, then inspect the immutable render. Retrieve current state before updating so expectedRevision cannot overwrite newer edits. Brand/template creation is advanced setup. Never invent claims or publish externally.",
+        "Primary workflow — Blindspot-first: get the approved brand, inspect approved compositions and recent work, choose a visually distinct semantic composition, create a stable draft, review its pinned revision and visually inspect the PNG against all eight rubric questions, revise up to three times, approve that exact review, render it, then inspect the immutable render. Retrieve current state before updating so expectedRevision cannot overwrite human edits. Never invent claims, expose Puck JSON, use arbitrary layout coordinates, or publish externally.",
     },
   );
   const client = new CanvnahClient(baseUrl, context);
@@ -53,6 +61,22 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     annotations: { readOnlyHint: true },
   }, async ({ brandId }) => result({ templates: await client.listTemplates(brandId) }));
 
+  server.registerTool("nocanva_list_compositions", {
+    title: "List approved NoCanva compositions",
+    description: "List Blindspot's six semantic composition families plus recent usage warnings. Choose by story purpose, not coordinates.",
+    inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20) }),
+    annotations: { readOnlyHint: true },
+  }, async ({ brandId, candidate, recentLimit }) => {
+    const recent = (await client.listDrafts(recentLimit, false)).filter((draft) => draft.brandId === brandId).map((draft) => ({
+      draftId: draft.id,
+      compositionId: draft.payload.compositionId,
+      backgroundStyle: draft.payload.content.backgroundStyle,
+      headline: draft.payload.content.headline,
+      workspaceUrl: draft.workspaceUrl,
+    }));
+    return result({ brandId, compositions: Object.values(compositions), recent, warnings: recentCompositionWarnings(recent, candidate) });
+  });
+
   server.registerTool("nocanva_list_drafts", {
     title: "List NoCanva drafts",
     description: "List current workspace drafts and their latest revisions.",
@@ -70,22 +94,16 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   server.registerTool("nocanva_create_draft", {
     title: "Create NoCanva draft",
     description: "Create a stable editable draft using an existing brand and approved template.",
-    inputSchema: z.object({
-      brandId: z.string(), templateId: z.string(), format: z.enum(["portrait", "square"]), content: contentSchema,
-      prompt: z.string().trim().max(500).optional(),
-    }),
+    inputSchema: draftPayloadInputSchema.safeExtend({ prompt: z.string().trim().max(500).optional() }),
     annotations: { destructiveHint: false, idempotentHint: false },
-  }, async ({ prompt, ...payload }) => result({ draft: await client.createDraft(payload, prompt) }));
+  }, async ({ prompt, ...input }) => result({ draft: await client.createDraft(resolveDraftPayload(input), prompt) }));
 
   server.registerTool("nocanva_update_draft", {
     title: "Update NoCanva draft",
     description: "Create a new immutable draft revision. expectedRevision prevents overwriting newer human or agent edits.",
-    inputSchema: z.object({
-      draftId: z.string().uuid(), expectedRevision: z.number().int().positive(), brandId: z.string(), templateId: z.string(),
-      format: z.enum(["portrait", "square"]), content: contentSchema, prompt: z.string().trim().max(500).optional(),
-    }),
+    inputSchema: draftPayloadInputSchema.safeExtend({ draftId: z.string().uuid(), expectedRevision: z.number().int().positive(), prompt: z.string().trim().max(500).optional() }),
     annotations: { destructiveHint: false, idempotentHint: false },
-  }, async ({ draftId, expectedRevision, prompt, ...payload }) => result({ draft: await client.updateDraft(draftId, expectedRevision, payload, prompt) }));
+  }, async ({ draftId, expectedRevision, prompt, ...input }) => result({ draft: await client.updateDraft(draftId, expectedRevision, resolveDraftPayload(input), prompt) }));
 
   server.registerTool("nocanva_review_draft", {
     title: "Review NoCanva draft",
@@ -97,10 +115,10 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     const { imageBase64, ...review } = reviewed.review;
     return {
       content: [
-        { type: "text" as const, text: JSON.stringify({ draft: reviewed.draft, review }, null, 2) },
+        { type: "text" as const, text: JSON.stringify({ draft: reviewed.draft, review, contentWarnings: creativeContentWarnings(reviewed.draft.payload.content), visualReviewRubric, maxAgentIterations: 3 }, null, 2) },
         { type: "image" as const, data: imageBase64, mimeType: "image/png" },
       ],
-      structuredContent: { draft: reviewed.draft, review },
+      structuredContent: { draft: reviewed.draft, review, contentWarnings: creativeContentWarnings(reviewed.draft.payload.content), visualReviewRubric, maxAgentIterations: 3 },
     };
   });
 

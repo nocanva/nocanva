@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostContent, type PostPayload, type TemplateInput } from "../lib/media";
+import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateInputSchema, type BrandConfig, type PostContent, type PostPayload, type RendererKey, type TemplateInput } from "../lib/media";
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
-export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal" | "bloom"; contentSchema: unknown; createdAt: number };
+export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; contentSchema: unknown; createdAt: number };
 export type AssetResult = { id: string; name: string; mimeType: "image/png" | "image/jpeg"; width: number; height: number; sha256: string; archivedAt: number | null; createdBy: string; createdAt: number; contentUrl: string };
 export type PostResult = { id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload; createdBy: string; createdAt: number };
 export type DraftResult = {
@@ -57,6 +57,7 @@ export type RenderCaptureOutput = {
   outside: number;
   overflowing: number;
   collapsed: number;
+  typographic: number;
   templateVersion: string | null;
 };
 
@@ -368,6 +369,7 @@ export class CanvnahClient {
       { id: "bounds", passed: capture.outside === 0, detail: capture.outside === 0 ? "Every region stays inside the canvas." : `${capture.outside} region(s) leave the canvas.` },
       { id: "overflow", passed: capture.overflowing === 0, detail: capture.overflowing === 0 ? "No text is clipped." : `${capture.overflowing} region(s) are clipped.` },
       { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
+      { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, or an orphaned final fragment.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];
     return {

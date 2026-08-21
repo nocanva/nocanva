@@ -18,7 +18,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["canvnah_list_brands", "canvnah_create_brand", "canvnah_list_templates", "canvnah_create_template", "canvnah_review_template", "canvnah_create_post", "canvnah_list_posts", "canvnah_render_post", "canvnah_list_renders", "canvnah_get_render", "canvnah_rerender"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
-  for (const tool of ["nocanva_get_brand", "nocanva_list_templates", "nocanva_list_drafts", "nocanva_get_draft", "nocanva_create_draft", "nocanva_update_draft", "nocanva_review_draft", "nocanva_approve_draft", "nocanva_archive_draft", "nocanva_render", "nocanva_get_render"]) {
+  for (const tool of ["nocanva_get_brand", "nocanva_list_templates", "nocanva_list_compositions", "nocanva_list_drafts", "nocanva_get_draft", "nocanva_create_draft", "nocanva_update_draft", "nocanva_review_draft", "nocanva_approve_draft", "nocanva_archive_draft", "nocanva_render", "nocanva_get_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
   for (const tool of ["nocanva_list_carousels", "nocanva_get_carousel", "nocanva_create_carousel", "nocanva_update_carousel", "nocanva_review_carousel", "nocanva_approve_carousel", "nocanva_archive_carousel", "nocanva_render_carousel", "nocanva_get_carousel_render"]) {
@@ -32,6 +32,9 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(worker, /createMcpHandler/);
   assert.match(worker, /createCloudflareRenderer/);
   assert.match(server, /Primary workflow/);
+  assert.match(server, /visualReviewRubric/);
+  assert.match(server, /contentWarnings: creativeContentWarnings/);
+  assert.match(server, /maxAgentIterations: 3/);
   assert.match(fixture, /Create a Sprout post from the Fortwin AI product repository/);
   assert.match(draftFixture, /stale\.isError/);
   assert.match(draftFixture, /pinnedTemplateVersionId/);

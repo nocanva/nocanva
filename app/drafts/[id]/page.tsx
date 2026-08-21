@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@puckeditor/core/puck.css";
 import { notFound } from "next/navigation";
 import { getBrandById, getDraftById, getTemplateVersionById, listDraftRevisions, recordDraftOpened } from "../../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../../lib/server/request-auth";

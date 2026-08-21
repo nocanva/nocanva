@@ -1,11 +1,12 @@
 import { env } from "cloudflare:workers";
-import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type TemplateInput } from "../media";
+import { compositionFromTemplateId, compositionTemplateIds, compositions, type CompositionId } from "../compositions";
+import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, templateInputSchema, templates, type BrandConfig, type DraftStatus, type PostPayload, type RendererKey, type TemplateInput } from "../media";
 import { validateContentAssets } from "./asset-repository";
 
 type D1Row = Record<string, unknown>;
 
 export type BrandRecord = { id: string; name: string; config: BrandConfig; createdAt: number };
-export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: "statement" | "signal" | "bloom"; contentSchema: Record<string, unknown>; createdAt: number };
+export type TemplateRecord = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; contentSchema: Record<string, unknown>; createdAt: number };
 export type PostRecord = {
   id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload;
   createdBy: string; createdAt: number;
@@ -149,13 +150,30 @@ async function seedWorkspace(workspaceId: string) {
   const brandId = physicalId(workspaceId, brand.id);
   const statementId = physicalId(workspaceId, "statement");
   const signalId = physicalId(workspaceId, "signal");
+  const compositionStatements = (Object.entries(compositionTemplateIds) as Array<[CompositionId, string]>).flatMap(([compositionId, templateId]) => {
+    const definition = compositions[compositionId];
+    const storedTemplateId = physicalId(workspaceId, templateId);
+    const schema = JSON.stringify({ required: definition.requiredFields, optional: definition.optionalFields, blocks: definition.blocks });
+    return [
+      db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(storedTemplateId, workspaceId, brandId, definition.name, compositionId, schema, createdAt),
+      db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@1`, workspaceId, storedTemplateId, 1, compositionId, JSON.stringify({ description: definition.purpose, composition: definition }), createdAt),
+      db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@2`, workspaceId, storedTemplateId, 2, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "blindspot-quality-pass-v2" }), createdAt + 1),
+    ];
+  });
   await db.batch([
     db.prepare("INSERT OR IGNORE INTO brands (id, workspace_id, name, config_json, created_at) VALUES (?, ?, ?, ?, ?)").bind(brandId, workspaceId, brand.name, JSON.stringify(brand), createdAt),
     db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(statementId, workspaceId, brandId, templates.statement.name, "statement", contentSchema, createdAt),
     db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(signalId, workspaceId, brandId, templates.signal.name, "signal", contentSchema, createdAt),
     db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${statementId}@1`, workspaceId, statementId, 1, "statement", JSON.stringify(templates.statement), createdAt),
     db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${signalId}@1`, workspaceId, signalId, 1, "signal", JSON.stringify(templates.signal), createdAt),
+    ...compositionStatements,
   ]);
+  const seededBrand = await db.prepare("SELECT config_json FROM brands WHERE id = ? AND workspace_id = ? LIMIT 1").bind(brandId, workspaceId).first<{ config_json: string }>();
+  if (seededBrand) {
+    const existingConfig = JSON.parse(String(seededBrand.config_json)) as Partial<BrandConfig>;
+    const expandedConfig = brandConfigSchema.parse({ ...brand, ...existingConfig });
+    await db.prepare("UPDATE brands SET config_json = ? WHERE id = ? AND workspace_id = ?").bind(JSON.stringify(expandedConfig), brandId, workspaceId).run();
+  }
 }
 
 async function recordWorkspaceEvent(workspaceId: string, action: string, entityType: string, entityId: string, actor: string, metadata: Record<string, unknown> = {}) {
@@ -327,6 +345,13 @@ async function validatePayloadReferences(payload: PostPayload, workspaceId: stri
   if (!brandRecord) throw new Error("The selected brand does not exist.");
   if (!templateRecord) throw new Error("The selected template does not exist.");
   if (templateRecord.brandId !== brandRecord.id) throw new Error("The selected template does not belong to the selected brand.");
+  const composition = compositionFromTemplateId(templateRecord.id);
+  if (payload.compositionId && payload.compositionId !== composition) throw new Error("The composition ID does not match the selected template.");
+  if (composition === "real_but" && !payload.content.image) throw new Error("The Real, but… composition requires a source image.");
+  if (composition === "receipt" && (!payload.content.image || !payload.content.evidence)) throw new Error("The Receipt composition requires both an evidence image and source detail.");
+  if (composition === "product" && !payload.content.image) throw new Error("The Product composition requires a real product screenshot.");
+  if (composition === "whats_missing" && payload.format !== "portrait") throw new Error("The What’s missing composition is a portrait carousel narrative.");
+  if (composition === "explainer" && (payload.format !== "portrait" || !payload.content.steps)) throw new Error("The Explainer composition requires portrait format and three to five steps.");
   await validateContentAssets([payload.content], workspaceId);
 }
 
@@ -341,6 +366,7 @@ async function mapDraft(row: D1Row, workspaceId: string): Promise<DraftRecord> {
   const payload = postPayloadSchema.parse({
     brandId: logicalId(workspaceId, row.brand_id),
     templateId: logicalId(workspaceId, row.template_id),
+    compositionId: compositionFromTemplateId(logicalId(workspaceId, row.template_id)),
     format: row.format,
     content: JSON.parse(String(row.content_json)),
   });

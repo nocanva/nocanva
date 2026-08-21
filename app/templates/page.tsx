@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { PostPayload } from "../../lib/media";
 import { listBrands, listTemplates } from "../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
@@ -19,7 +20,7 @@ export default async function TemplatesPage() {
   });
   return (
     <main className="studio-shell"><WorkspaceHeader active="templates" /><section className="collection-page">
-      <div className="collection-heading"><p className="kicker">Template library</p><h1>Reusable visual systems.</h1><p>Versioned templates turn validated content into predictable layouts.</p></div>
+      <div className="collection-heading"><p className="kicker">Template library</p><h1>Reusable visual systems.</h1><p>Versioned templates turn validated content into predictable layouts.</p><Link className="primary-button" href="/labs/template-editor">Open constrained editor proof <span>→</span></Link></div>
       <div className="template-library">{latestRecords.map((item) => {
         const brandRecord = brandRecords.get(item.brandId);
         if (!brandRecord) return null;

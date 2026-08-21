@@ -1,0 +1,26 @@
+{
+  "name": "Blindspot creative engine v1",
+  "success": { "publishableWithoutDesignEditsPercent": 70, "medianHumanSecondsMaximum": 120 },
+  "tasks": [
+    { "id": "product-01", "category": "product", "brief": "Announce a new claim-context panel using a real product screenshot.", "composition": "product", "asset": "product screenshot", "format": "portrait" },
+    { "id": "product-02", "category": "product", "brief": "Show the faster source-checking workflow with the result screen as hero.", "composition": "product", "asset": "product screenshot", "format": "square" },
+    { "id": "product-03", "category": "product", "brief": "Explain a release-note change in one specific, verifiable headline.", "composition": "claim", "asset": "none", "format": "portrait" },
+    { "id": "product-04", "category": "product", "brief": "Demonstrate a provenance view and highlight the source region.", "composition": "receipt", "asset": "annotated product screenshot", "format": "portrait" },
+    { "id": "product-05", "category": "product", "brief": "Turn three verified improvements into a saveable workflow card.", "composition": "explainer", "asset": "none", "format": "portrait" },
+    { "id": "misinfo-01", "category": "misinformation", "brief": "Correct a real photo shared with the wrong location.", "composition": "real_but", "asset": "source photo", "format": "portrait" },
+    { "id": "misinfo-02", "category": "misinformation", "brief": "Correct an old video frame presented as breaking news.", "composition": "real_but", "asset": "source frame", "format": "square" },
+    { "id": "misinfo-03", "category": "misinformation", "brief": "State why a screenshot without source and date is not proof.", "composition": "claim", "asset": "none", "format": "portrait" },
+    { "id": "misinfo-04", "category": "misinformation", "brief": "Reveal the missing date behind a viral claim.", "composition": "whats_missing", "asset": "optional evidence", "format": "portrait", "slides": 3 },
+    { "id": "misinfo-05", "category": "misinformation", "brief": "Show the original source next to the misleading excerpt.", "composition": "receipt", "asset": "source screenshot", "format": "portrait" },
+    { "id": "explainer-01", "category": "explainer", "brief": "Teach three checks before sharing a viral image.", "composition": "explainer", "asset": "none", "format": "portrait" },
+    { "id": "explainer-02", "category": "explainer", "brief": "Explain reverse-image search in four concise steps.", "composition": "explainer", "asset": "none", "format": "portrait" },
+    { "id": "explainer-03", "category": "explainer", "brief": "Explain what metadata can and cannot establish.", "composition": "whats_missing", "asset": "optional evidence", "format": "portrait", "slides": 4 },
+    { "id": "receipt-01", "category": "evidence", "brief": "Use an official notice as the central proof and name the source.", "composition": "receipt", "asset": "official notice screenshot", "format": "portrait" },
+    { "id": "receipt-02", "category": "evidence", "brief": "Highlight the decisive sentence in a primary source.", "composition": "receipt", "asset": "primary source screenshot", "format": "square" },
+    { "id": "receipt-03", "category": "evidence", "brief": "Contrast the viral caption with the source's actual wording.", "composition": "receipt", "asset": "source screenshot", "format": "portrait" },
+    { "id": "light-01", "category": "light", "brief": "A light post: zooming into pixels is not the same as adding context.", "composition": "claim", "asset": "none", "format": "square" },
+    { "id": "light-02", "category": "light", "brief": "A playful real-but correction about a familiar recycled image.", "composition": "real_but", "asset": "source image", "format": "portrait" },
+    { "id": "carousel-01", "category": "carousel", "brief": "Hook with a claim, reveal missing context, finish with evidence.", "composition": "whats_missing", "asset": "evidence screenshot", "format": "portrait", "slides": 3 },
+    { "id": "carousel-02", "category": "carousel", "brief": "Teach a four-step verification habit with one action per slide.", "composition": "explainer", "asset": "none", "format": "portrait", "slides": 4 }
+  ]
+}

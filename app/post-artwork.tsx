@@ -1,7 +1,7 @@
 import { forwardRef, type CSSProperties } from "react";
-import { brand, formats, templates, type BrandConfig, type PostPayload } from "../lib/media";
+import { brand, formats, templates, type BrandConfig, type PostPayload, type RendererKey } from "../lib/media";
+import { ArtworkImage, Body, BrandHeader, CTA, Evidence, Eyebrow, Headline, Highlight, LogoFooter, Metric } from "./artwork-blocks";
 
-type RendererKey = "statement" | "signal" | "bloom";
 type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey };
 type PostArtworkProps = { payload: PostPayload; mode?: "preview" | "export"; brandConfig?: BrandConfig; template?: ArtworkTemplate };
 
@@ -99,6 +99,94 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
   );
 }
 
+function StandardHeader({ brandConfig, dimensions }: { brandConfig: BrandConfig; dimensions: { width: number; height: number } }) {
+  return <header data-render-region="brand-header"><span className="post-logo">{brandConfig.name.toUpperCase()}<span>●</span></span><span className="post-format">{dimensions.width} × {dimensions.height}</span></header>;
+}
+
+function StandardFooter({ brandConfig }: { brandConfig: BrandConfig }) {
+  return <footer data-render-region="brand-footer"><span>{brandConfig.tagline}</span><span>{brandConfig.website}</span></footer>;
+}
+
+function TerminalArtwork({ brandConfig, content, dimensions }: { brandConfig: BrandConfig; content: PostPayload["content"]; dimensions: { width: number; height: number } }) {
+  return (
+    <>
+      <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
+      {content.image && <MediaFrame image={content.image} />}
+      <div className="terminal-window" data-render-region="content">
+        <div className="terminal-bar" aria-hidden><span /><span /><span /><b>~/prompt</b></div>
+        <div className="terminal-body">
+          <p className="post-eyebrow"><i>$</i> {content.eyebrow}</p>
+          <h2 data-render-region="headline">{content.headline}</h2>
+          <div className="terminal-output"><i aria-hidden>›</i><p className="post-support" data-render-region="support">{content.support}</p></div>
+          <span className="terminal-cursor" aria-hidden />
+        </div>
+      </div>
+      <StandardFooter brandConfig={brandConfig} />
+    </>
+  );
+}
+
+function SplitArtwork({ brandConfig, content, dimensions }: { brandConfig: BrandConfig; content: PostPayload["content"]; dimensions: { width: number; height: number } }) {
+  return (
+    <>
+      <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
+      {content.image && <MediaFrame image={content.image} />}
+      <div className="split-layout" data-render-region="content">
+        <aside aria-hidden><span>02</span><i /></aside>
+        <section>
+          <p className="post-eyebrow">{content.eyebrow}</p>
+          <h2 data-render-region="headline">{content.headline}</h2>
+          <div className="split-support"><span aria-hidden>→</span><p className="post-support" data-render-region="support">{content.support}</p></div>
+        </section>
+      </div>
+      <StandardFooter brandConfig={brandConfig} />
+    </>
+  );
+}
+
+function LedgerArtwork({ brandConfig, content, dimensions }: { brandConfig: BrandConfig; content: PostPayload["content"]; dimensions: { width: number; height: number } }) {
+  return (
+    <>
+      <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
+      {content.image && <MediaFrame image={content.image} />}
+      <div className="ledger-layout" data-render-region="content">
+        <p className="post-eyebrow">{content.eyebrow}</p>
+        <h2 data-render-region="headline">{content.headline}</h2>
+        <div className="ledger-steps" aria-hidden>
+          <span><b>01</b><i /></span><span><b>02</b><i /></span><span><b>03</b><i /></span>
+        </div>
+        <p className="post-support" data-render-region="support">{content.support}</p>
+      </div>
+      <StandardFooter brandConfig={brandConfig} />
+    </>
+  );
+}
+
+function ClaimArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  return <><BrandHeader brand={brandConfig} label="Verified context" /><section className="claim-layout" data-render-region="content"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="claim-detail"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} /></>;
+}
+
+function RealButArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  return <><BrandHeader brand={brandConfig} label="Context check" /><section className="real-but-layout" data-render-region="content">{content.image && <ArtworkImage image={content.image} />}<div className="real-but-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="real-but-detail"><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div></div></section><LogoFooter brand={brandConfig} index="REAL ≠ ACCURATE" /></>;
+}
+
+function ReceiptArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  return <><BrandHeader brand={brandConfig} label="Evidence receipt" /><section className="receipt-layout" data-render-region="content"><div className="receipt-lead"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="receipt-proof">{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="evidence" />}<Evidence evidence={content.evidence} /></div><div className="receipt-conclusion"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} index="PRIMARY SOURCE" /></>;
+}
+
+function WhatsMissingArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className="missing-layout" data-render-region="content"><span className="missing-index" aria-hidden>?</span><div className="missing-question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer"><span>Missing context</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div><div className="missing-source"><Evidence evidence={content.evidence} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="FIND THE GAP" /></>;
+}
+
+function ProductArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  return <><BrandHeader brand={brandConfig} label="Product update" /><section className="product-layout" data-render-region="content"><div className="product-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="product-detail"><Body>{content.support}</Body><CTA>{content.cta}</CTA></div></div>{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="screenshot" />}</section><LogoFooter brand={brandConfig} index="PRODUCT / CONTEXT" /></>;
+}
+
+function ExplainerArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  const steps = content.steps ?? [content.support, "Check the original source", "Compare date, place, and surrounding context"];
+  return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-layout" data-render-region="content"><div className="explainer-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><ol>{steps.map((step, index) => <li data-render-region="step" key={`${index}-${step}`}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol><div className="explainer-action"><Metric value={content.metric} label={content.metricLabel} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
+}
+
 export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function PostArtwork(
   { payload, mode = "preview", brandConfig = brand, template },
   ref,
@@ -118,6 +206,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     "--brand-signal": brandConfig.colors.signal,
     "--brand-muted": brandConfig.colors.muted,
     "--brand-paper": brandConfig.colors.paper,
+    "--brand-ink": brandConfig.colors.ink,
     "--brand-accent": brandConfig.colors.accent ?? brandConfig.colors.signal,
     "--brand-signal-bright": `color-mix(in srgb, ${brandConfig.colors.signal} 68%, #ffffff)`,
     "--brand-ink-deep": `color-mix(in srgb, ${brandConfig.colors.ink} 82%, ${brandConfig.colors.signal})`,
@@ -133,14 +222,19 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
       aria-label={`Rendered ${brandConfig.name} post`}
     >
-      {resolvedTemplate.rendererKey === "bloom" ? (
-        <BloomArtwork brandConfig={brandConfig} content={content} />
-      ) : (
+      {resolvedTemplate.rendererKey === "bloom" ? <BloomArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "claim" ? <ClaimArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "real_but" ? <RealButArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "receipt" ? <ReceiptArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "whats_missing" ? <WhatsMissingArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "product" ? <ProductArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "explainer" ? <ExplainerArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "terminal" ? <TerminalArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} />
+      : resolvedTemplate.rendererKey === "split" ? <SplitArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} />
+      : resolvedTemplate.rendererKey === "ledger" ? <LedgerArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} />
+      : (
         <>
-          <header data-render-region="brand-header">
-            <span className="post-logo">{brandConfig.name.toUpperCase()}<span>●</span></span>
-            <span className="post-format">{dimensions.width} × {dimensions.height}</span>
-          </header>
+          <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
           {content.image && <MediaFrame image={content.image} />}
           <div className="post-content" data-render-region="content">
             <p className="post-eyebrow">{content.eyebrow}</p>
@@ -149,7 +243,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
             <div className="red-rule" />
             <p className="post-support" data-render-region="support">{content.support}</p>
           </div>
-          <footer data-render-region="brand-footer"><span>{brandConfig.tagline}</span><span>{brandConfig.website}</span></footer>
+          <StandardFooter brandConfig={brandConfig} />
         </>
       )}
     </article>

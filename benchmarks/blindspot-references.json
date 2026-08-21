@@ -1,0 +1,16 @@
+{
+  "brandId": "blindspot",
+  "policy": "References are approved, evidence-backed Blindspot outputs only. Layout QA captures are candidates, never brand references or generative-image style prompts.",
+  "minimumApproved": 5,
+  "maximumApproved": 10,
+  "environment": "local visual QA · 2026-08-21",
+  "status": "awaiting real Blindspot source material and human brand approval",
+  "references": [],
+  "qaCandidates": [
+    { "composition": "claim", "draftId": "b3e11139-c7b3-4b73-a43c-0fe99e2b2859", "templateVersionId": "claim@2", "width": 1080, "height": 1350, "sha256": "8109f3ee0fe1fa78bf02b19bbc397f7b03eed70331f1f473fd5238e94ec6528f" },
+    { "composition": "real_but", "draftId": "44ef6064-b049-4f51-b3e9-95e180f22d99", "templateVersionId": "real-but@2", "width": 1080, "height": 1350, "sha256": "fc20989cb11d2a4ad0ccbed114eaf4d073efe447fa6817fdaddabdfb10efdeb1" },
+    { "composition": "receipt", "draftId": "0f34f408-ae87-4a3f-a603-93b8985b0396", "templateVersionId": "receipt@2", "width": 1080, "height": 1350, "sha256": "debf616b15b11275d609977f061d6e5be6d7b0aae1dd9152daa0a43eaed634cb" },
+    { "composition": "whats_missing", "draftId": "36d20101-3762-4a02-a2c2-3c5818843223", "templateVersionId": "whats-missing@2", "width": 1080, "height": 1350, "sha256": "cbe78b32d8fb2db19fd01f5315a9b016f25b09f48784fa2796ad5d3cedeb6272" },
+    { "composition": "explainer", "draftId": "0cbb9d1d-3912-4ae8-91f6-d07848516268", "templateVersionId": "explainer@2", "width": 1080, "height": 1350, "sha256": "f4754efcf3ed9bf0f5a39d240c4d1050c26b1012f37b39e8caacf23a1454ed8b" }
+  ]
+}

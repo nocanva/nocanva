@@ -37,6 +37,22 @@ test("Sites identity ignores spoofed actor and workspace headers", async () => {
   assert.deepEqual(principal, { kind: "sites-user", actor: "human:user-123", workspaceId: "trusted-team" });
 });
 
+test("Cloudflare Access identity is attributed inside the configured workspace", async () => {
+  const principal = await resolvePrincipal(new Headers({
+    "x-nocanva-access-user-id": "access-user-123",
+    "x-nocanva-actor-id": "agent:spoofed",
+    "x-nocanva-workspace-id": "other-team",
+  }), { mode: "cloudflare_access", workspaceId: "trusted-team", serviceToken });
+  assert.deepEqual(principal, { kind: "access-user", actor: "human:access-user-123", workspaceId: "trusted-team" });
+});
+
+test("Cloudflare Access mode fails closed without an injected identity", async () => {
+  assert.equal(await resolvePrincipal(new Headers({
+    "x-nocanva-actor-id": "human:spoofed",
+    "oai-authenticated-user-id": "sites-user-spoofed",
+  }), { mode: "cloudflare_access", workspaceId: "trusted-team", serviceToken }), null);
+});
+
 test("every media API route except health enforces the application boundary", async () => {
   const routes = [
     "brands/route.ts", "brands/[id]/route.ts", "templates/route.ts", "posts/route.ts", "posts/[id]/route.ts",

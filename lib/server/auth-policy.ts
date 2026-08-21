@@ -1,6 +1,6 @@
-export type NoCanvaAuthMode = "disabled" | "sites_private";
+export type NoCanvaAuthMode = "disabled" | "sites_private" | "cloudflare_access";
 export type NoCanvaPrincipal = {
-  kind: "local" | "service" | "sites-user";
+  kind: "local" | "service" | "sites-user" | "access-user";
   actor: string;
   workspaceId: string;
 };
@@ -63,6 +63,10 @@ export async function resolvePrincipal(requestHeaders: Headers, config: NoCanvaA
   }
 
   const userId = requestHeaders.get("oai-authenticated-user-id")?.trim();
-  if (userId) return { kind: "sites-user", actor: `human:${userId}`, workspaceId: configuredWorkspaceId(config.workspaceId) };
+  if (config.mode === "sites_private" && userId) return { kind: "sites-user", actor: `human:${userId}`, workspaceId: configuredWorkspaceId(config.workspaceId) };
+  const accessUserId = requestHeaders.get("x-nocanva-access-user-id")?.trim();
+  if (config.mode === "cloudflare_access" && accessUserId) {
+    return { kind: "access-user", actor: `human:${accessUserId}`, workspaceId: configuredWorkspaceId(config.workspaceId) };
+  }
   return null;
 }

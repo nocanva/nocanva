@@ -8,8 +8,10 @@ type AuthorizationResult =
   | { ok: true; principal: NoCanvaPrincipal }
   | { ok: false; response: Response };
 
-function authMode(): "disabled" | "sites_private" {
-  return env.NOCANVA_AUTH_MODE === "sites_private" ? "sites_private" : "disabled";
+function authMode(): "disabled" | "sites_private" | "cloudflare_access" {
+  if (env.NOCANVA_AUTH_MODE === "sites_private") return "sites_private";
+  if (env.NOCANVA_AUTH_MODE === "cloudflare_access") return "cloudflare_access";
+  return "disabled";
 }
 
 export async function resolveNoCanvaPrincipal(requestHeaders: Headers): Promise<NoCanvaPrincipal | null> {
@@ -35,5 +37,6 @@ export async function authorizeApi(request: Request): Promise<AuthorizationResul
 export async function requireNoCanvaViewer(returnTo = "/") {
   const principal = await resolveNoCanvaPrincipal(await headers());
   if (principal) return principal;
-  redirect(chatGPTSignInPath(returnTo));
+  if (authMode() === "sites_private") redirect(chatGPTSignInPath(returnTo));
+  throw new Error("Cloudflare Access did not supply an authenticated identity.");
 }
