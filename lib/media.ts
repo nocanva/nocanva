@@ -48,12 +48,12 @@ export const templates = {
   statement: { id: "statement", name: "Editorial statement", description: "One strong idea with a sharp supporting line.", version: 1 },
   signal: { id: "signal", name: "Signal card", description: "A numbered claim for a recurring evidence series.", version: 1 },
   bloom: { id: "bloom", name: "Bloom card", description: "An illustrated card with a serif headline, leaf motifs and a channel footer.", version: 1 },
-  claim: { id: "claim", name: compositions.claim.name, description: compositions.claim.purpose, version: 2 },
-  "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 2 },
-  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 2 },
-  "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 2 },
-  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 2 },
-  explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 2 },
+  claim: { id: "claim", name: compositions.claim.name, description: compositions.claim.purpose, version: 3 },
+  "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 3 },
+  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 3 },
+  "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 3 },
+  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 3 },
+  explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 3 },
 } as const;
 
 export const posterLayoutSchema = z.object({
@@ -75,7 +75,7 @@ export const formats = {
   square: { id: "square", label: "1:1", width: 1080, height: 1080 },
 } as const;
 
-export const rendererKeySchema = z.enum(["statement", "signal", "bloom", "terminal", "split", "ledger", "claim", "real_but", "receipt", "whats_missing", "product", "explainer", "layout"]);
+export const rendererKeySchema = z.enum(["statement", "signal", "bloom", "chat", "lookup", "breakdown", "terminal", "split", "ledger", "claim", "real_but", "receipt", "whats_missing", "product", "explainer", "layout"]);
 export type RendererKey = z.infer<typeof rendererKeySchema>;
 
 export const templateInputSchema = z.object({

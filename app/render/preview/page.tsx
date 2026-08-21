@@ -8,12 +8,16 @@ export const metadata: Metadata = { title: "NoCanva render", robots: { index: fa
 
 function decodePayload(raw?: string) {
   if (!raw) return defaultPostPayload;
-  try {
-    const result = postPayloadSchema.safeParse(JSON.parse(decodeURIComponent(raw)));
-    return result.success ? result.data : defaultPostPayload;
-  } catch {
-    return defaultPostPayload;
+  for (const candidate of [raw, (() => { try { return decodeURIComponent(raw); } catch { return ""; } })()]) {
+    if (!candidate) continue;
+    try {
+      const result = postPayloadSchema.safeParse(JSON.parse(candidate));
+      if (result.success) return result.data;
+    } catch {
+      // Try the alternate encoded form before falling back.
+    }
   }
+  return defaultPostPayload;
 }
 
 export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string; templateVersionId?: string }> }) {

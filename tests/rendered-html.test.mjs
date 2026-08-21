@@ -60,6 +60,7 @@ test("automation route uses the shared exact-size artwork", async () => {
     readFile(new URL("app/globals.css", root), "utf8"),
   ]);
   assert.match(route, /PostArtwork/);
+  assert.match(route, /\[raw,.*decodeURIComponent/);
   assert.match(artwork, /data-render-root/);
   assert.match(artwork, /data-template-version/);
   assert.match(css, /width:\s*1080px/);
@@ -80,6 +81,20 @@ test("generic layout templates stay renderer-driven and reviewable", async () =>
   assert.match(artwork, /data-render-region="headline"/);
   assert.match(skill, /canvnah_create_template/);
   assert.match(skill, /HTML\/CSS poster/);
+});
+
+test("beta renderers preserve the product object instead of collapsing into statement cards", async () => {
+  const [artwork, media, css] = await Promise.all([
+    readFile(new URL("app/post-artwork.tsx", root), "utf8"),
+    readFile(new URL("lib/media.ts", root), "utf8"),
+    readFile(new URL("app/globals.css", root), "utf8"),
+  ]);
+  for (const renderer of ["chat", "lookup", "breakdown"]) {
+    assert.match(media, new RegExp(`rendererKeySchema = z\\.enum\\(\\[[^\\]]*\\"${renderer}\\"`));
+    assert.match(artwork, new RegExp(`${renderer[0].toUpperCase()}${renderer.slice(1)}Artwork`));
+    assert.match(css, new RegExp(`\\.${renderer}-layout`));
+  }
+  assert.match(artwork, /background-\$\{resolvedBackgroundStyle\}/);
 });
 
 test("template library renders the real latest template artwork", async () => {

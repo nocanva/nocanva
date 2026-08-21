@@ -14,6 +14,7 @@ const draftPayloadInputSchema = z.object({
 }).refine((value) => value.templateId || value.compositionId, { message: "Provide compositionId or templateId." });
 
 function resolveDraftPayload(input: z.infer<typeof draftPayloadInputSchema>) {
+  if (input.brandId === "blindspot" && !input.compositionId) throw new Error("Blindspot beta work requires a semantic compositionId. Legacy statement templates are retained only for historical renders.");
   const templateId = input.compositionId ? compositionTemplateIds[input.compositionId] : input.templateId!;
   return { brandId: input.brandId, templateId, ...(input.compositionId ? { compositionId: input.compositionId } : {}), format: input.format, content: input.content };
 }

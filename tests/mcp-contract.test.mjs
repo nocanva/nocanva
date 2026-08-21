@@ -34,6 +34,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(server, /Primary workflow/);
   assert.match(server, /visualReviewRubric/);
   assert.match(server, /contentWarnings: creativeContentWarnings/);
+  assert.match(server, /Blindspot beta work requires a semantic compositionId/);
   assert.match(server, /maxAgentIterations: 3/);
   assert.match(fixture, /Create a Sprout post from the Fortwin AI product repository/);
   assert.match(draftFixture, /stale\.isError/);

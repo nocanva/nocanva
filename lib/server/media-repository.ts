@@ -158,6 +158,7 @@ async function seedWorkspace(workspaceId: string) {
       db.prepare("INSERT OR IGNORE INTO templates (id, workspace_id, brand_id, name, type, content_schema_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(storedTemplateId, workspaceId, brandId, definition.name, compositionId, schema, createdAt),
       db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@1`, workspaceId, storedTemplateId, 1, compositionId, JSON.stringify({ description: definition.purpose, composition: definition }), createdAt),
       db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@2`, workspaceId, storedTemplateId, 2, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "blindspot-quality-pass-v2" }), createdAt + 1),
+      db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@3`, workspaceId, storedTemplateId, 3, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "object-led-beta-v3" }), createdAt + 2),
     ];
   });
   await db.batch([

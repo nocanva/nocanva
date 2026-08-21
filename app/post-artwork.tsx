@@ -99,6 +99,25 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
   );
 }
 
+function ChatArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  const messages = content.steps ?? [content.support, "Share a photo or voice note", "Get one calm next step"];
+  return <><BrandHeader brand={brandConfig} label="Chat, not another app" /><section className="chat-layout" data-render-region="content"><div className="chat-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="chat-phone" aria-label="Example conversation"><div className="chat-contact"><span>{brandConfig.logo?.mark ?? "🌱"}</span><strong>{brandConfig.name}</strong><small>online</small></div><div className="chat-messages">{messages.map((message, index) => <p className={index % 2 ? "chat-reply" : "chat-question"} key={`${index}-${message}`}>{message}<small>{index ? "9:42" : "9:41"}</small></p>)}</div><div className="chat-input">Message <b>➤</b></div></div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="TEXT / PHOTO / VOICE" /></>;
+}
+
+function LookupArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  const query = content.quote ?? "9876543210";
+  const facts = content.steps ?? ["Community reports", "Reviewed before publishing", "Not a fraud verdict"];
+  return <><BrandHeader brand={brandConfig} label="Community fraud register" /><section className="lookup-layout" data-render-region="content"><div className="lookup-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="lookup-console"><span className="lookup-label">Phone number or UPI ID</span><div className="lookup-search"><strong>{query}</strong><b>SEARCH</b></div><div className="lookup-result"><small>CHECK BEFORE YOU PAY</small><strong>{content.highlight ?? "Read the reports before acting."}</strong><ul>{facts.map((fact) => <li key={fact}>{fact}</li>)}</ul></div></div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="SEARCH / READ / REPORT" /></>;
+}
+
+function BreakdownArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
+  const rows = (content.steps ?? ["India — 82%", "Tax — 5%", "Abroad — 13%"]).map((row) => {
+    const match = row.match(/^(.*?)\s*[—:]\s*(\d{1,3})%$/);
+    return { label: match?.[1]?.trim() ?? row, value: Math.min(Number(match?.[2] ?? 0), 100) };
+  });
+  return <><BrandHeader brand={brandConfig} label="Every rupee traced" /><section className="breakdown-layout" data-render-region="content"><div className="breakdown-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="breakdown-score"><strong>{content.metric ?? `${rows[0]?.value ?? 0}%`}</strong><span>{content.metricLabel ?? "Indian value capture"}</span></div><div className="breakdown-bars">{rows.map((row, index) => <div key={`${row.label}-${row.value}`}><span><b>{row.label}</b><strong>{row.value}%</strong></span><i><em style={{ width: `${row.value}%` }} /></i><small>{index === 0 ? "INDIA" : index === 1 ? "TAX" : "ABROAD"}</small></div>)}</div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="SOURCE / METHOD / VALUE" /></>;
+}
+
 function StandardHeader({ brandConfig, dimensions }: { brandConfig: BrandConfig; dimensions: { width: number; height: number } }) {
   return <header data-render-region="brand-header"><span className="post-logo">{brandConfig.name.toUpperCase()}<span>●</span></span><span className="post-format">{dimensions.width} × {dimensions.height}</span></header>;
 }
@@ -228,6 +247,12 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     : resolvedLayout.mediaPosition === "auto"
       ? resolvedLayout.family === "signal" || resolvedLayout.family === "grid" ? "left" : "top"
       : resolvedLayout.mediaPosition;
+  const resolvedBackgroundStyle = content.backgroundStyle ?? (
+    resolvedTemplate.rendererKey === "real_but" || resolvedTemplate.rendererKey === "product" || resolvedTemplate.rendererKey === "explainer" ? "ink"
+    : resolvedTemplate.rendererKey === "receipt" ? "paper_grid"
+    : resolvedTemplate.rendererKey === "whats_missing" ? "signal_wash"
+    : "paper"
+  );
   const safeArea = mode === "export" ? `${brandConfig.safeArea}px` : `${brandConfig.safeArea / 10.8}%`;
   const style = {
     background: brandConfig.colors.paper,
@@ -248,7 +273,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey}${content.image ? " has-media" : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} background-${resolvedBackgroundStyle}${content.image ? " has-media" : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
@@ -256,6 +281,9 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     >
       {resolvedTemplate.rendererKey === "layout" ? <LayoutArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} layout={resolvedLayout} />
       : resolvedTemplate.rendererKey === "bloom" ? <BloomArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "chat" ? <ChatArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "lookup" ? <LookupArtwork brandConfig={brandConfig} content={content} />
+      : resolvedTemplate.rendererKey === "breakdown" ? <BreakdownArtwork brandConfig={brandConfig} content={content} />
       : resolvedTemplate.rendererKey === "claim" ? <ClaimArtwork brandConfig={brandConfig} content={content} />
       : resolvedTemplate.rendererKey === "real_but" ? <RealButArtwork brandConfig={brandConfig} content={content} />
       : resolvedTemplate.rendererKey === "receipt" ? <ReceiptArtwork brandConfig={brandConfig} content={content} />

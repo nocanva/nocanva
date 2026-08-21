@@ -30,6 +30,7 @@
     "render:sample": "node scripts/render-post.mjs",
     "render:nocanva": "node scripts/generate-nocanva-posts.mjs",
     "render:campaigns": "node scripts/generate-brand-campaigns.mjs",
+    "render:beta-samples": "node scripts/generate-beta-samples.mjs",
     "benchmark:blindspot": "node scripts/evaluate-blindspot-benchmark.mjs",
     "mcp:dev": "tsx mcp/stdio.ts",
     "mcp:http": "tsx mcp/http-server.ts",
