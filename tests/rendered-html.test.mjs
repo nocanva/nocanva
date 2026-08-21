@@ -50,6 +50,21 @@ test("automation route uses the shared exact-size artwork", async () => {
   await access(new URL("dist/server/index.js", root));
 });
 
+test("generic layout templates stay renderer-driven and reviewable", async () => {
+  const [artwork, media, skill] = await Promise.all([
+    readFile(new URL("app/post-artwork.tsx", root), "utf8"),
+    readFile(new URL("lib/media.ts", root), "utf8"),
+    readFile(new URL("skills/nocanva-layout/SKILL.md", root), "utf8"),
+  ]);
+  assert.match(media, /rendererKeySchema = z\.enum\(\["statement", "signal", "bloom", "layout"\]\)/);
+  assert.match(media, /posterLayoutSchema/);
+  assert.match(artwork, /LayoutArtwork/);
+  assert.match(artwork, /layout-renderer/);
+  assert.match(artwork, /data-render-region="headline"/);
+  assert.match(skill, /canvnah_create_template/);
+  assert.match(skill, /HTML\/CSS poster/);
+});
+
 test("template library renders the real latest template artwork", async () => {
   const page = await readFile(new URL("app/templates/page.tsx", root), "utf8");
   assert.match(page, /<PostArtwork/);

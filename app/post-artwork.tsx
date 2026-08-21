@@ -1,8 +1,7 @@
 import { forwardRef, type CSSProperties } from "react";
-import { brand, formats, templates, type BrandConfig, type PostPayload } from "../lib/media";
+import { brand, formats, posterLayoutSchema, templates, type BrandConfig, type PostPayload, type PosterLayout, type RendererKey } from "../lib/media";
 
-type RendererKey = "statement" | "signal" | "bloom";
-type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey };
+type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey; layout?: PosterLayout };
 type PostArtworkProps = { payload: PostPayload; mode?: "preview" | "export"; brandConfig?: BrandConfig; template?: ArtworkTemplate };
 
 function MediaFrame({ image }: { image: NonNullable<PostPayload["content"]["image"]> }) {
@@ -99,6 +98,30 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
   );
 }
 
+function LayoutArtwork({ brandConfig, content, dimensions, layout }: { brandConfig: BrandConfig; content: PostPayload["content"]; dimensions: (typeof formats)[PostPayload["format"]]; layout: PosterLayout }) {
+  const index = content.eyebrow.match(/\d+/)?.[0] ?? "01";
+  const showIndex = layout.showIndex || layout.family === "signal";
+  const signature = layout.signature === "none" ? null : <div className={`layout-signature ${layout.signature}`} aria-hidden />;
+
+  return (
+    <>
+      <header data-render-region="brand-header">
+        <span className="layout-brand">{brandConfig.name.toUpperCase()}<b>●</b></span>
+        <span className="post-format">{dimensions.width} × {dimensions.height}</span>
+      </header>
+      {content.image && layout.mediaPosition !== "none" && <MediaFrame image={content.image} />}
+      <div className="post-content" data-render-region="content">
+        <p className="post-eyebrow">{content.eyebrow}</p>
+        {showIndex && <span className={`layout-index ${layout.indexPlacement}`} aria-hidden>{index}</span>}
+        <h2 data-render-region="headline">{content.headline}</h2>
+        {signature}
+        <p className="post-support" data-render-region="support">{content.support}</p>
+      </div>
+      <footer data-render-region="brand-footer"><span>{brandConfig.tagline}</span><span>{brandConfig.website}</span></footer>
+    </>
+  );
+}
+
 export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function PostArtwork(
   { payload, mode = "preview", brandConfig = brand, template },
   ref,
@@ -110,6 +133,12 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     version: 1,
     rendererKey: payload.templateId === templates.signal.id ? "signal" : payload.templateId === templates.bloom.id ? "bloom" : "statement",
   };
+  const resolvedLayout = posterLayoutSchema.parse(resolvedTemplate.layout ?? {});
+  const layoutMediaPosition = !content.image
+    ? "none"
+    : resolvedLayout.mediaPosition === "auto"
+      ? resolvedLayout.family === "signal" || resolvedLayout.family === "grid" ? "left" : "top"
+      : resolvedLayout.mediaPosition;
   const safeArea = mode === "export" ? `${brandConfig.safeArea}px` : `${brandConfig.safeArea / 10.8}%`;
   const style = {
     background: brandConfig.colors.paper,
@@ -122,18 +151,22 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     "--brand-signal-bright": `color-mix(in srgb, ${brandConfig.colors.signal} 68%, #ffffff)`,
     "--brand-ink-deep": `color-mix(in srgb, ${brandConfig.colors.ink} 82%, ${brandConfig.colors.signal})`,
     "--brand-wash": `color-mix(in srgb, ${brandConfig.colors.signal} 14%, ${brandConfig.colors.paper})`,
+    "--layout-headline-scale": resolvedLayout.headlineScale,
+    "--layout-media-split": `${resolvedLayout.mediaSplit * 100}%`,
   } as CSSProperties;
 
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey}${content.image ? " has-media" : ""}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey}${content.image ? " has-media" : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
       aria-label={`Rendered ${brandConfig.name} post`}
     >
-      {resolvedTemplate.rendererKey === "bloom" ? (
+      {resolvedTemplate.rendererKey === "layout" ? (
+        <LayoutArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} layout={resolvedLayout} />
+      ) : resolvedTemplate.rendererKey === "bloom" ? (
         <BloomArtwork brandConfig={brandConfig} content={content} />
       ) : (
         <>

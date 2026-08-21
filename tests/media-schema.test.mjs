@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defaultPostPayload, formats, parsePostPayload, renderFilename } from "../lib/media.ts";
+import { defaultPostPayload, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
 
 test("accepts the default structured payload", () => {
   assert.deepEqual(parsePostPayload(defaultPostPayload), defaultPostPayload);
@@ -23,4 +23,12 @@ test("accepts deterministic image crop instructions and rejects drift", () => {
   assert.equal(payload.content.image.zoom, 1.4);
   assert.throws(() => parsePostPayload({ ...payload, content: { ...payload.content, image: { ...payload.content.image, zoom: 3.1 } } }));
   assert.throws(() => parsePostPayload({ ...payload, content: { ...payload.content, image: { ...payload.content.image, focalPoint: { x: -0.1, y: .5 } } } }));
+});
+
+test("accepts bounded HTML/CSS layout templates and rejects incomplete generic layouts", () => {
+  const layout = posterLayoutSchema.parse({ family: "grid", mediaPosition: "left", alignment: "right", headlineScale: 1.12, mediaSplit: .42, signature: "rail" });
+  assert.equal(layout.family, "grid");
+  assert.equal(layout.mediaSplit, .42);
+  assert.throws(() => templateCreateSchema.parse({ id: "grid", brandId: "blindspot", name: "Evidence grid", description: "A split evidence poster.", rendererKey: "layout" }));
+  assert.doesNotThrow(() => templateCreateSchema.parse({ id: "grid", brandId: "blindspot", name: "Evidence grid", description: "A split evidence poster.", rendererKey: "layout", layout }));
 });
