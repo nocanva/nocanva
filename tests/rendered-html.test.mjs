@@ -20,6 +20,23 @@ test("NoCanva Studio exposes the durable render workflow", async () => {
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
 
+test("workspace theme is persistent, accessible, and independent from artwork colors", async () => {
+  const [layout, header, toggle, css, artwork] = await Promise.all([
+    readFile(new URL("app/layout.tsx", root), "utf8"),
+    readFile(new URL("app/workspace-header.tsx", root), "utf8"),
+    readFile(new URL("app/theme-toggle.tsx", root), "utf8"),
+    readFile(new URL("app/globals.css", root), "utf8"),
+    readFile(new URL("app/post-artwork.tsx", root), "utf8"),
+  ]);
+  assert.match(layout, /nocanva-theme/);
+  assert.match(header, /<ThemeToggle/);
+  assert.match(toggle, /aria-label="Use dark mode"/);
+  assert.match(toggle, /useSyncExternalStore/);
+  assert.match(css, /:root\[data-theme="dark"\]/);
+  assert.match(css, /\.ui-switch\[data-checked\]/);
+  assert.match(artwork, /background: brandConfig\.colors\.paper/);
+});
+
 test("draft workspace exposes stable editable lifecycle actions", async () => {
   const [page, workspace, renderDetail] = await Promise.all([
     readFile(new URL("app/drafts/[id]/page.tsx", root), "utf8"),

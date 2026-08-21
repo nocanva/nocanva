@@ -54,7 +54,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await requireNoCanvaViewer("/");
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var saved=localStorage.getItem("nocanva-theme");var theme=saved==="light"||saved==="dark"?saved:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme}catch(e){}})();` }} />
+      </head>
       <body className={`${dmSans.variable} ${sourceSerif.variable} ${fraunces.variable} ${jakarta.variable}`}>{children}</body>
     </html>
   );

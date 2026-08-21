@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 export function WorkspaceHeader({ active }: { active: "create" | "brands" | "templates" | "drafts" | "carousels" | "renders" | "connections" }) {
   return (
@@ -15,7 +16,7 @@ export function WorkspaceHeader({ active }: { active: "create" | "brands" | "tem
         <Link className={`nav-item ${active === "renders" ? "active" : ""}`} href="/renders">Renders</Link>
         <Link className={`nav-item ${active === "connections" ? "active" : ""}`} href="/connections">Connect</Link>
       </nav>
-      <div className="topbar-actions"><span className="status-dot"><i />Durable workspace</span><span className="avatar">RB</span></div>
+      <div className="topbar-actions"><span className="status-dot"><i />Durable workspace</span><ThemeToggle /><span className="avatar">RB</span></div>
     </header>
   );
 }
