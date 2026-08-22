@@ -45,16 +45,18 @@ export function ArtworkImage({ image, role = "image" }: { image: NonNullable<Pos
   const imageStyle = {
     objectFit: image.fit,
     objectPosition: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
-    transform: `scale(${image.zoom})`,
   } as CSSProperties;
+  const stageStyle = { transform: `scale(${image.zoom})`, transformOrigin: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%` } as CSSProperties;
   const frame = image.frame ?? (role === "screenshot" ? "browser" : "none");
   return <figure className={`composition-image ${role} frame-${frame}`} data-render-region="media">
     {frame === "browser" && <div className="browser-bar" aria-hidden><i /><i /><i /><span>verified source</span></div>}
     {frame === "device" && <div className="device-speaker" aria-hidden />}
-    {/* The original immutable asset is required here; optimization would make render bytes provider-dependent. */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img alt={image.alt} crossOrigin="anonymous" src={`/api/assets/${image.assetId}/content`} style={imageStyle} />
-    {(image.blurRegions ?? []).map((region, index) => <span className="asset-blur" key={`blur-${index}`} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%`, backdropFilter: `blur(${region.strength}px)` }} />)}
-    {(image.highlightRegions ?? []).map((region, index) => <span className="asset-highlight" key={`highlight-${index}`} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}>{region.label && <b>{region.label}</b>}</span>)}
+    <div className="composition-image-stage" style={stageStyle}>
+      {/* The original immutable asset is required here; optimization would make render bytes provider-dependent. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt={image.alt} crossOrigin="anonymous" src={`/api/assets/${image.assetId}/content`} style={imageStyle} />
+      {(image.blurRegions ?? []).map((region, index) => <span className="asset-blur" key={`blur-${index}`} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%`, backdropFilter: `blur(${region.strength}px)` }} />)}
+      {(image.highlightRegions ?? []).map((region, index) => <span className="asset-highlight" key={`highlight-${index}`} style={{ left: `${region.x * 100}%`, top: `${region.y * 100}%`, width: `${region.width * 100}%`, height: `${region.height * 100}%` }}>{region.label && <b>{region.label}</b>}</span>)}
+    </div>
   </figure>;
 }

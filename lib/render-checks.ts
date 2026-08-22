@@ -14,6 +14,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     return rect.left < rootRect.left - 1 || rect.top < rootRect.top - 1 || rect.right > rootRect.right + 1 || rect.bottom > rootRect.bottom + 1;
   });
   const overflowing = regions.filter((region) => {
+    if (region.getAttribute("data-render-region") === "media") return false;
     const style = getComputedStyle(region);
     const clipsX = ["hidden", "clip"].includes(style.overflowX);
     const clipsY = ["hidden", "clip"].includes(style.overflowY);

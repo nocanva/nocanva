@@ -84,11 +84,14 @@ test("generic layout templates stay renderer-driven and reviewable", async () =>
 });
 
 test("beta renderers preserve the product object instead of collapsing into statement cards", async () => {
-  const [artwork, media, css, samples] = await Promise.all([
+  const [artwork, artworkBlocks, media, css, samples, benchmarkRunner, benchmarkEvaluator] = await Promise.all([
     readFile(new URL("app/post-artwork.tsx", root), "utf8"),
+    readFile(new URL("app/artwork-blocks.tsx", root), "utf8"),
     readFile(new URL("lib/media.ts", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
     readFile(new URL("scripts/generate-beta-samples.mjs", root), "utf8"),
+    readFile(new URL("scripts/run-blindspot-benchmark.mjs", root), "utf8"),
+    readFile(new URL("scripts/evaluate-blindspot-benchmark.mjs", root), "utf8"),
   ]);
   for (const renderer of ["chat", "lookup", "breakdown"]) {
     assert.match(media, new RegExp(`rendererKeySchema = z\\.enum\\(\\[[^\\]]*\\"${renderer}\\"`));
@@ -96,10 +99,16 @@ test("beta renderers preserve the product object instead of collapsing into stat
     assert.match(css, new RegExp(`\\.${renderer}-layout`));
   }
   assert.match(artwork, /background-\$\{resolvedBackgroundStyle\}/);
+  assert.match(artworkBlocks, /composition-image-stage/);
+  assert.match(artwork, /transformOrigin/);
   assert.match(samples, /quality-reviews\.json/);
   assert.match(samples, /failed visual rubric item/);
   assert.match(samples, /Verified source asset changed/);
   assert.doesNotMatch(samples, /const visualRubric\s*=\s*\{[\s\S]*professionallyDesigned:\s*true/);
+  assert.match(benchmarkRunner, /one visual rubric per PNG/);
+  assert.match(benchmarkRunner, /nocanva_list_compositions/);
+  assert.match(benchmarkRunner, /nocanva_review_carousel/);
+  assert.match(benchmarkEvaluator, /immutable render/);
 });
 
 test("template library renders the real latest template artwork", async () => {

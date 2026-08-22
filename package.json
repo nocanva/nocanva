@@ -32,6 +32,7 @@
     "render:campaigns": "node scripts/generate-brand-campaigns.mjs",
     "render:beta-samples": "node scripts/generate-beta-samples.mjs",
     "benchmark:blindspot": "node scripts/evaluate-blindspot-benchmark.mjs",
+    "benchmark:blindspot:run": "node scripts/run-blindspot-benchmark.mjs",
     "mcp:dev": "tsx mcp/stdio.ts",
     "mcp:http": "tsx mcp/http-server.ts",
     "mcp:worker:dev": "wrangler dev --remote --config wrangler.mcp.jsonc",

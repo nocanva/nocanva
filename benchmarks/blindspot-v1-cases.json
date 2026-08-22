@@ -1,0 +1,361 @@
+{
+  "name": "Blindspot creative engine v1 - reproducible cases",
+  "capturedAt": "2026-08-23",
+  "policy": "Every case is grounded in the evidence ledger. Product cards use real Blindspot UI captures; evidence cards use real report frames or an official document; educational cards use primary product or standards documentation.",
+  "assets": {
+    "blindspot-home": {
+      "name": "Blindspot public link checker",
+      "path": "benchmarks/assets/blindspot-home-product.png",
+      "mimeType": "image/png",
+      "sha256": "ba5e2cfce8358e1952dabf369c80fcf622e16a08a3ecce1cf7b88c5da388b14f"
+    },
+    "blindspot-report": {
+      "name": "Blindspot ethanol claim report",
+      "path": "benchmarks/assets/blindspot-report-product.png",
+      "mimeType": "image/png",
+      "sha256": "1c7e56fa2e331e09aff2a8118475b39de2056c7e31ea37ac13c2ebad4ab2992f"
+    },
+    "ethanol-frame": {
+      "name": "Frame from checked ethanol-plant reel",
+      "path": "benchmarks/assets/blindspot-ethanol-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "35764be8b0b7fb73f5348a1eea84112605cf997ab40962eb09e47dec0fb7291a"
+    },
+    "ranchi-frame": {
+      "name": "Frame from checked Ranchi clash reel",
+      "path": "benchmarks/assets/blindspot-Db5498KS2Ds-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "a8dcb4bc456f40caa356ae20a805983a9242c70a88994b53efee878765116149"
+    },
+    "champat-rai-frame": {
+      "name": "Frame from checked Champat Rai reel",
+      "path": "benchmarks/assets/blindspot-DaSSoEnyxws-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "2491440bc1ecace61d320cd7645d1939ef163f0aebbbb51452bfccc66a34aec2"
+    },
+    "false-title-frame": {
+      "name": "Frame that falsely titles Ashutosh Ranka Chief Justice",
+      "path": "benchmarks/assets/blindspot-DcTKHigSGMb-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "a98d96882d62bc766920134c123fd32a12655c38d44e3e3a28c41e090428d0a7"
+    },
+    "jio-frame": {
+      "name": "Frame from checked Jio 198 network-hack reel",
+      "path": "benchmarks/assets/blindspot-DcLgM5Ht_Zm-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "4ce3c40865790d279314df48b75071582dcdcd3f4d23befd87608a1114813acb"
+    },
+    "infrastructure-frame": {
+      "name": "Frame from checked infrastructure-cost post",
+      "path": "benchmarks/assets/blindspot-Db8eNl1H-5g-frame.jpg",
+      "mimeType": "image/jpeg",
+      "sha256": "c2e4640a2269d77f7f82ffbd804adfb4bdd8f4364b7a711b4beb8b378a586132"
+    },
+    "pib-multifeed": {
+      "name": "Ministry of Cooperation annexure on multi-feed ethanol plants",
+      "path": "benchmarks/assets/pib-multifeed-ethanol.png",
+      "mimeType": "image/png",
+      "sha256": "810fb36a30195a592e1a2bc61f5614a60918f6c190dfa79fb52cc9b3527ba27f"
+    }
+  },
+  "evidenceLedger": [
+    {
+      "id": "blindspot-home",
+      "source": "https://blindspot.buzz/",
+      "verified": "Blindspot accepts a public post or video link, checks claims and missing context, and returns a cited report with the short answer first and receipts underneath."
+    },
+    {
+      "id": "ethanol-report",
+      "source": "https://blindspot.buzz/r/Dbx3lKnTLsZ",
+      "verified": "Report dated 22 Aug 2026: OMC ethanol-plant setups are confirmed, while one-day output, 364-days-idle, forced outside buying, and politician-owned supplier claims remain unsupported. The report records one true and seven unchecked claims."
+    },
+    {
+      "id": "ranchi-report",
+      "source": "https://blindspot.buzz/r/Db5498KS2Ds",
+      "verified": "Report dated 14 Aug 2026: footage from the 23 July 2026 Congress-BJP clash in Ranchi was recirculated as current Jharkhand student-protest footage."
+    },
+    {
+      "id": "champat-rai-report",
+      "source": "https://blindspot.buzz/r/DaSSoEnyxws",
+      "verified": "Report dated 14 Aug 2026: Champat Rai's quote calling Modi an avatar of Lord Vishnu is from 2023, not a new June-July 2026 event."
+    },
+    {
+      "id": "false-title-report",
+      "source": "https://blindspot.buzz/r/DcTKHigSGMb",
+      "verified": "Report dated 21 Aug 2026: Ashutosh Ranka issued the reported ultimatum as CJP co-convenor and spokesperson; the reel's Chief Justice title is false."
+    },
+    {
+      "id": "jio-report",
+      "source": "https://blindspot.buzz/r/DcLgM5Ht_Zm",
+      "verified": "Report dated 18 Aug 2026: 198 is a Jio complaint number; no source shows that leaving a call to 198 running creates or improves network access."
+    },
+    {
+      "id": "infrastructure-report",
+      "source": "https://blindspot.buzz/r/Db8eNl1H-5g",
+      "verified": "Report dated 15 Aug 2026: several project incidents are real, but no source confirms the viral aggregate of Rs 34,343 crore or the systemic waste label."
+    },
+    {
+      "id": "pib-multifeed",
+      "source": "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2025/mar/doc2025318522401.pdf",
+      "verified": "The Ministry of Cooperation annexure says some cooperative sugar-mill ethanol plants cannot operate at full capacity year-round because of feedstock constraints and proposes conversion to multi-feed units. It does not establish 364 days of idleness for listed OMC plants."
+    },
+    {
+      "id": "google-lens",
+      "source": "https://support.google.com/websearch/answer/1325808",
+      "verified": "Google documents image search by upload, drag-and-drop, image URL, or right-click Search with Google Lens; results can include similar images and websites carrying the image."
+    },
+    {
+      "id": "c2pa",
+      "source": "https://c2pa.org/specifications/specifications/2.2/explainer/Explainer.html",
+      "verified": "C2PA says provenance may describe origin and edits and provide tamper-evident assertions, but provenance can be incomplete and cannot by itself establish that depicted content is true or factual."
+    }
+  ],
+  "cases": [
+    {
+      "id": "product-01",
+      "evidence": ["blindspot-home"],
+      "asset": "blindspot-home",
+      "content": {
+        "eyebrow": "BLINDSPOT / PRODUCT",
+        "headline": "One public link becomes a cited, claim-by-claim report.",
+        "support": "Blindspot checks the post, returns the short answer first, and keeps every source underneath.",
+        "cta": "Paste a public post",
+        "backgroundStyle": "ink",
+        "image": { "alt": "Blindspot homepage with its public-link checker and cited-report preview", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.38 }, "zoom": 1.05, "frame": "browser" }
+      }
+    },
+    {
+      "id": "product-02",
+      "evidence": ["ethanol-report"],
+      "asset": "blindspot-report",
+      "content": {
+        "eyebrow": "REPORT / 22 AUG 2026",
+        "headline": "The short answer lands before the receipts.",
+        "support": "This report leads with its conclusion, then exposes each checked claim and source.",
+        "cta": "Open the full report",
+        "backgroundStyle": "ink",
+        "image": { "alt": "Blindspot report showing a misleading verdict and claim-by-claim evidence rows", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.28 }, "zoom": 1.12, "frame": "browser" }
+      }
+    },
+    {
+      "id": "product-03",
+      "evidence": ["ethanol-report"],
+      "content": {
+        "eyebrow": "REPORT / UNCERTAINTY",
+        "headline": "Seven claims stayed unchecked - not forced into a verdict.",
+        "support": "The 22 August ethanol report confirms the plant setups and keeps unsupported claims visibly unresolved.",
+        "highlight": "1 TRUE / 7 UNCHECKED",
+        "backgroundStyle": "paper"
+      }
+    },
+    {
+      "id": "product-04",
+      "evidence": ["ethanol-report"],
+      "asset": "blindspot-report",
+      "content": {
+        "eyebrow": "PROVENANCE / REPORT",
+        "headline": "One conclusion. Every checked claim underneath.",
+        "support": "The report keeps the verdict, original claim, correction, date, and sources in one inspectable view.",
+        "highlight": "TRACE THE CONCLUSION",
+        "evidence": { "source": "Blindspot report · 22 Aug 2026", "detail": "One true claim and seven unchecked claims, with four named sources." },
+        "backgroundStyle": "paper_grid",
+        "image": { "alt": "Blindspot ethanol report with conclusion and claim rows visible", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.3 }, "zoom": 1.08, "frame": "browser", "highlightRegions": [{ "x": 0.03, "y": 0.1, "width": 0.61, "height": 0.19, "label": "Conclusion" }] }
+      }
+    },
+    {
+      "id": "product-05",
+      "evidence": ["blindspot-home", "ethanol-report"],
+      "content": {
+        "eyebrow": "BLINDSPOT / WORKFLOW",
+        "headline": "From public post to inspectable report in three moves.",
+        "support": "The ethanol report shows the complete path from short answer to claim rows and cited sources.",
+        "steps": ["Paste the public post or video link", "Read the short conclusion and uncertainty", "Open every claim and cited source"],
+        "metric": "4",
+        "metricLabel": "sources in this report",
+        "cta": "Save this workflow",
+        "backgroundStyle": "ink"
+      }
+    },
+    {
+      "id": "misinfo-01",
+      "evidence": ["ranchi-report"],
+      "asset": "ranchi-frame",
+      "content": {
+        "eyebrow": "REAL FOOTAGE / WRONG MOMENT",
+        "headline": "This clash is real. It is from 23 July - not today's student protest.",
+        "support": "The frame traces to the Congress-BJP clash outside the BJP office in Ranchi on 23 July 2026.",
+        "highlight": "OLD CLIP / NEW CLAIM",
+        "backgroundStyle": "ink",
+        "image": { "alt": "Frame from an old Ranchi political clash recirculated as current student-protest footage", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.38 }, "zoom": 1 }
+      }
+    },
+    {
+      "id": "misinfo-02",
+      "evidence": ["champat-rai-report"],
+      "asset": "champat-rai-frame",
+      "content": {
+        "eyebrow": "REAL QUOTE / WRONG YEAR",
+        "headline": "The quote is real. The clip is from 2023 - not 2026.",
+        "support": "Champat Rai's remarks resurfaced after his June 2026 resignation, but they were not a new event.",
+        "highlight": "3 YEARS OMITTED",
+        "backgroundStyle": "ink",
+        "image": { "alt": "Frame from the Champat Rai clip whose 2023 date was omitted in a 2026 viral post", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.38 }, "zoom": 1 }
+      }
+    },
+    {
+      "id": "misinfo-03",
+      "evidence": ["jio-report"],
+      "content": {
+        "eyebrow": "JIO 198 / SOURCE CHECK",
+        "headline": "A phone-number screenshot cannot prove a network hack.",
+        "support": "198 is a complaint number. No cited source shows that leaving the call running creates coverage.",
+        "highlight": "NUMBER CONFIRMED / HACK UNCHECKED",
+        "backgroundStyle": "signal_wash"
+      }
+    },
+    {
+      "id": "misinfo-04",
+      "evidence": ["champat-rai-report"],
+      "asset": "champat-rai-frame",
+      "slides": [
+        { "eyebrow": "01 / THE MISSING DATE", "headline": "The date missing from this viral Modi clip: 2023.", "support": "The clip was presented as a fresh June-July 2026 event.", "highlight": "ASK: WHEN WAS THIS RECORDED?", "backgroundStyle": "signal_wash", "image": { "alt": "Champat Rai clip recirculated in 2026 without its 2023 date", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.35 }, "zoom": 1 } },
+        { "eyebrow": "02 / WHY IT RETURNED", "headline": "It resurfaced after Champat Rai resigned in June 2026.", "support": "A current controversy gave an old quote a new moment.", "highlight": "RECIRCULATION IS CONTEXT", "backgroundStyle": "paper" },
+        { "eyebrow": "03 / THE CORRECTION", "headline": "The quote is real. The 'new 2026 event' framing is not.", "support": "Blindspot traces the remarks to 2023 reporting and keeps the later recirculation separate.", "cta": "Check the original date", "backgroundStyle": "ink" }
+      ]
+    },
+    {
+      "id": "misinfo-05",
+      "evidence": ["false-title-report"],
+      "asset": "false-title-frame",
+      "content": {
+        "eyebrow": "ON-SCREEN TITLE / FALSE",
+        "headline": "The ultimatum is real. 'Chief Justice' is not.",
+        "support": "The statement came from Ashutosh Ranka as CJP co-convenor and spokesperson.",
+        "highlight": "TITLE CHANGES THE WEIGHT",
+        "evidence": { "source": "Blindspot report · 21 Aug 2026", "detail": "Reporting identifies Ranka as CJP co-convenor; no source supports the Chief Justice title." },
+        "backgroundStyle": "paper_grid",
+        "image": { "alt": "Viral frame that falsely labels CJP co-convenor Ashutosh Ranka as Chief Justice", "fit": "contain", "focalPoint": { "x": 0.5, "y": 0.5 }, "zoom": 1, "frame": "browser", "highlightRegions": [{ "x": 0.08, "y": 0.82, "width": 0.84, "height": 0.12, "label": "False title" }] }
+      }
+    },
+    {
+      "id": "explainer-01",
+      "evidence": ["blindspot-home"],
+      "content": {
+        "eyebrow": "BEFORE YOU SHARE",
+        "headline": "Three checks for the image that made you stop scrolling.",
+        "support": "Blindspot checks what was said, what evidence shows, and what context was left out.",
+        "steps": ["Find the earliest available upload", "Compare the date, place, and visible details", "Read the source before repeating its conclusion"],
+        "cta": "Save before you share",
+        "backgroundStyle": "ink"
+      }
+    },
+    {
+      "id": "explainer-02",
+      "evidence": ["google-lens"],
+      "content": {
+        "eyebrow": "GOOGLE LENS / FOUR STEPS",
+        "headline": "Reverse-search the image, then inspect where it appeared.",
+        "support": "Google says Lens can return similar images and websites carrying the same or a related image.",
+        "steps": ["Save the image or copy its image URL", "Open Google's Search by image control", "Upload the file or paste the image link", "Compare dates and open the earliest credible result"],
+        "cta": "Search, then read",
+        "backgroundStyle": "paper"
+      }
+    },
+    {
+      "id": "explainer-03",
+      "evidence": ["c2pa"],
+      "slides": [
+        { "eyebrow": "01 / METADATA", "headline": "Metadata can describe origin, time, place, and editing tools.", "support": "C2PA packages provenance statements as signed assertions.", "highlight": "USEFUL SIGNAL", "backgroundStyle": "signal_wash" },
+        { "eyebrow": "02 / THE GAP", "headline": "Missing provenance does not prove an image is fake.", "support": "C2PA notes that provenance can be incomplete or stripped by later workflows.", "highlight": "ABSENCE IS NOT A VERDICT", "backgroundStyle": "paper" },
+        { "eyebrow": "03 / THE LIMIT", "headline": "Valid provenance still cannot prove the scene itself is true.", "support": "A signed history can authenticate assertions without making the depicted claim factual.", "highlight": "ORIGIN IS NOT TRUTH", "backgroundStyle": "ink" },
+        { "eyebrow": "04 / THE HABIT", "headline": "Treat metadata as one clue - then corroborate the claim.", "support": "Check the source, date, place, and independent reporting around the asset.", "cta": "Keep the evidence chain", "backgroundStyle": "signal_wash" }
+      ]
+    },
+    {
+      "id": "receipt-01",
+      "evidence": ["pib-multifeed", "ethanol-report"],
+      "asset": "pib-multifeed",
+      "content": {
+        "eyebrow": "OFFICIAL NOTICE / ETHANOL",
+        "headline": "This notice says some cooperative mills cannot run at full capacity year-round.",
+        "support": "It does not establish the reel's separate claim that listed OMC plants sat idle for 364 days.",
+        "highlight": "DO NOT MERGE TWO CLAIMS",
+        "evidence": { "source": "Ministry of Cooperation annexure · Mar 2025", "detail": "The page says some CSM ethanol plants cannot operate at full capacity year-round because feedstock is limited." },
+        "backgroundStyle": "paper_grid",
+        "image": { "alt": "Official Ministry of Cooperation document discussing year-round capacity limits at cooperative ethanol plants", "fit": "contain", "focalPoint": { "x": 0.5, "y": 0.3 }, "zoom": 2.1, "frame": "browser", "highlightRegions": [{ "x": 0.09, "y": 0.1, "width": 0.82, "height": 0.38, "label": "What it actually says" }] }
+      }
+    },
+    {
+      "id": "receipt-02",
+      "evidence": ["pib-multifeed", "ethanol-report"],
+      "asset": "pib-multifeed",
+      "content": {
+        "eyebrow": "READ THE DECISIVE LINE",
+        "headline": "The document says 'not at full capacity' - not 'idle for 364 days.'",
+        "support": "The subject is cooperative sugar mills facing feedstock limits, not a verified utilization record for listed OMC plants.",
+        "highlight": "WORDS SET THE BOUNDARY",
+        "evidence": { "source": "Ministry of Cooperation annexure · Mar 2025", "detail": "The page says CSM ethanol plants are 'not able to operate them at full capacity round the year.'" },
+        "backgroundStyle": "paper_grid",
+        "image": { "alt": "Official document sentence about cooperative ethanol plants not operating at full capacity year-round", "fit": "contain", "focalPoint": { "x": 0.5, "y": 0.28 }, "zoom": 2.6, "frame": "browser", "highlightRegions": [{ "x": 0.08, "y": 0.12, "width": 0.84, "height": 0.36, "label": "Decisive sentence" }] }
+      }
+    },
+    {
+      "id": "receipt-03",
+      "evidence": ["false-title-report"],
+      "asset": "false-title-frame",
+      "content": {
+        "eyebrow": "CAPTION VS REPORTING",
+        "headline": "The source calls him CJP co-convenor - not Chief Justice.",
+        "support": "The 48-hour ultimatum is reported. The authority added by the viral title is not.",
+        "highlight": "REAL STATEMENT / FALSE TITLE",
+        "evidence": { "source": "Hindustan Times · 21 Aug 2026", "detail": "Blindspot's cited reporting identifies Ashutosh Ranka as CJP co-convenor." },
+        "backgroundStyle": "paper_grid",
+        "image": { "alt": "Viral frame with the incorrect Chief Justice label highlighted", "fit": "contain", "focalPoint": { "x": 0.5, "y": 0.5 }, "zoom": 1, "frame": "browser", "highlightRegions": [{ "x": 0.08, "y": 0.82, "width": 0.84, "height": 0.12, "label": "Viral title" }] }
+      }
+    },
+    {
+      "id": "light-01",
+      "evidence": ["jio-report"],
+      "content": {
+        "eyebrow": "PIXELS / NOT PROOF",
+        "headline": "Zooming into '198' still cannot manufacture a network signal.",
+        "support": "The number is real. The claimed Jio coverage hack still has no supporting source.",
+        "highlight": "ENHANCE THE EVIDENCE, NOT THE PIXELS",
+        "backgroundStyle": "paper"
+      }
+    },
+    {
+      "id": "light-02",
+      "evidence": ["champat-rai-report"],
+      "asset": "champat-rai-frame",
+      "content": {
+        "eyebrow": "THROWBACK / UNLABELED",
+        "headline": "The clip came back in 2026. Its quote stayed in 2023.",
+        "support": "A recycled clip is not breaking news just because the upload date is new.",
+        "highlight": "NEW POST / OLD MOMENT",
+        "backgroundStyle": "ink",
+        "image": { "alt": "A 2023 Champat Rai clip recirculated as a recent 2026 event", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.38 }, "zoom": 1 }
+      }
+    },
+    {
+      "id": "carousel-01",
+      "evidence": ["infrastructure-report"],
+      "asset": "infrastructure-frame",
+      "slides": [
+        { "eyebrow": "01 / THE VIRAL TOTAL", "headline": "Rs 34,343 crore: the total no cited source confirms.", "support": "The post combines several infrastructure incidents into one precise waste number.", "highlight": "SPECIFIC NUMBER / MISSING SUM", "backgroundStyle": "signal_wash", "image": { "alt": "Viral infrastructure-cost post showing a damaged Lucknow-Kanpur Expressway", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.35 }, "zoom": 1 } },
+        { "eyebrow": "02 / WHAT HOLDS", "headline": "Several project incidents are real and individually reported.", "support": "Verified costs and damage reports do not automatically validate the combined total.", "highlight": "TRUE PARTS / UNPROVEN SUM", "backgroundStyle": "paper" },
+        { "eyebrow": "03 / THE RECEIPT", "headline": "Add verified costs. Do not inherit a viral total.", "support": "Blindspot found no source confirming exactly Rs 34,343 crore or the systemic waste label.", "cta": "Check every line item", "backgroundStyle": "ink" }
+      ]
+    },
+    {
+      "id": "carousel-02",
+      "evidence": ["blindspot-home", "google-lens"],
+      "slides": [
+        { "eyebrow": "01 / NAME IT", "headline": "Write the exact claim before searching.", "support": "Separate what the caption says from what the image visibly shows.", "highlight": "ONE CLAIM AT A TIME", "backgroundStyle": "signal_wash" },
+        { "eyebrow": "02 / TRACE IT", "headline": "Search the image and find the earliest credible appearance.", "support": "Lens can surface similar images and websites carrying the asset.", "highlight": "ORIGINAL BEFORE REPOST", "backgroundStyle": "paper" },
+        { "eyebrow": "03 / COMPARE IT", "headline": "Match the date, place, people, and surrounding event.", "support": "A real frame can still be attached to the wrong moment or identity.", "highlight": "CONTEXT CHANGES THE CLAIM", "backgroundStyle": "ink" },
+        { "eyebrow": "04 / REPORT IT", "headline": "State what holds, what fails, and what remains unknown.", "support": "Keep uncertainty visible and link every conclusion back to evidence.", "cta": "Save the four-step habit", "backgroundStyle": "signal_wash" }
+      ]
+    }
+  ]
+}

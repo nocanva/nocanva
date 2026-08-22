@@ -10,6 +10,7 @@ function MediaFrame({ image }: { image: NonNullable<PostPayload["content"]["imag
     objectFit: image.fit,
     objectPosition: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
     transform: `scale(${image.zoom})`,
+    transformOrigin: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
   } as CSSProperties;
   // The original immutable asset is required here; optimization would make render bytes provider-dependent.
   // eslint-disable-next-line @next/next/no-img-element
@@ -221,7 +222,8 @@ function ReceiptArtwork({ brandConfig, content }: { brandConfig: BrandConfig; co
 }
 
 function WhatsMissingArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className="missing-layout" data-render-region="content"><span className="missing-index" aria-hidden>?</span><div className="missing-question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer"><span>Missing context</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div><div className="missing-source"><Evidence evidence={content.evidence} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="FIND THE GAP" /></>;
+  const hasSource = Boolean(content.image || content.evidence || content.cta);
+  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className={`missing-layout${content.image ? " has-source-image" : ""}`} data-render-region="content"><span className="missing-index" aria-hidden>?</span><div className="missing-question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer"><span>Missing context</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div>{hasSource && <div className={`missing-source${content.image ? " has-image" : ""}`}>{content.image ? <ArtworkImage image={content.image} role="evidence" /> : <Evidence evidence={content.evidence} />}<CTA>{content.cta}</CTA></div>}</section><LogoFooter brand={brandConfig} index="FIND THE GAP" /></>;
 }
 
 function ProductArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
@@ -229,8 +231,12 @@ function ProductArtwork({ brandConfig, content }: { brandConfig: BrandConfig; co
 }
 
 function ExplainerArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  const steps = content.steps ?? [content.support, "Check the original source", "Compare date, place, and surrounding context"];
-  return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-layout" data-render-region="content"><div className="explainer-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><ol>{steps.map((step, index) => <li data-render-region="step" key={`${index}-${step}`}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol><div className="explainer-action"><Metric value={content.metric} label={content.metricLabel} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
+  if (!content.steps) {
+    const index = content.eyebrow.match(/\d+/)?.[0]?.padStart(2, "0") ?? "01";
+    return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-slide-layout" data-render-region="content"><div className="explainer-slide-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="explainer-slide-action"><strong aria-hidden>{index}</strong><Body>{content.support}</Body></div><div className="explainer-slide-footer"><Highlight>{content.highlight}</Highlight><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
+  }
+
+  return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-layout" data-render-region="content"><div className="explainer-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><ol>{content.steps.map((step, index) => <li data-render-region="step" key={`${index}-${step}`}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol><div className="explainer-action"><Metric value={content.metric} label={content.metricLabel} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
 }
 
 export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function PostArtwork(

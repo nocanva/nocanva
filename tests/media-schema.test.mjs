@@ -44,8 +44,17 @@ test("flags generic creative copy and anonymous evidence", () => {
 
 test("keeps the Blindspot benchmark and approved visual references measurable", async () => {
   const benchmark = JSON.parse(await readFile(new URL("../benchmarks/blindspot-v1.json", import.meta.url), "utf8"));
+  const cases = JSON.parse(await readFile(new URL("../benchmarks/blindspot-v1-cases.json", import.meta.url), "utf8"));
   const references = JSON.parse(await readFile(new URL("../benchmarks/blindspot-references.json", import.meta.url), "utf8"));
   assert.equal(benchmark.tasks.length, 20);
+  assert.deepEqual(cases.cases.map((entry) => entry.id).sort(), benchmark.tasks.map((task) => task.id).sort());
+  assert.ok(cases.evidenceLedger.length >= 8);
+  assert.ok(Object.values(cases.assets).every((asset) => /^[a-f0-9]{64}$/.test(asset.sha256) && asset.path.startsWith("benchmarks/assets/")));
+  for (const task of benchmark.tasks) {
+    const benchmarkCase = cases.cases.find((entry) => entry.id === task.id);
+    assert.equal(benchmarkCase.slides?.length ?? 1, task.slides ?? 1);
+    assert.ok(benchmarkCase.evidence.length > 0);
+  }
   assert.equal(benchmark.success.publishableWithoutDesignEditsPercent, 70);
   assert.equal(benchmark.success.medianHumanSecondsMaximum, 120);
   assert.ok(references.references.length <= references.maximumApproved);
