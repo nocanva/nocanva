@@ -101,13 +101,13 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
 
 function ChatArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
   const messages = content.steps ?? [content.support, "Share a photo or voice note", "Get one calm next step"];
-  return <><BrandHeader brand={brandConfig} label="Chat, not another app" /><section className="chat-layout" data-render-region="content"><div className="chat-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="chat-phone" aria-label="Example conversation"><div className="chat-contact"><span>{brandConfig.logo?.mark ?? "🌱"}</span><strong>{brandConfig.name}</strong><small>online</small></div><div className="chat-messages">{messages.map((message, index) => <p className={index % 2 ? "chat-reply" : "chat-question"} key={`${index}-${message}`}>{message}<small>{index ? "9:42" : "9:41"}</small></p>)}</div><div className="chat-input">Message <b>➤</b></div></div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="TEXT / PHOTO / VOICE" /></>;
+  return <><div className="chat-botanical" aria-hidden><i /><i /><i /></div><BrandHeader brand={brandConfig} label="Plant help that lives in WhatsApp" /><section className="chat-layout" data-render-region="content"><div className="chat-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="chat-proof"><strong>1 tap</strong><span>to ask Sprout</span></div></div><div className="chat-phone" aria-label="Example conversation"><div className="chat-contact"><span>{brandConfig.logo?.mark ?? "🌱"}</span><strong>{brandConfig.name}</strong><small>online · replies in seconds</small></div><div className="chat-day">TODAY</div><div className="chat-messages">{messages.map((message, index) => <p className={index % 2 ? "chat-reply" : "chat-question"} key={`${index}-${message}`}>{message}<small>{index ? "9:42" : "9:41"}</small></p>)}</div><div className="chat-input">Message <b>➤</b></div></div><div className="chat-note"><Body>{content.support}</Body><span>NO APP · NO SIGNUP</span></div></section><LogoFooter brand={brandConfig} index="TEXT / PHOTO / VOICE" /></>;
 }
 
 function LookupArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
   const query = content.quote ?? "9876543210";
   const facts = content.steps ?? ["Community reports", "Reviewed before publishing", "Not a fraud verdict"];
-  return <><BrandHeader brand={brandConfig} label="Community fraud register" /><section className="lookup-layout" data-render-region="content"><div className="lookup-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="lookup-console"><span className="lookup-label">Phone number or UPI ID</span><div className="lookup-search"><strong>{query}</strong><b>SEARCH</b></div><div className="lookup-result"><small>CHECK BEFORE YOU PAY</small><strong>{content.highlight ?? "Read the reports before acting."}</strong><ul>{facts.map((fact) => <li key={fact}>{fact}</li>)}</ul></div></div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="SEARCH / READ / REPORT" /></>;
+  return <><BrandHeader brand={brandConfig} label="India’s community fraud register" /><section className="lookup-layout" data-render-region="content"><div className="lookup-copy"><span className="lookup-warning">CHECK BEFORE YOU PAY</span><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><div className="lookup-console"><div className="lookup-console-top"><i /><span>SCAMDB LOOKUP</span><b>PUBLIC</b></div><span className="lookup-label">PHONE NUMBER OR UPI ID</span><div className="lookup-search"><strong>{query}</strong><b>SEARCH</b></div><div className="lookup-result"><small>COMMUNITY SIGNAL</small><strong>{content.highlight ?? "Read the reports before acting."}</strong><ul>{facts.map((fact, index) => <li key={fact}><b>{String(index + 1).padStart(2, "0")}</b>{fact}</li>)}</ul></div><p>Not confirmation of fraud. Verify before acting.</p></div><div className="lookup-stamp">SEARCH<br />READ<br />DECIDE</div></section><LogoFooter brand={brandConfig} index="SEARCH / READ / REPORT" /></>;
 }
 
 function BreakdownArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
@@ -115,7 +115,7 @@ function BreakdownArtwork({ brandConfig, content }: { brandConfig: BrandConfig; 
     const match = row.match(/^(.*?)\s*[—:]\s*(\d{1,3})%$/);
     return { label: match?.[1]?.trim() ?? row, value: Math.min(Number(match?.[2] ?? 0), 100) };
   });
-  return <><BrandHeader brand={brandConfig} label="Every rupee traced" /><section className="breakdown-layout" data-render-region="content"><div className="breakdown-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="breakdown-score"><strong>{content.metric ?? `${rows[0]?.value ?? 0}%`}</strong><span>{content.metricLabel ?? "Indian value capture"}</span></div><div className="breakdown-bars">{rows.map((row, index) => <div key={`${row.label}-${row.value}`}><span><b>{row.label}</b><strong>{row.value}%</strong></span><i><em style={{ width: `${row.value}%` }} /></i><small>{index === 0 ? "INDIA" : index === 1 ? "TAX" : "ABROAD"}</small></div>)}</div><Body>{content.support}</Body></section><LogoFooter brand={brandConfig} index="SOURCE / METHOD / VALUE" /></>;
+  return <><BrandHeader brand={brandConfig} label="Every rupee traced" /><section className="breakdown-layout" data-render-region="content"><div className="breakdown-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="breakdown-pack" aria-label={content.quote ?? "Product pack"}><small>PACKAGED BISCUITS</small><strong>{content.quote ?? "PARLE-G · 55G"}</strong><span>MRP</span><b>₹4</b></div><div className="breakdown-score"><strong>{content.metric ?? `${rows[0]?.value ?? 0}%`}</strong><span>{content.metricLabel ?? "Indian value capture"}</span></div><div className="breakdown-bars">{rows.map((row, index) => <div key={`${row.label}-${row.value}`}><span><b>{row.label}</b><strong>{row.value}%</strong></span><i><em style={{ width: `${row.value}%` }} /></i><small>{index === 0 ? "STAYS IN INDIA" : index === 1 ? "TAX" : "FLOWS ABROAD"}</small></div>)}</div><div className="breakdown-note"><Body>{content.support}</Body><span>1002 PRODUCTS · 44 CATEGORIES</span></div></section><LogoFooter brand={brandConfig} index="SOURCE / METHOD / VALUE" /></>;
 }
 
 function StandardHeader({ brandConfig, dimensions }: { brandConfig: BrandConfig; dimensions: { width: number; height: number } }) {
@@ -127,6 +127,7 @@ function StandardFooter({ brandConfig }: { brandConfig: BrandConfig }) {
 }
 
 function TerminalArtwork({ brandConfig, content, dimensions }: { brandConfig: BrandConfig; content: PostPayload["content"]; dimensions: { width: number; height: number } }) {
+  const rows = content.steps ?? ["PASS quality 0.891", "PASS grounding 0.942", "WARN refusal drifted −0.04"];
   return (
     <>
       <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
@@ -136,8 +137,10 @@ function TerminalArtwork({ brandConfig, content, dimensions }: { brandConfig: Br
         <div className="terminal-body">
           <p className="post-eyebrow"><i>$</i> {content.eyebrow}</p>
           <h2 data-render-region="headline">{content.headline}</h2>
+          <div className="terminal-command"><i>$</i><code>promptry run rag-regression --compare prod</code></div>
+          <div className="terminal-results">{rows.map((row) => { const [status, ...rest] = row.split(" "); return <div className={`terminal-result ${status.toLowerCase()}`} key={row}><b>{status}</b><span>{rest.join(" ")}</span></div>; })}</div>
+          <div className="terminal-summary"><span><small>OVERALL SCORE</small><strong>{content.metric ?? "0.913"}</strong></span><b>PASS</b></div>
           <div className="terminal-output"><i aria-hidden>›</i><p className="post-support" data-render-region="support">{content.support}</p></div>
-          <span className="terminal-cursor" aria-hidden />
         </div>
       </div>
       <StandardFooter brandConfig={brandConfig} />

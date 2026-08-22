@@ -84,10 +84,11 @@ test("generic layout templates stay renderer-driven and reviewable", async () =>
 });
 
 test("beta renderers preserve the product object instead of collapsing into statement cards", async () => {
-  const [artwork, media, css] = await Promise.all([
+  const [artwork, media, css, samples] = await Promise.all([
     readFile(new URL("app/post-artwork.tsx", root), "utf8"),
     readFile(new URL("lib/media.ts", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
+    readFile(new URL("scripts/generate-beta-samples.mjs", root), "utf8"),
   ]);
   for (const renderer of ["chat", "lookup", "breakdown"]) {
     assert.match(media, new RegExp(`rendererKeySchema = z\\.enum\\(\\[[^\\]]*\\"${renderer}\\"`));
@@ -95,6 +96,10 @@ test("beta renderers preserve the product object instead of collapsing into stat
     assert.match(css, new RegExp(`\\.${renderer}-layout`));
   }
   assert.match(artwork, /background-\$\{resolvedBackgroundStyle\}/);
+  assert.match(samples, /quality-reviews\.json/);
+  assert.match(samples, /failed visual rubric item/);
+  assert.match(samples, /Verified source asset changed/);
+  assert.doesNotMatch(samples, /const visualRubric\s*=\s*\{[\s\S]*professionallyDesigned:\s*true/);
 });
 
 test("template library renders the real latest template artwork", async () => {
