@@ -1,5 +1,6 @@
 import { toNextJsHandler } from "better-auth/next-js";
 import { getAuth } from "../../../../lib/server/auth";
+import { normalizeLoopbackNativeRegistration } from "../../../../lib/server/oauth-registration";
 
 function handlers() {
   return toNextJsHandler(getAuth());
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return handlers().POST(request);
+  return handlers().POST(await normalizeLoopbackNativeRegistration(request));
 }
 
 export async function PATCH(request: Request) {

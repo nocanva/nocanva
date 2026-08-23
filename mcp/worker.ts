@@ -1,5 +1,5 @@
 import { createMcpHandler } from "agents/mcp/server";
-import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { createRemoteJWKSet, customFetch, jwtVerify, type JWTPayload } from "jose";
 import { authenticateBearer, loadTokenRecords } from "./auth";
 import { createCloudflareRenderer } from "./cloudflare-renderer";
 import { buildServer } from "./server";
@@ -137,7 +137,9 @@ async function authenticateOAuthRequest(request: Request, env: Env): Promise<JWT
   const jwksUrl = `${env.NOCANVA_AUTH_ISSUER}/jwks`;
   let keySet = remoteKeySets.get(jwksUrl);
   if (!keySet) {
-    keySet = createRemoteJWKSet(new URL(jwksUrl));
+    keySet = createRemoteJWKSet(new URL(jwksUrl), {
+      [customFetch]: (_url, init) => applicationRequest(env, "/api/auth/jwks", init),
+    });
     remoteKeySets.set(jwksUrl, keySet);
   }
   try {
@@ -148,7 +150,12 @@ async function authenticateOAuthRequest(request: Request, env: Env): Promise<JWT
     const scopes = new Set(typeof payload.scope === "string" ? payload.scope.split(/\s+/) : []);
     if (!scopes.has("nocanva:read") || !scopes.has("nocanva:write")) return oauthChallenge(env, 403, "insufficient_scope");
     return payload;
-  } catch {
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "oauth_token_verification_error",
+      error: error instanceof Error ? error.message : "Unknown error",
+      code: typeof error === "object" && error && "code" in error ? String(error.code) : undefined,
+    }));
     return oauthChallenge(env, 401, "invalid_token");
   }
 }

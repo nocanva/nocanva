@@ -14,8 +14,6 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
     for (const item of Array.isArray(value) ? value : value ? [value] : []) query.append(key, item);
   }
   await requireNoCanvaViewer(`/consent?${query.toString()}`);
-  const code = single(params.code);
-  if (!code) return <main className="auth-shell"><section className="auth-card"><h1>This connection has expired.</h1><p className="auth-copy">Return to your MCP client and start the connection again.</p></section></main>;
   const scopes = (single(params.scope) ?? "").split(/\s+/).filter(Boolean);
   return <main className="auth-shell"><ConsentCard scopes={scopes} /></main>;
 }
