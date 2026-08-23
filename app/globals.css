@@ -317,6 +317,7 @@ button { color: inherit; }
 .composition-logo-footer strong { color: currentColor; }
 .composition-eyebrow { color: var(--brand-signal); font-size: clamp(7px,.75vw,11px); font-weight: 850; letter-spacing: .14em; margin: 0 0 4%; text-transform: uppercase; }
 .composition-headline { font: 560 clamp(28px,3.35vw,52px)/.98 var(--font-serif), serif !important; hyphens: none; letter-spacing: -.05em !important; margin: 0; max-width: none !important; overflow-wrap: normal; text-wrap: balance; word-break: normal; }
+.post-canvas .composition-headline { overflow-wrap: normal; word-break: normal; }
 .composition-body { color: var(--brand-muted); font-size: clamp(9px,.95vw,14px); line-height: 1.48; margin: 0; }
 .composition-highlight { align-self: flex-start; background: var(--brand-signal); color: #fff; display: inline-block; font-size: clamp(7px,.72vw,11px); letter-spacing: .07em; padding: 1.7% 2.5%; text-transform: uppercase; }
 .composition-cta { align-items: center; align-self: flex-start; border-bottom: 1px solid currentColor; display: inline-flex; font-size: clamp(7px,.75vw,11px); gap: 12px; padding: 0 0 1.5%; text-transform: uppercase; }
@@ -463,7 +464,7 @@ button { color: inherit; }
 .post-canvas.preview .composition-wordmark { font-size: 11px; }
 .post-canvas.preview .composition-brand-header > span:last-child { font-size: 6px; }
 .post-canvas.preview .composition-eyebrow { font-size: 8px; }
-.post-canvas.preview .composition-headline { font-size: 42px !important; }
+.post-canvas.preview .composition-headline { font-size: calc(42px * var(--headline-fit, 1)) !important; }
 .post-canvas.preview .composition-body { font-size: 10px; }
 .post-canvas.preview .composition-highlight, .post-canvas.preview .composition-cta { font-size: 7px; }
 .post-canvas.preview .composition-evidence > span { font-size: 6px; }
@@ -471,12 +472,12 @@ button { color: inherit; }
 .post-canvas.preview .composition-evidence p { font-size: 7px; }
 .post-canvas.preview .composition-metric strong { font-size: 22px; }
 .post-canvas.preview .composition-metric span { font-size: 6px; }
-.post-canvas.preview.claim .composition-headline { font-size: 56px !important; }
-.post-canvas.preview.real_but .composition-headline { font-size: 35px !important; }
-.post-canvas.preview.receipt .composition-headline { font-size: 33px !important; }
-.post-canvas.preview.whats_missing .composition-headline { font-size: 46px !important; }
-.post-canvas.preview.product .composition-headline { font-size: 39px !important; }
-.post-canvas.preview.explainer .composition-headline { font-size: 42px !important; }
+.post-canvas.preview.claim .composition-headline { font-size: calc(56px * var(--headline-fit, 1)) !important; }
+.post-canvas.preview.real_but .composition-headline { font-size: calc(35px * var(--headline-fit, 1)) !important; }
+.post-canvas.preview.receipt .composition-headline { font-size: calc(33px * var(--headline-fit, 1)) !important; }
+.post-canvas.preview.whats_missing .composition-headline { font-size: calc(46px * var(--headline-fit, 1)) !important; }
+.post-canvas.preview.product .composition-headline { font-size: calc(39px * var(--headline-fit, 1)) !important; }
+.post-canvas.preview.explainer .composition-headline { font-size: calc(42px * var(--headline-fit, 1)) !important; }
 .post-canvas.preview.explainer .explainer-layout li b { font-size: 24px; }
 .post-canvas.preview.explainer .explainer-layout li span { font-size: 11px; }
 .post-canvas.preview .missing-index { font-size: 160px; }
@@ -509,7 +510,7 @@ button { color: inherit; }
 .puck-draft-editor[aria-disabled="true"] { opacity: .72; pointer-events: none; }
 .puck-draft-editor .post-canvas { width: min(100%, 390px); }
 .post-canvas.export .composition-eyebrow { font-size: 19px; }
-.post-canvas.export .composition-headline { font-size: 88px !important; }
+.post-canvas.export .composition-headline { font-size: calc(88px * var(--headline-fit, 1)) !important; }
 .post-canvas.export .composition-body { font-size: 26px; }
 .post-canvas.export .composition-highlight { font-size: 18px; }
 .post-canvas.export .composition-cta { font-size: 18px; }
@@ -519,12 +520,12 @@ button { color: inherit; }
 .post-canvas.export .composition-evidence > span { font-size: 15px; }
 .post-canvas.export .composition-evidence strong { font-size: 20px; }
 .post-canvas.export .composition-evidence p { font-size: 18px; }
-.post-canvas.export.claim .composition-headline { font-size: 100px !important; }
-.post-canvas.export.real_but .composition-headline { font-size: 82px !important; }
-.post-canvas.export.receipt .composition-headline { font-size: 76px !important; }
-.post-canvas.export.whats_missing .composition-headline { font-size: 106px !important; }
-.post-canvas.export.product .composition-headline { font-size: 74px !important; }
-.post-canvas.export.explainer .composition-headline { font-size: 78px !important; }
+.post-canvas.export.claim .composition-headline { font-size: calc(100px * var(--headline-fit, 1)) !important; }
+.post-canvas.export.real_but .composition-headline { font-size: calc(82px * var(--headline-fit, 1)) !important; }
+.post-canvas.export.receipt .composition-headline { font-size: calc(76px * var(--headline-fit, 1)) !important; }
+.post-canvas.export.whats_missing .composition-headline { font-size: calc(106px * var(--headline-fit, 1)) !important; }
+.post-canvas.export.product .composition-headline { font-size: calc(74px * var(--headline-fit, 1)) !important; }
+.post-canvas.export.explainer .composition-headline { font-size: calc(78px * var(--headline-fit, 1)) !important; }
 .post-canvas.export.explainer .explainer-layout li b { font-size: 44px; }
 .post-canvas.export.explainer .explainer-layout li span { font-size: 27px; }
 .post-canvas.export.real_but .real-but-detail .composition-body { font-size: 21px; }
@@ -623,7 +624,7 @@ button { color: inherit; }
 .terminal-output { margin-top: 4%; padding-top: 4%; }
 .post-canvas.terminal .terminal-output .post-support { font-size: clamp(6px,.65vw,10px); }
 
-.post-canvas.export.chat .chat-copy .composition-headline { font-size: 66px !important; }
+.post-canvas.export.chat .chat-copy .composition-headline { font-size: calc(66px * var(--headline-fit, 1)) !important; }
 .post-canvas.export.chat .chat-proof strong { font-size: 68px; }
 .post-canvas.export.chat .chat-proof span, .post-canvas.export.chat .chat-note > span { font-size: 14px; }
 .post-canvas.export.chat .chat-day { font-size: 11px; }

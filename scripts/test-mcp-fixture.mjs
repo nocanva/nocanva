@@ -31,6 +31,23 @@ try {
   assert.ok(toolNames.includes("nocanva_list_compositions"), "Missing MCP tool: nocanva_list_compositions");
   const compositionResult = structured(await client.callTool({ name: "nocanva_list_compositions", arguments: { brandId: "blindspot", recentLimit: 20 } }));
   assert.deepEqual(compositionResult.compositions.map((composition) => composition.id), ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
+  const handleReview = structured(await client.callTool({
+    name: "canvnah_review_template",
+    arguments: {
+      brandId: "blindspot",
+      templateId: "whats-missing",
+      format: "portrait",
+      content: {
+        eyebrow: "INSTAGRAM, TOO",
+        headline: "Already sharing posts with @blindspot.buzz?",
+        support: "Keep sending public Reels, photo posts, and carousels—or paste their links on the website.",
+        highlight: "REELS · PHOTOS · CAROUSELS",
+        backgroundStyle: "ink",
+      },
+    },
+  }));
+  assert.equal(handleReview.review.passed, true);
+  assert.equal(handleReview.review.checks.find((check) => check.id === "typography")?.passed, true);
 
   const brand = structured(await client.callTool({
     name: "canvnah_create_brand",
@@ -121,7 +138,7 @@ try {
   assert.equal(rerendered.render.parentRenderId, rendered.render.id);
   assert.equal(rerendered.render.sha256, rendered.render.sha256);
 
-  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, brandId: brand.brand.id, templateId: template.template.id, layoutTemplateId: layoutTemplate.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ tools: toolNames.length, handleTypography: "passed", brandId: brand.brand.id, templateId: template.template.id, layoutTemplateId: layoutTemplate.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);
 } finally {
   await client.close();
 }

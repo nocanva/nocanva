@@ -48,12 +48,12 @@ export const templates = {
   statement: { id: "statement", name: "Editorial statement", description: "One strong idea with a sharp supporting line.", version: 1 },
   signal: { id: "signal", name: "Signal card", description: "A numbered claim for a recurring evidence series.", version: 1 },
   bloom: { id: "bloom", name: "Bloom card", description: "An illustrated card with a serif headline, leaf motifs and a channel footer.", version: 1 },
-  claim: { id: "claim", name: compositions.claim.name, description: compositions.claim.purpose, version: 4 },
-  "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 4 },
-  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 4 },
-  "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 4 },
-  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 4 },
-  explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 4 },
+  claim: { id: "claim", name: compositions.claim.name, description: compositions.claim.purpose, version: 5 },
+  "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 5 },
+  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 5 },
+  "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 5 },
+  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 5 },
+  explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 5 },
 } as const;
 
 export const posterLayoutSchema = z.object({

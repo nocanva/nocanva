@@ -127,8 +127,11 @@ test("carousel exports remain discoverable and force exact PNG downloads", async
   assert.match(repository, /getLatestCarouselRender/);
   assert.match(repository, /getCarouselRenderForRevision/);
   assert.match(checks, /headline.*eyebrow/);
+  assert.match(checks, /split token/);
   assert.match(remoteChecks, /contrast/);
+  assert.match(remoteChecks, /splitToken/);
   assert.match(workspace, /initialRender/);
+  assert.match(await readFile(new URL("app/post-artwork.tsx", root), "utf8"), /--headline-fit/);
 });
 
 test("template library renders the real latest template artwork", async () => {

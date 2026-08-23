@@ -5,6 +5,17 @@ import { ArtworkImage, Body, BrandHeader, CTA, Evidence, Eyebrow, Headline, High
 type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey; layout?: PosterLayout };
 type PostArtworkProps = { payload: PostPayload; mode?: "preview" | "export"; brandConfig?: BrandConfig; template?: ArtworkTemplate };
 
+function headlineFit(text: string) {
+  const length = Array.from(text.trim()).length;
+  const longestToken = Math.max(0, ...text.trim().split(/\s+/).map((token) => Array.from(token).length));
+  if (longestToken >= 22 || length >= 72) return .72;
+  if (longestToken >= 18 || length >= 60) return .8;
+  if (longestToken >= 15 || length >= 50) return .88;
+  if (longestToken >= 12 || length >= 44) return .92;
+  if (length >= 38) return .95;
+  return 1;
+}
+
 function MediaFrame({ image }: { image: NonNullable<PostPayload["content"]["image"]> }) {
   const imageStyle = {
     objectFit: image.fit,
@@ -279,6 +290,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     "--brand-signal-bright": `color-mix(in srgb, ${brandConfig.colors.signal} 68%, #ffffff)`,
     "--brand-ink-deep": `color-mix(in srgb, ${brandConfig.colors.ink} 82%, ${brandConfig.colors.signal})`,
     "--brand-wash": `color-mix(in srgb, ${brandConfig.colors.signal} 14%, ${brandConfig.colors.paper})`,
+    "--headline-fit": headlineFit(content.headline),
     "--layout-headline-scale": resolvedLayout.headlineScale,
     "--layout-media-split": `${resolvedLayout.mediaSplit * 100}%`,
   } as CSSProperties;

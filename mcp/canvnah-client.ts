@@ -372,7 +372,7 @@ export class CanvnahClient {
       { id: "bounds", passed: capture.outside === 0, detail: capture.outside === 0 ? "Every region stays inside the canvas." : `${capture.outside} region(s) leave the canvas.` },
       { id: "overflow", passed: capture.overflowing === 0, detail: capture.overflowing === 0 ? "No text is clipped." : `${capture.overflowing} region(s) are clipped.` },
       { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
-      { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, or an orphaned final fragment.` },
+      { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, token integrity, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
       { id: "contrast", passed: capture.contrast === 0, detail: capture.contrast === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${capture.contrast} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];

@@ -34,7 +34,16 @@ export function inspectRenderLayout(root: Element) {
     }
     const lineValues = Array.from(lines.values()).map((line) => line.trim()).filter(Boolean);
     const finalLine = lineValues.at(-1) ?? "";
-    return headline.getBoundingClientRect().width < rootRect.width * .38 || lineValues.length > 5 || (text.includes(" ") && finalLine.length <= 3);
+    let splitToken = false;
+    const tokenPattern = /\S+/g;
+    let token: RegExpExecArray | null;
+    while ((token = tokenPattern.exec(text))) {
+      const range = document.createRange();
+      range.setStart(node, token.index);
+      range.setEnd(node, token.index + token[0].length);
+      if (new Set(Array.from(range.getClientRects()).map((rect) => Math.round(rect.top))).size > 1) splitToken = true;
+    }
+    return headline.getBoundingClientRect().width < rootRect.width * .38 || lineValues.length > 5 || splitToken || (text.includes(" ") && finalLine.length <= 4);
   }).length;
   const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foregroundMatch = getComputedStyle(region).color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
