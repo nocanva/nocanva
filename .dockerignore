@@ -2,6 +2,7 @@
 .next
 .vinext
 .wrangler
+.private
 backups
 node_modules
 outputs
