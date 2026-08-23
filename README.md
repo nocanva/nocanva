@@ -10,34 +10,30 @@ No embedded LLM. No mystery rerender. No design-by-coordinate prompts.
 
 ## Try the hosted beta
 
-The hosted beta is currently invite-only.
-
-1. Open [NoCanva](https://nocanva-app.sidsaini1196.workers.dev) and sign in.
-2. Go to **Connections** → **Create token**. Copy the token; it is shown once.
-3. Connect Codex:
+1. Open [NoCanva](https://nocanva-app.sidsaini1196.workers.dev) and continue with Google. A personal workspace is created automatically.
+2. Connect Codex:
 
 ```bash
-export NOCANVA_MCP_TOKEN='ncv_...'
-codex mcp add nocanva \
-  --url https://nocanva-mcp.sidsaini1196.workers.dev/mcp \
-  --bearer-token-env-var NOCANVA_MCP_TOKEN
-codex mcp list
+codex mcp add nocanva --url https://nocanva-mcp.sidsaini1196.workers.dev/mcp
+codex mcp login nocanva
 ```
 
-4. In Codex, install the media workflow:
+Your browser opens once. Continue with Google and approve the connection. The MCP is then bound to your personal workspace.
+
+3. Install the media workflow in Codex:
 
 ```text
 $skill-installer https://github.com/nocanva/nocanva/tree/main/skills/nocanva-media
 ```
 
-5. Restart Codex if asked, then try:
+4. Restart Codex if asked, then try:
 
 ```text
 $nocanva-media Turn this verified brief into a 4-slide carousel.
 Show me the draft before approval.
 ```
 
-Codex supports remote MCP servers with bearer-token environment variables. The skill teaches the agent NoCanva's review, approval, and immutable-render workflow.
+The skill teaches the agent NoCanva's draft, review, human-approval, and immutable-render workflow. Need headless access for CI? Create a revocable token under **Connect** and use `--bearer-token-env-var` instead.
 
 ## What happens in the UI
 
@@ -45,7 +41,7 @@ Codex supports remote MCP servers with bearer-token environment variables. The s
 - Edit copy, choose media, and adjust crop or focal point.
 - Approve one exact revision.
 - Download the approved PNG or carousel ZIP.
-- Create and revoke agent tokens under **Connections**.
+- Connect interactive MCP clients with Google; create revocable tokens only for CI or headless agents.
 
 Draft URLs stay stable. Approved exports do not change.
 

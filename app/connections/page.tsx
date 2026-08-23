@@ -21,7 +21,7 @@ export default async function ConnectionsPage() {
       <div className="collection-heading">
         <p className="kicker">Agent connections</p>
         <h1>Connect once. Create from anywhere.</h1>
-        <p>NoCanva exposes the same tool contract over local stdio and authenticated Streamable HTTP.</p>
+        <p>Interactive clients connect with Google. CI and headless agents can use a revocable workspace token.</p>
       </div>
       <div className="connection-status-grid">
         <article className="connection-status-card"><span>Application</span><strong className={dependencies ? "healthy" : "unhealthy"}>{dependencies ? "Healthy" : "Unavailable"}</strong><small>UI and API process</small></article>
@@ -42,7 +42,6 @@ export default async function ConnectionsPage() {
           <div><span>Render completion</span><strong>{activation.rendersCompleted}</strong></div>
         </div>
       </section>
-      <TokenManager initialTokens={tokens} />
       <div className="connection-grid">
         <article className="connection-panel">
           <p className="kicker">Local development</p><h2>STDIO MCP</h2>
@@ -51,13 +50,14 @@ export default async function ConnectionsPage() {
           <pre>npm run connect -- claude</pre>
         </article>
         <article className="connection-panel">
-          <p className="kicker">Remote and self-hosted</p><h2>Streamable HTTP</h2>
-          <p>Export a workspace bearer token, then connect. Shared configuration references the environment variable rather than committing the secret.</p>
-          <pre>NOCANVA_MCP_TOKEN=... npm run connect -- codex --remote</pre>
-          <pre>NOCANVA_MCP_TOKEN=... npm run connect -- claude --remote</pre>
-          <p className="connection-note">Check the sidecar at <code>/healthz</code> and authenticated configuration at <code>/diagnostics</code>.</p>
+          <p className="kicker">Recommended</p><h2>Connect with Google</h2>
+          <p>Add the hosted MCP, then sign in. Your browser binds the client to this personal workspace.</p>
+          <pre>codex mcp add nocanva --url https://nocanva-mcp.sidsaini1196.workers.dev/mcp</pre>
+          <pre>codex mcp login nocanva</pre>
+          <p className="connection-note">Agents may draft, review, and revise. Final approval remains human-only.</p>
         </article>
       </div>
+      <TokenManager initialTokens={tokens} />
     </section>
   </main>;
 }

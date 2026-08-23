@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Fraunces, Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
 import { headers } from "next/headers";
-import { requireNoCanvaViewer } from "../lib/server/request-auth";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -51,8 +50,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  await requireNoCanvaViewer("/");
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

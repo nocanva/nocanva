@@ -18,10 +18,11 @@ function equalSecret(left: string, right: string) {
 }
 
 export function loadTokenRecords(environment: Record<string, string | undefined> = process.env): McpTokenRecord[] {
+  const records: McpTokenRecord[] = [];
   if (environment.NOCANVA_MCP_TOKENS) {
     const value = JSON.parse(environment.NOCANVA_MCP_TOKENS) as unknown;
     if (!Array.isArray(value)) throw new Error("NOCANVA_MCP_TOKENS must be a JSON array.");
-    return value.map((entry, index) => {
+    records.push(...value.map((entry, index) => {
       if (!entry || typeof entry !== "object") throw new Error(`MCP token record ${index + 1} is invalid.`);
       const record = entry as Record<string, unknown>;
       const token = String(record.token ?? "");
@@ -32,14 +33,18 @@ export function loadTokenRecords(environment: Record<string, string | undefined>
         workspaceId: String(record.workspaceId ?? "default"),
         revokedAt: record.revokedAt ? String(record.revokedAt) : null,
       };
-    });
+    }));
   }
 
   const token = environment.NOCANVA_MCP_TOKEN;
-  if (!token || token.length < 24) {
+  if (token) {
+    if (token.length < 24) throw new Error("NOCANVA_MCP_TOKEN must contain at least 24 characters before the remote MCP server can start.");
+    records.push({ id: "self-host", token, workspaceId: environment.NOCANVA_WORKSPACE_ID ?? "default", revokedAt: null });
+  }
+  if (records.length === 0) {
     throw new Error("NOCANVA_MCP_TOKEN must contain at least 24 characters before the remote MCP server can start.");
   }
-  return [{ id: "self-host", token, workspaceId: environment.NOCANVA_WORKSPACE_ID ?? "default", revokedAt: null }];
+  return records;
 }
 
 export function authenticateBearer(authorization: string | undefined, records: McpTokenRecord[]): McpPrincipal | null {

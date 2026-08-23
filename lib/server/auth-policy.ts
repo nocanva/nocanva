@@ -1,8 +1,14 @@
-export type NoCanvaAuthMode = "disabled" | "sites_private" | "cloudflare_access";
+export type NoCanvaAuthMode = "disabled" | "sites_private" | "cloudflare_access" | "better_auth";
 export type NoCanvaPrincipal = {
-  kind: "local" | "service" | "sites-user" | "access-user";
+  kind: "local" | "service" | "sites-user" | "access-user" | "better-auth-user";
   actor: string;
   workspaceId: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  };
 };
 
 export type NoCanvaAuthConfig = {

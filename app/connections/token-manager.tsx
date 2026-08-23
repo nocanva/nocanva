@@ -7,7 +7,7 @@ export function TokenManager({ initialTokens }: { initialTokens: ManagedMcpToken
   const [tokens, setTokens] = useState(initialTokens);
   const [name, setName] = useState("My agent");
   const [secret, setSecret] = useState<string | null>(null);
-  const [notice, setNotice] = useState("Create a separate token for each agent or machine.");
+  const [notice, setNotice] = useState("Optional fallback for CI and headless machines. Interactive clients should use Google above.");
 
   async function createToken() {
     setSecret(null);
@@ -28,7 +28,7 @@ export function TokenManager({ initialTokens }: { initialTokens: ManagedMcpToken
   }
 
   return <section className="token-panel">
-    <div><p className="kicker">Hosted access</p><h2>Workspace tokens</h2><p>{notice}</p></div>
+    <div><p className="kicker">Headless fallback</p><h2>Workspace tokens</h2><p>{notice}</p></div>
     <div className="token-create"><input aria-label="Token name" maxLength={60} value={name} onChange={(event) => setName(event.target.value)} /><button className="primary-button" onClick={createToken} type="button">Create token</button></div>
     {secret && <div className="token-secret"><code>{secret}</code><button onClick={() => void navigator.clipboard.writeText(secret)} type="button">Copy</button></div>}
     <div className="token-list">{tokens.length ? tokens.map((token) => <div key={token.id}>

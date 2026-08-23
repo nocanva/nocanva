@@ -1,4 +1,25 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { user } from "./auth-schema";
+
+export const workspaces = sqliteTable("workspaces", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  kind: text("kind").notNull().default("personal"),
+  personalOwnerUserId: text("personal_owner_user_id").references(() => user.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (table) => [uniqueIndex("idx_workspaces_personal_owner").on(table.personalOwnerUserId)]);
+
+export const workspaceMemberships = sqliteTable("workspace_memberships", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("owner"),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_workspace_memberships_workspace_user").on(table.workspaceId, table.userId),
+  index("idx_workspace_memberships_user").on(table.userId, table.createdAt),
+]);
 
 export const brands = sqliteTable("brands", {
   id: text("id").primaryKey(),

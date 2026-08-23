@@ -70,6 +70,7 @@ export type CanvnahClientContext = {
   siteBypassToken?: string;
   allowRemote?: boolean;
   render?: MediaRenderer;
+  renderBaseUrl?: string;
   renderTimeoutMs?: number;
   appFetcher?: Fetcher;
 };
@@ -349,7 +350,8 @@ export class CanvnahClient {
     const dimensions = formats[payload.format];
     const query = new URLSearchParams({ payload: JSON.stringify(payload) });
     if (templateVersionId) query.set("templateVersionId", templateVersionId);
-    const previewUrl = `${this.baseUrl}/render/preview?${query.toString()}`;
+    const renderBaseUrl = this.context.renderBaseUrl?.replace(/\/$/, "") ?? this.baseUrl;
+    const previewUrl = `${renderBaseUrl}/render/preview?${query.toString()}`;
     const capture = await this.context.render({
       previewUrl,
       width: dimensions.width,

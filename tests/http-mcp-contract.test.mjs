@@ -16,6 +16,20 @@ test("remote MCP tokens are scoped, revocable, and fail closed", () => {
   assert.throws(() => loadTokenRecords({ NOCANVA_MCP_TOKEN: "short" }), /at least 24 characters/);
 });
 
+test("a bootstrap token can be added without replacing managed token records", () => {
+  const records = loadTokenRecords({
+    NOCANVA_MCP_TOKENS: JSON.stringify([
+      { id: "existing", token: "existing-token-012345678901234567", workspaceId: "default" },
+    ]),
+    NOCANVA_MCP_TOKEN: "blindspot-token-012345678901234567",
+    NOCANVA_WORKSPACE_ID: "default",
+  });
+  assert.deepEqual(records.map(({ id, workspaceId }) => ({ id, workspaceId })), [
+    { id: "existing", workspaceId: "default" },
+    { id: "self-host", workspaceId: "default" },
+  ]);
+});
+
 test("self-host package keeps the MCP sidecar authenticated and persistent", async () => {
   const [compose, dockerfile, server, guide] = await Promise.all([
     readFile(new URL("../docker-compose.yml", import.meta.url), "utf8"),
@@ -45,4 +59,15 @@ test("managed hosted tokens are hashed, revocable, and validated by the app boun
   assert.match(repository, /revoked_at IS NULL/);
   assert.match(worker, /\/api\/internal\/mcp\/auth/);
   assert.match(route, /principal\.kind !== "service"/);
+});
+
+test("hosted browser rendering uses the authenticated MCP render proxy", async () => {
+  const [client, worker] = await Promise.all([
+    readFile(new URL("../mcp/canvnah-client.ts", import.meta.url), "utf8"),
+    readFile(new URL("../mcp/worker.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(client, /renderBaseUrl/);
+  assert.match(worker, /isRenderProxyPath/);
+  assert.match(worker, /applicationProxyAuthorized/);
+  assert.match(worker, /renderBaseUrl: url\.origin/);
 });

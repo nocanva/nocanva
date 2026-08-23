@@ -3,7 +3,7 @@
   "name": "nocanva-app",
   "main": "worker/index.ts",
   "account_id": "8548382b9202825301780b51cc39a870",
-  "compatibility_date": "2026-05-22",
+  "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": false,
@@ -11,7 +11,8 @@
     {
       "binding": "DB",
       "database_name": "nocanva-db",
-      "database_id": "e05c6733-fcae-4177-b592-45047d35be1a"
+      "database_id": "e05c6733-fcae-4177-b592-45047d35be1a",
+      "migrations_dir": "drizzle"
     }
   ],
   "r2_buckets": [
@@ -21,9 +22,10 @@
     }
   ],
   "vars": {
-    "NOCANVA_AUTH_MODE": "cloudflare_access",
-    "NOCANVA_ACCESS_TEAM_DOMAIN": "https://example.cloudflareaccess.com",
-    "NOCANVA_ACCESS_AUD": "REDACTED_CLOUDFLARE_ACCESS_AUDIENCE",
+    "NOCANVA_AUTH_MODE": "better_auth",
+    "BETTER_AUTH_URL": "https://nocanva-app.sidsaini1196.workers.dev",
+    "NOCANVA_MCP_RESOURCE": "https://nocanva-mcp.sidsaini1196.workers.dev/mcp",
+    "NOCANVA_SUPPORT_EMAIL": "rohitsainihere@gmail.com",
     "NOCANVA_APPROVAL_MODE": "human_required",
     "NOCANVA_WORKSPACE_ID": "default"
   },

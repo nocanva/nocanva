@@ -53,7 +53,7 @@ test("Cloudflare Access mode fails closed without an injected identity", async (
   }), { mode: "cloudflare_access", workspaceId: "trusted-team", serviceToken }), null);
 });
 
-test("every media API route except health enforces the application boundary", async () => {
+test("every media API route and private workspace page enforce the application boundary", async () => {
   const routes = [
     "brands/route.ts", "brands/[id]/route.ts", "templates/route.ts", "posts/route.ts", "posts/[id]/route.ts",
     "drafts/route.ts", "drafts/[id]/route.ts", "drafts/[id]/revisions/route.ts", "drafts/[id]/review/route.ts",
@@ -71,5 +71,7 @@ test("every media API route except health enforces the application boundary", as
     assert.match(source, /authorizeApi/, `${route} must authorize requests`);
   }
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
-  assert.match(layout, /requireNoCanvaViewer/);
+  const home = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(layout, /requireNoCanvaViewer/, "the shared layout must allow sign-in and legal pages");
+  assert.match(home, /requireNoCanvaViewer/, "the workspace home must require a viewer");
 });

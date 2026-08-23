@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "nocanva-mcp",
   "main": "mcp/worker.ts",
-  "compatibility_date": "2026-08-19",
+  "compatibility_date": "2026-08-23",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": false,
@@ -16,7 +16,9 @@
     }
   ],
   "vars": {
-    "NOCANVA_BASE_URL": "https://nocanva-app.sidsaini1196.workers.dev"
+    "NOCANVA_BASE_URL": "https://nocanva-app.sidsaini1196.workers.dev",
+    "NOCANVA_AUTH_ISSUER": "https://nocanva-app.sidsaini1196.workers.dev/api/auth",
+    "NOCANVA_MCP_RESOURCE": "https://nocanva-mcp.sidsaini1196.workers.dev/mcp"
   },
   "observability": {
     "enabled": true,
