@@ -34,7 +34,7 @@ test("workspace theme is persistent, accessible, and independent from artwork co
   assert.match(toggle, /useSyncExternalStore/);
   assert.match(css, /:root\[data-theme="dark"\]/);
   assert.match(css, /\.ui-switch\[data-checked\]/);
-  assert.match(artwork, /background: brandConfig\.colors\.paper/);
+  assert.match(artwork, /backgroundColor: brandConfig\.colors\.paper/);
 });
 
 test("draft workspace exposes stable editable lifecycle actions", async () => {
@@ -109,6 +109,26 @@ test("beta renderers preserve the product object instead of collapsing into stat
   assert.match(benchmarkRunner, /nocanva_list_compositions/);
   assert.match(benchmarkRunner, /nocanva_review_carousel/);
   assert.match(benchmarkEvaluator, /immutable render/);
+});
+
+test("carousel exports remain discoverable and force exact PNG downloads", async () => {
+  const [workspace, renderPage, assetRoute, repository, checks, remoteChecks] = await Promise.all([
+    readFile(new URL("app/carousels/[id]/workspace.tsx", root), "utf8"),
+    readFile(new URL("app/carousel-renders/[id]/page.tsx", root), "utf8"),
+    readFile(new URL("app/api/carousel-renders/[id]/assets/[slideIndex]/route.ts", root), "utf8"),
+    readFile(new URL("lib/server/carousel-repository.ts", root), "utf8"),
+    readFile(new URL("lib/render-checks.ts", root), "utf8"),
+    readFile(new URL("mcp/render-layout.ts", root), "utf8"),
+  ]);
+  assert.match(workspace, /Open exported PNGs/);
+  assert.match(workspace, /Download all PNGs/);
+  assert.match(renderPage, /Download slide/);
+  assert.match(assetRoute, /content-disposition/);
+  assert.match(repository, /getLatestCarouselRender/);
+  assert.match(repository, /getCarouselRenderForRevision/);
+  assert.match(checks, /headline.*eyebrow/);
+  assert.match(remoteChecks, /contrast/);
+  assert.match(workspace, /initialRender/);
 });
 
 test("template library renders the real latest template artwork", async () => {

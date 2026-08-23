@@ -255,6 +255,8 @@ export async function createCarouselRender(id: string, actor = "agent:mcp", work
   if (!current) throw new Error("The carousel does not exist.");
   if (!['approved', 'rendered'].includes(current.status) || current.approval?.decision !== "approved" || !current.approval.reviewId) throw new Error("Review and approve the current carousel revision before rendering it.");
   if (!current.review || current.review.id !== current.approval.reviewId) throw new Error("The approval does not pin the current carousel review artifacts.");
+  const existing = await getCarouselRenderForRevision(current.revisionId, current.approval.reviewId, workspaceId);
+  if (existing) return existing;
   const reviewRow = await database().prepare("SELECT artifacts_json FROM carousel_reviews WHERE id = ? AND carousel_revision_id = ? AND workspace_id = ? LIMIT 1").bind(current.approval.reviewId, current.revisionId, workspaceId).first<{ artifacts_json: string }>();
   if (!reviewRow) throw new Error("The approved carousel review artifacts are unavailable.");
   const reviewedArtifacts = JSON.parse(reviewRow.artifacts_json) as StoredArtifact[];
@@ -291,6 +293,17 @@ export async function createCarouselRender(id: string, actor = "agent:mcp", work
 export async function getCarouselRenderById(id: string, workspaceId = defaultWorkspaceId()) {
   await ensureCarouselDatabase(workspaceId);
   const row = await database().prepare(`${renderSelect} WHERE rr.id = ? AND rr.workspace_id = ? LIMIT 1`).bind(id, workspaceId).first<D1Row>();
+  return row ? mapRender(row, workspaceId) : null;
+}
+
+export async function getLatestCarouselRender(carouselId: string, workspaceId = defaultWorkspaceId()) {
+  await ensureCarouselDatabase(workspaceId);
+  const row = await database().prepare(`${renderSelect} WHERE cr.carousel_id = ? AND rr.workspace_id = ? ORDER BY rr.created_at DESC LIMIT 1`).bind(carouselId, workspaceId).first<D1Row>();
+  return row ? mapRender(row, workspaceId) : null;
+}
+
+async function getCarouselRenderForRevision(carouselRevisionId: string, reviewId: string, workspaceId: string) {
+  const row = await database().prepare(`${renderSelect} WHERE rr.carousel_revision_id = ? AND rr.review_id = ? AND rr.workspace_id = ? ORDER BY rr.created_at DESC LIMIT 1`).bind(carouselRevisionId, reviewId, workspaceId).first<D1Row>();
   return row ? mapRender(row, workspaceId) : null;
 }
 

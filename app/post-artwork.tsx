@@ -262,10 +262,14 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     : resolvedTemplate.rendererKey === "whats_missing" ? "signal_wash"
     : "paper"
   );
+  const resolvedSurface = resolvedBackgroundStyle === "ink" || resolvedBackgroundStyle === "image_full_bleed"
+    ? { backgroundColor: brandConfig.colors.ink, color: brandConfig.colors.paper }
+    : resolvedBackgroundStyle === "signal_wash"
+      ? { backgroundColor: brandConfig.colors.signal, color: brandConfig.colors.paper }
+      : { backgroundColor: brandConfig.colors.paper, color: brandConfig.colors.ink };
   const safeArea = mode === "export" ? `${brandConfig.safeArea}px` : `${brandConfig.safeArea / 10.8}%`;
   const style = {
-    background: brandConfig.colors.paper,
-    color: brandConfig.colors.ink,
+    ...resolvedSurface,
     padding: safeArea,
     "--brand-signal": brandConfig.colors.signal,
     "--brand-muted": brandConfig.colors.muted,

@@ -379,7 +379,6 @@ button { color: inherit; }
 .receipt-conclusion .composition-body { border-top: 1px solid color-mix(in srgb,currentColor 20%,transparent); padding-top: 3%; }
 
 /* What’s missing: a loud red question resolved by a grounded paper answer. */
-.post-canvas.whats_missing { background: var(--brand-signal) !important; color: var(--brand-paper) !important; }
 .post-canvas.whats_missing .composition-brand-header, .post-canvas.whats_missing .composition-logo-footer { color: var(--brand-paper); }
 .post-canvas.whats_missing .composition-logo-footer span:nth-child(2) { color: var(--brand-ink); }
 .missing-layout { display: grid; flex: 1; gap: 5%; grid-template-rows: auto minmax(0,1fr) auto; padding: 7% 0 5%; position: relative; }
@@ -406,6 +405,11 @@ button { color: inherit; }
 .post-canvas.whats_missing.background-paper .missing-answer { background: var(--brand-ink); color: var(--brand-paper); }
 .post-canvas.whats_missing.background-paper .missing-answer .composition-body { color: color-mix(in srgb,var(--brand-paper) 78%,transparent); }
 .post-canvas.whats_missing.background-paper .missing-source .composition-evidence > span, .post-canvas.whats_missing.background-paper .missing-source .composition-evidence p { color: var(--brand-ink); }
+.post-canvas.whats_missing.background-paper_grid .composition-brand-header, .post-canvas.whats_missing.background-paper_grid .composition-logo-footer { color: var(--brand-ink); }
+.post-canvas.whats_missing.background-paper_grid .missing-index { color: color-mix(in srgb,var(--brand-signal) 14%,transparent); }
+.post-canvas.whats_missing.background-paper_grid .missing-answer { background: var(--brand-ink); color: var(--brand-paper); }
+.post-canvas.whats_missing.background-paper_grid .missing-answer .composition-body { color: color-mix(in srgb,var(--brand-paper) 78%,transparent); }
+.post-canvas.whats_missing.background-ink .missing-question .composition-eyebrow { color: var(--brand-signal); }
 .post-canvas.whats_missing.background-ink .missing-answer .composition-body { color: var(--brand-muted); }
 .post-canvas.whats_missing.background-signal_wash .missing-answer .composition-body { color: var(--brand-muted); }
 
@@ -784,8 +788,9 @@ button { color: inherit; }
 .draft-preview-panel { min-width: 0; }
 .draft-preview-panel .canvas-stage { min-height: 650px; }
 .draft-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.draft-actions button { min-height: 38px; padding: 0 13px; border: 1px solid var(--line-strong); color: var(--ink); background: var(--card); font-size: 9px; font-weight: 800; cursor: pointer; }
+.draft-actions button, .draft-actions a { min-height: 38px; padding: 0 13px; border: 1px solid var(--line-strong); color: var(--ink); background: var(--card); display: inline-flex; align-items: center; text-decoration: none; font-size: 9px; font-weight: 800; cursor: pointer; }
 .draft-actions button:disabled { cursor: not-allowed; opacity: .4; }
+.draft-actions a.export-action { border-color: var(--ink); color: var(--paper); background: var(--ink); }
 .carousel-tabs { display: grid; gap: 6px; margin-bottom: 10px; }
 .carousel-tabs button { min-width: 0; display: grid; grid-template-columns: 28px 1fr; gap: 9px; align-items: center; padding: 9px; border: 1px solid var(--line); color: var(--ink); background: var(--paper); text-align: left; cursor: pointer; }
 .carousel-tabs button.active { border-color: var(--ink); background: var(--card); box-shadow: inset 3px 0 0 var(--red); }
@@ -825,7 +830,7 @@ button { color: inherit; }
 .carousel-render-slide > div:last-child { min-width: 0; display: flex; flex-direction: column; align-items: start; }
 .carousel-render-slide span { color: var(--red); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .carousel-render-slide strong { margin: 12px 0 auto; font: 600 20px/1.05 var(--font-serif), serif; }
-.carousel-render-slide a { margin: 16px 0 8px; color: var(--ink); font-size: 9px; font-weight: 800; }
+.carousel-render-slide a { margin: 16px 0 8px; padding: 10px 12px; border: 1px solid var(--ink); color: var(--paper); background: var(--ink); font-size: 9px; font-weight: 800; text-decoration: none; }
 .carousel-render-slide small { color: var(--muted); font-size: 8px; }
 .carousel-render-slide code { display: block; max-width: 100%; margin-top: 8px; overflow: hidden; color: var(--muted); font-size: 7px; text-overflow: ellipsis; }
 .carousel-render-meta { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 24px; padding: 18px; border: 1px solid var(--line); background: var(--card); }

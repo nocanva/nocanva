@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
 import { brandConfigSchema, postContentSchema, templateInputSchema } from "../lib/media";
-import { compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
+import { compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
 
 const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
 const draftPayloadInputSchema = z.object({
@@ -167,7 +167,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_create_carousel", {
     title: "Create NoCanva carousel",
-    description: "Create a stable editable 3–7 slide carousel using one existing brand and approved template.",
+    description: "Create a stable editable 3–7 slide carousel using one existing brand and approved template. For Blindspot, reserve What’s missing for omitted-context stories; use Explainer for screenshot-free feature education and Product only with real product screenshots.",
     inputSchema: z.object({
       brandId: z.string(), templateId: z.string(), format: z.enum(["portrait", "square"]), slides: z.array(contentSchema).min(3).max(7),
       prompt: z.string().trim().max(500).optional(),
@@ -192,12 +192,14 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     annotations: { readOnlyHint: false, destructiveHint: false },
   }, async ({ carouselId, reviewer, notes }) => {
     const reviewed = await client.reviewCarousel(carouselId, reviewer, notes);
+    const compositionId = compositionFromTemplateId(reviewed.carousel.templateId);
+    const contentWarnings = reviewed.carousel.slides.flatMap((slide, slideIndex) => creativeContentWarnings(slide).map((warning) => `Slide ${slideIndex + 1}: ${warning}`));
     return {
       content: [
-        { type: "text" as const, text: JSON.stringify({ carousel: reviewed.carousel, review: reviewed.review }, null, 2) },
+        { type: "text" as const, text: JSON.stringify({ carousel: reviewed.carousel, review: reviewed.review, compositionId, contentWarnings, visualReviewRubric, requiredVisualAnswers: reviewed.carousel.slides.map((_, slideIndex) => ({ slide: slideIndex + 1, questions: visualReviewRubric })) }, null, 2) },
         ...reviewed.imagesBase64.map((data) => ({ type: "image" as const, data, mimeType: "image/png" as const })),
       ],
-      structuredContent: { carousel: reviewed.carousel, review: reviewed.review },
+      structuredContent: { carousel: reviewed.carousel, review: reviewed.review, compositionId, contentWarnings, visualReviewRubric },
     };
   });
 

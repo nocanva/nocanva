@@ -8,5 +8,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const index = Number(slideIndex);
   const asset = Number.isInteger(index) ? await getCarouselRenderAsset(id, index, authorization.principal.workspaceId) : null;
   if (!asset) return Response.json({ error: "Carousel slide not found." }, { status: 404 });
-  return new Response(asset.body, { headers: { "content-type": asset.httpMetadata?.contentType ?? "image/png", "cache-control": "private, max-age=31536000, immutable", etag: asset.httpEtag } });
+  const headers = new Headers({ "content-type": asset.httpMetadata?.contentType ?? "image/png", "cache-control": "private, max-age=31536000, immutable", etag: asset.httpEtag });
+  if (new URL(request.url).searchParams.get("download") === "1") headers.set("content-disposition", `attachment; filename="nocanva-carousel-${id}-slide-${String(index + 1).padStart(2, "0")}.png"`);
+  return new Response(asset.body, { headers });
 }

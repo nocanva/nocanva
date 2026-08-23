@@ -23,9 +23,9 @@ For Blindspot, use specific evidence-led copy. Name the actual claim, date, loca
 
 ## Create a carousel
 
-1. Build one evidence-backed narrative with 3–7 structured slides. Each slide needs an eyebrow, headline, and support line.
+1. Build one evidence-backed narrative with 3–7 structured slides. Each slide needs an eyebrow, headline, and support line. Reserve `whats_missing` for a specific omitted date, place, source, statement, or context. For a screenshot-free feature walkthrough use `explainer`; use `product` only when every product-led slide has a real product screenshot.
 2. Call `nocanva_create_carousel` with one approved brand, template, and format for the entire set. Preserve its `workspaceUrl`, `templateVersionId`, and `currentRevision`.
 3. Before edits, call `nocanva_get_carousel` and use its exact `currentRevision` with `nocanva_update_carousel`.
-4. Call `nocanva_review_carousel`. Inspect every returned PNG visually; one attractive slide does not establish the quality of the full set. Check narrative flow, hierarchy, legibility, repetition, brand fit, and whether slide-to-slide rhythm is intentional.
+4. Call `nocanva_review_carousel`. Treat every returned content warning and failed contrast check as requiring revision. Inspect every returned PNG visually and answer all eight returned rubric questions for every slide; one attractive slide does not establish the quality of the full set. Check narrative flow, hierarchy, legibility, repetition, brand fit, and whether slide-to-slide rhythm is intentional. Never approve a slide whose headline or eyebrow disappears into its surface.
 5. Approve the exact review set with `nocanva_approve_carousel`, then call `nocanva_render_carousel`. Rendering promotes every approved review artifact without a second capture.
 6. Call `nocanva_get_carousel_render`. Report the editable workspace URL, immutable render URL, every slide URL and SHA-256, the pinned template version, dimensions, and ZIP URL.

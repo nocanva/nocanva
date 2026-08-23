@@ -36,5 +36,27 @@ export function inspectRenderLayout(root: Element) {
     const finalLine = lineValues.at(-1) ?? "";
     return headline.getBoundingClientRect().width < rootRect.width * .38 || lineValues.length > 5 || (text.includes(" ") && finalLine.length <= 3);
   }).length;
-  return { outside, overflowing, collapsed, typographic };
+  const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
+    const foregroundMatch = getComputedStyle(region).color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
+    let current: HTMLElement | null = region;
+    let backgroundMatch: RegExpMatchArray | null = null;
+    while (current) {
+      const candidate = getComputedStyle(current).backgroundColor.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
+      if (candidate && (candidate[4] == null || Number(candidate[4]) >= .95)) { backgroundMatch = candidate; break; }
+      if (current === root) break;
+      current = current.parentElement;
+    }
+    if (!foregroundMatch || !backgroundMatch) return true;
+    const values = [foregroundMatch, backgroundMatch].map((match) => {
+      const channels = [Number(match[1]), Number(match[2]), Number(match[3])].map((channel) => {
+        const value = channel / 255;
+        return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * channels[0] + .7152 * channels[1] + .0722 * channels[2];
+    });
+    const lighter = Math.max(values[0], values[1]);
+    const darker = Math.min(values[0], values[1]);
+    return (lighter + .05) / (darker + .05) < 3;
+  }).length;
+  return { outside, overflowing, collapsed, typographic, contrast };
 }

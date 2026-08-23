@@ -4,14 +4,14 @@ import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
 import { carouselUpdateInputSchema, formats, type PostContent } from "../../../lib/media";
-import type { CarouselRecord, CarouselRevisionRecord } from "../../../lib/server/carousel-repository";
+import type { CarouselRecord, CarouselRenderRecord, CarouselRevisionRecord } from "../../../lib/server/carousel-repository";
 import type { BrandRecord, TemplateRecord } from "../../../lib/server/media-repository";
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { WorkspaceHeader } from "../../workspace-header";
 
-export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAssets, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
+export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAssets, initialRender, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; initialAssets: WorkspaceAsset[]; initialRender: CarouselRenderRecord | null; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
   const [carousel, setCarousel] = useState(initialCarousel);
   const [format, setFormat] = useState(initialCarousel.format);
@@ -22,14 +22,16 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
   const [busy, setBusy] = useState(false);
   const [revisions, setRevisions] = useState(initialRevisions);
   const [assets, setAssets] = useState(initialAssets);
+  const [renderRecord, setRenderRecord] = useState(initialRender);
   const exportRefs = useRef<Array<HTMLElement | null>>([]);
   const updateInput = { expectedRevision: carousel.currentRevision, brandId: carousel.brandId, templateId: carousel.templateId, format, slides, prompt };
   const valid = carouselUpdateInputSchema.safeParse(updateInput).success;
   const current = slides[activeSlide] ?? slides[0];
+  const currentRender = renderRecord?.carouselRevisionId === carousel.revisionId ? renderRecord : null;
 
   async function request(path: string, init: RequestInit) {
     const response = await fetch(path, init);
-    const data = await response.json() as { carousel?: CarouselRecord; render?: { id: string }; error?: string };
+    const data = await response.json() as { carousel?: CarouselRecord; render?: CarouselRenderRecord; error?: string };
     if (!response.ok) throw new Error(data.error ?? "NoCanva could not complete the request.");
     if (data.carousel) setCarousel(data.carousel);
     return data;
@@ -120,10 +122,17 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
 
   async function render() {
     if (carousel.status !== "approved" && carousel.status !== "rendered") return;
+    if (currentRender) {
+      window.location.href = `/carousel-renders/${currentRender.id}`;
+      return;
+    }
     setBusy(true);
     try {
       const data = await request(`/api/carousels/${carousel.id}/render`, { method: "POST", headers: { "x-nocanva-created-by": "human:workspace" } });
-      if (data.render) window.location.href = `/carousel-renders/${data.render.id}`;
+      if (data.render) {
+        setRenderRecord(data.render);
+        window.location.href = `/carousel-renders/${data.render.id}`;
+      }
     } catch (error) { setNotice(error instanceof Error ? error.message : "Render failed."); setBusy(false); }
   }
 
@@ -167,7 +176,7 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
       <div className="carousel-preview-label"><span>Slide {activeSlide + 1} of {slides.length}</span><strong>Shared brand · template v{carousel.templateVersion}</strong></div>
       <div className="canvas-stage"><PostArtwork payload={payload} brandConfig={brand.config} template={template} /></div>
       {slides.map((content, index) => <div className="export-surface" aria-hidden="true" key={index}><PostArtwork ref={(node) => { exportRefs.current[index] = node; }} payload={{ brandId: carousel.brandId, templateId: carousel.templateId, format, content }} brandConfig={brand.config} template={template} mode="export" /></div>)}
-      <div className="draft-actions"><button disabled={busy || Boolean(carousel.archivedAt) || !valid} onClick={review} type="button">Review every slide</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve reviewed set</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button><button disabled={busy || (carousel.status !== "approved" && carousel.status !== "rendered")} onClick={render} type="button">Render carousel + ZIP</button><button disabled={busy} onClick={archive} type="button">{carousel.archivedAt ? "Restore carousel" : "Archive carousel"}</button></div>
+      <div className="draft-actions"><button disabled={busy || Boolean(carousel.archivedAt) || !valid} onClick={review} type="button">Review every slide</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve reviewed set</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button>{currentRender ? <><a className="export-action" href={`/carousel-renders/${currentRender.id}`}>Open exported PNGs →</a><a href={currentRender.zipUrl} download>Download all PNGs (.zip) ↓</a></> : <button disabled={busy || (carousel.status !== "approved" && carousel.status !== "rendered")} onClick={render} type="button">Render carousel + ZIP</button>}<button disabled={busy} onClick={archive} type="button">{carousel.archivedAt ? "Restore carousel" : "Archive carousel"}</button></div>
     </aside></div>
   </section></main>;
 }

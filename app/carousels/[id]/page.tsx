@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCarouselById, listCarouselRevisions } from "../../../lib/server/carousel-repository";
+import { getCarouselById, getLatestCarouselRender, listCarouselRevisions } from "../../../lib/server/carousel-repository";
 import { getBrandById, getTemplateVersionById } from "../../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
 import { listWorkspaceAssets } from "../../../lib/server/asset-repository";
@@ -18,12 +18,13 @@ export default async function CarouselPage({ params }: { params: Promise<{ id: s
   const principal = await requireNoCanvaViewer(`/carousels/${id}`);
   const carousel = await getCarouselById(id, principal.workspaceId);
   if (!carousel) notFound();
-  const [brand, template, revisions, assets] = await Promise.all([
+  const [brand, template, revisions, assets, latestRender] = await Promise.all([
     getBrandById(carousel.brandId, principal.workspaceId),
     getTemplateVersionById(carousel.templateVersionId, principal.workspaceId),
     listCarouselRevisions(carousel.id, principal.workspaceId),
     listWorkspaceAssets(principal.workspaceId),
+    getLatestCarouselRender(carousel.id, principal.workspaceId),
   ]);
   if (!brand || !template) notFound();
-  return <CarouselWorkspace key={carousel.revisionId} initialCarousel={carousel} initialRevisions={revisions} initialAssets={assets} brand={brand} template={template} />;
+  return <CarouselWorkspace key={carousel.revisionId} initialCarousel={carousel} initialRevisions={revisions} initialAssets={assets} initialRender={latestRender} brand={brand} template={template} />;
 }
