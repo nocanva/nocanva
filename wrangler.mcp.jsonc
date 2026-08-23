@@ -20,6 +20,9 @@
     "NOCANVA_AUTH_ISSUER": "https://nocanva-app.sidsaini1196.workers.dev/api/auth",
     "NOCANVA_MCP_RESOURCE": "https://nocanva-mcp.sidsaini1196.workers.dev/mcp"
   },
+  "secrets": {
+    "required": ["NOCANVA_APP_TOKEN"]
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1

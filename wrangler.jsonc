@@ -29,6 +29,9 @@
     "NOCANVA_APPROVAL_MODE": "human_required",
     "NOCANVA_WORKSPACE_ID": "default"
   },
+  "secrets": {
+    "required": ["BETTER_AUTH_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "NOCANVA_APP_TOKEN"]
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1

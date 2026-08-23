@@ -8,4 +8,12 @@ outputs
 renders
 work
 .env*
+.dev.vars*
+*.pem
+*.key
+*.p12
+*.pfx
+client_secret*.json
+credentials*.json
+service-account*.json
 npm-debug.log*
