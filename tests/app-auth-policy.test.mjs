@@ -72,6 +72,8 @@ test("every media API route and private workspace page enforce the application b
   }
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const home = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const create = await readFile(new URL("../app/create/page.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(layout, /requireNoCanvaViewer/, "the shared layout must allow sign-in and legal pages");
-  assert.match(home, /requireNoCanvaViewer/, "the workspace home must require a viewer");
+  assert.doesNotMatch(home, /requireNoCanvaViewer/, "the public landing page must remain accessible");
+  assert.match(create, /requireNoCanvaViewer/, "the creation workspace must require a viewer");
 });

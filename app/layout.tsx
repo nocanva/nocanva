@@ -33,18 +33,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const imageUrl = `${protocol}://${host}/og-nocanva.png`;
 
   return {
-    title: "NoCanva — AI-native branded media",
-    description: "Turn structured ideas into consistent, brand-ready social media.",
+    title: "NoCanva — A proper media desk for you and your agent",
+    description: "Turn verified briefs into on-brand, reviewable, exact-pixel media with a human and an agent at the same desk.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "NoCanva — AI-native branded media",
-      description: "Ideas in. Brand-ready media out.",
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: "NoCanva branded media studio" }],
+      title: "NoCanva — A proper media desk for you and your agent",
+      description: "Verified briefs in. Reviewable, exact-pixel media out.",
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: "NoCanva editorial media desk for a human and an agent" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "NoCanva — AI-native branded media",
-      description: "Ideas in. Brand-ready media out.",
+      title: "NoCanva — A proper media desk for you and your agent",
+      description: "Verified briefs in. Reviewable, exact-pixel media out.",
       images: [imageUrl],
     },
   };

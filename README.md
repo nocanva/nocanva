@@ -10,7 +10,7 @@ No embedded LLM. No mystery rerender. No design-by-coordinate prompts.
 
 ## Hosted beta
 
-Open [NoCanva](https://nocanva-app.sidsaini1196.workers.dev) and continue with Google. Every user gets a personal workspace.
+Visit [NoCanva](https://nocanva-app.sidsaini1196.workers.dev), then open your workspace and continue with Google. Every user gets a personal workspace.
 
 ### Codex
 
@@ -53,6 +53,7 @@ Full client setup and troubleshooting: [MCP clients](./docs/MCP_CLIENTS.md)
 
 ## Use the UI
 
+- Open the hosted workspace at [`/create`](https://nocanva-app.sidsaini1196.workers.dev/create).
 - Open agent-created drafts and carousels from their stable workspace URLs.
 - Review the real rendered PNG, not a text approximation.
 - Edit copy, choose media, and adjust crop or focal point.
