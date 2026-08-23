@@ -53,6 +53,8 @@ test("hosting binds relational data and immutable assets", async () => {
   assert.match(repository, /render_completed/);
   assert.match(repository, /approval\.reviewId/);
   assert.match(repository, /approved review artifact failed its SHA-256 integrity check/);
+  assert.match(repository, /serializeDraftSnapshot/);
+  assert.match(repository, /parseDraftSnapshot/);
   const carouselRepository = await readFile(new URL("lib/server/carousel-repository.ts", root), "utf8");
   assert.match(carouselRepository, /carousel-reviews/);
   assert.match(carouselRepository, /carousel-renders/);

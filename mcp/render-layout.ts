@@ -17,6 +17,20 @@ export function inspectRenderLayout(root: Element) {
     const role = region.getAttribute("data-render-region");
     return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
   }).length;
+  const zones = Array.from(root.querySelectorAll<HTMLElement>("[data-layout-zone]")).filter((zone) => !zone.querySelector("[data-layout-zone]"));
+  let collisions = 0;
+  for (let index = 0; index < zones.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < zones.length; otherIndex += 1) {
+      const first = zones[index];
+      const second = zones[otherIndex];
+      if (first.closest("[data-render-region='content']") !== second.closest("[data-render-region='content']")) continue;
+      const a = first.getBoundingClientRect();
+      const b = second.getBoundingClientRect();
+      const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+      const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (overlapX > 2 && overlapY > 2) collisions += 1;
+    }
+  }
   const headlines = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline']"));
   const typographic = headlines.filter((headline) => {
     const text = headline.textContent?.trim() ?? "";
@@ -67,5 +81,5 @@ export function inspectRenderLayout(root: Element) {
     const darker = Math.min(values[0], values[1]);
     return (lighter + .05) / (darker + .05) < 3;
   }).length;
-  return { outside, overflowing, collapsed, typographic, contrast };
+  return { outside, overflowing, collisions, collapsed, typographic, contrast };
 }

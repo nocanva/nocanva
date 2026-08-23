@@ -70,6 +70,15 @@ export const posterLayoutSchema = z.object({
 });
 export type PosterLayout = z.infer<typeof posterLayoutSchema>;
 
+export const draftLayoutSchema = z.object({
+  headlineScale: z.number().min(0.85).max(1.1).default(1),
+  headlineAlignment: z.enum(["left", "center"]).default("left"),
+  density: z.enum(["compact", "comfortable", "airy"]).default("comfortable"),
+  compositionPosition: z.enum(["raised", "balanced", "lowered"]).default("balanced"),
+  supportPosition: z.enum(["raised", "balanced", "lowered"]).default("balanced"),
+}).strict();
+export type DraftLayout = z.infer<typeof draftLayoutSchema>;
+
 export const formats = {
   portrait: { id: "portrait", label: "4:5", width: 1080, height: 1350 },
   square: { id: "square", label: "1:1", width: 1080, height: 1080 },
@@ -130,6 +139,7 @@ export const postPayloadSchema = z.object({
   compositionId: compositionIdSchema.optional(),
   format: z.enum(["portrait", "square"]),
   content: postContentSchema,
+  layout: draftLayoutSchema.optional().describe("Bounded semantic layout refinements. No coordinates or editor-specific JSON."),
 });
 
 export type PostPayload = z.infer<typeof postPayloadSchema>;

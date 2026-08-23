@@ -1,5 +1,5 @@
 import { forwardRef, type CSSProperties } from "react";
-import { brand, formats, posterLayoutSchema, templates, type BrandConfig, type PostPayload, type PosterLayout, type RendererKey } from "../lib/media";
+import { brand, draftLayoutSchema, formats, posterLayoutSchema, templates, type BrandConfig, type PostPayload, type PosterLayout, type RendererKey } from "../lib/media";
 import { ArtworkImage, Body, BrandHeader, CTA, Evidence, Eyebrow, Headline, Highlight, LogoFooter, Metric } from "./artwork-blocks";
 
 type ArtworkTemplate = { id: string; version: number; rendererKey: RendererKey; layout?: PosterLayout };
@@ -10,7 +10,8 @@ function headlineFit(text: string) {
   const longestToken = Math.max(0, ...text.trim().split(/\s+/).map((token) => Array.from(token).length));
   if (longestToken >= 22 || length >= 72) return .72;
   if (longestToken >= 18 || length >= 60) return .8;
-  if (longestToken >= 15 || length >= 50) return .88;
+  if (longestToken >= 15) return .8;
+  if (length >= 50) return .86;
   if (longestToken >= 12 || length >= 44) return .92;
   if (length >= 38) return .95;
   return 1;
@@ -221,33 +222,33 @@ function LayoutArtwork({ brandConfig, content, dimensions, layout }: { brandConf
 }
 
 function ClaimArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  return <><BrandHeader brand={brandConfig} label="Verified context" /><section className="claim-layout" data-render-region="content"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="claim-detail"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} /></>;
+  return <><BrandHeader brand={brandConfig} label="Verified context" /><section className="claim-layout" data-render-region="content"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="claim-detail" data-layout-zone="support"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} /></>;
 }
 
 function RealButArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  return <><BrandHeader brand={brandConfig} label="Context check" /><section className="real-but-layout" data-render-region="content">{content.image && <ArtworkImage image={content.image} />}<div className="real-but-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="real-but-detail"><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div></div></section><LogoFooter brand={brandConfig} index="REAL ≠ ACCURATE" /></>;
+  return <><BrandHeader brand={brandConfig} label="Context check" /><section className="real-but-layout" data-render-region="content">{content.image && <ArtworkImage image={content.image} />}<div className="real-but-copy" data-layout-zone="copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="real-but-detail" data-layout-zone="support"><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div></div></section><LogoFooter brand={brandConfig} index="REAL ≠ ACCURATE" /></>;
 }
 
 function ReceiptArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  return <><BrandHeader brand={brandConfig} label="Evidence receipt" /><section className="receipt-layout" data-render-region="content"><div className="receipt-lead"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="receipt-proof">{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="evidence" />}<Evidence evidence={content.evidence} /></div><div className="receipt-conclusion"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} index="PRIMARY SOURCE" /></>;
+  return <><BrandHeader brand={brandConfig} label="Evidence receipt" /><section className="receipt-layout" data-render-region="content"><div className="receipt-lead" data-layout-zone="lead"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="receipt-proof" data-layout-zone="proof">{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="evidence" />}<Evidence evidence={content.evidence} /></div><div className="receipt-conclusion" data-layout-zone="support"><Highlight>{content.highlight}</Highlight><Body>{content.support}</Body></div></section><LogoFooter brand={brandConfig} index="PRIMARY SOURCE" /></>;
 }
 
 function WhatsMissingArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
   const hasSource = Boolean(content.image || content.evidence || content.cta);
-  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className={`missing-layout${content.image ? " has-source-image" : ""}`} data-render-region="content"><span className="missing-index" aria-hidden>?</span><div className="missing-question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer"><span>Missing context</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div>{hasSource && <div className={`missing-source${content.image ? " has-image" : ""}`}>{content.image ? <ArtworkImage image={content.image} role="evidence" /> : <Evidence evidence={content.evidence} />}<CTA>{content.cta}</CTA></div>}</section><LogoFooter brand={brandConfig} index="FIND THE GAP" /></>;
+  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className={`missing-layout${content.image ? " has-source-image" : ""}`} data-render-region="content"><span className="missing-index" aria-hidden>?</span><div className="missing-question" data-layout-zone="question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer" data-layout-zone="support"><span>Missing context</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div>{hasSource && <div className={`missing-source${content.image ? " has-image" : ""}`} data-layout-zone="source">{content.image ? <ArtworkImage image={content.image} role="evidence" /> : <Evidence evidence={content.evidence} />}<CTA>{content.cta}</CTA></div>}</section><LogoFooter brand={brandConfig} index="FIND THE GAP" /></>;
 }
 
 function ProductArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
-  return <><BrandHeader brand={brandConfig} label="Product update" /><section className="product-layout" data-render-region="content"><div className="product-copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="product-detail"><Body>{content.support}</Body><CTA>{content.cta}</CTA></div></div>{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="screenshot" />}</section><LogoFooter brand={brandConfig} index="PRODUCT / CONTEXT" /></>;
+  return <><BrandHeader brand={brandConfig} label="Product update" /><section className="product-layout" data-render-region="content"><div className="product-copy" data-layout-zone="copy"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><div className="product-detail" data-layout-zone="support"><Body>{content.support}</Body><CTA>{content.cta}</CTA></div></div>{content.image && <ArtworkImage image={{ ...content.image, frame: content.image.frame ?? "browser" }} role="screenshot" />}</section><LogoFooter brand={brandConfig} index="PRODUCT / CONTEXT" /></>;
 }
 
 function ExplainerArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
   if (!content.steps) {
     const index = content.eyebrow.match(/\d+/)?.[0]?.padStart(2, "0") ?? "01";
-    return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-slide-layout" data-render-region="content"><div className="explainer-slide-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="explainer-slide-action"><strong aria-hidden>{index}</strong><Body>{content.support}</Body></div><div className="explainer-slide-footer"><Highlight>{content.highlight}</Highlight><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
+    return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-slide-layout" data-render-region="content"><div className="explainer-slide-intro" data-layout-zone="intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="explainer-slide-action" data-layout-zone="support"><strong aria-hidden>{index}</strong><Body>{content.support}</Body></div><div className="explainer-slide-footer" data-layout-zone="footer"><Highlight>{content.highlight}</Highlight><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
   }
 
-  return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-layout" data-render-region="content"><div className="explainer-intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><ol>{content.steps.map((step, index) => <li data-render-region="step" key={`${index}-${step}`}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol><div className="explainer-action"><Metric value={content.metric} label={content.metricLabel} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
+  return <><BrandHeader brand={brandConfig} label="Practical guide" /><section className="explainer-layout" data-render-region="content"><div className="explainer-intro" data-layout-zone="intro"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline><Body>{content.support}</Body></div><ol data-layout-zone="steps">{content.steps.map((step, index) => <li data-render-region="step" key={`${index}-${step}`}><b>{String(index + 1).padStart(2, "0")}</b><span>{step}</span></li>)}</ol><div className="explainer-action" data-layout-zone="support"><Metric value={content.metric} label={content.metricLabel} /><CTA>{content.cta}</CTA></div></section><LogoFooter brand={brandConfig} index="SAVE / VERIFY / SHARE" /></>;
 }
 
 export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function PostArtwork(
@@ -262,6 +263,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     rendererKey: payload.templateId === templates.signal.id ? "signal" : payload.templateId === templates.bloom.id ? "bloom" : "statement",
   };
   const resolvedLayout = posterLayoutSchema.parse(resolvedTemplate.layout ?? {});
+  const draftLayout = draftLayoutSchema.parse(payload.layout ?? {});
   const layoutMediaPosition = !content.image
     ? "none"
     : resolvedLayout.mediaPosition === "auto"
@@ -279,6 +281,8 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
       ? { backgroundColor: brandConfig.colors.signal, color: brandConfig.colors.paper }
       : { backgroundColor: brandConfig.colors.paper, color: brandConfig.colors.ink };
   const safeArea = mode === "export" ? `${brandConfig.safeArea}px` : `${brandConfig.safeArea / 10.8}%`;
+  const contentOffset = draftLayout.compositionPosition === "raised" ? (mode === "export" ? -36 : -14) : draftLayout.compositionPosition === "lowered" ? (mode === "export" ? 36 : 14) : 0;
+  const supportOffset = draftLayout.supportPosition === "raised" ? (mode === "export" ? -36 : -14) : draftLayout.supportPosition === "lowered" ? (mode === "export" ? 36 : 14) : 0;
   const style = {
     ...resolvedSurface,
     padding: safeArea,
@@ -290,15 +294,18 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
     "--brand-signal-bright": `color-mix(in srgb, ${brandConfig.colors.signal} 68%, #ffffff)`,
     "--brand-ink-deep": `color-mix(in srgb, ${brandConfig.colors.ink} 82%, ${brandConfig.colors.signal})`,
     "--brand-wash": `color-mix(in srgb, ${brandConfig.colors.signal} 14%, ${brandConfig.colors.paper})`,
-    "--headline-fit": headlineFit(content.headline),
-    "--layout-headline-scale": resolvedLayout.headlineScale,
+    "--headline-fit": headlineFit(content.headline) * draftLayout.headlineScale,
+    "--layout-headline-scale": resolvedLayout.headlineScale * draftLayout.headlineScale,
     "--layout-media-split": `${resolvedLayout.mediaSplit * 100}%`,
+    "--draft-content-offset": `${contentOffset}px`,
+    "--draft-support-offset": `${supportOffset}px`,
+    "--missing-answer-gap": `${mode === "export" ? 24 : 8}px`,
   } as CSSProperties;
 
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} background-${resolvedBackgroundStyle}${content.image ? " has-media" : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} background-${resolvedBackgroundStyle} draft-density-${draftLayout.density} draft-headline-${draftLayout.headlineAlignment}${content.image ? " has-media" : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}

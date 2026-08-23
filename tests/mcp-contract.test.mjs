@@ -27,6 +27,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["nocanva_list_assets", "nocanva_upload_asset"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   assert.match(nodeRenderer, /chromium\.launch/);
   assert.match(client, /Repeated PNG hashes match/);
+  assert.match(client, /Structured sections do not overlap/);
   assert.match(client, /NOCANVA_ALLOW_REMOTE_APP_URL/);
   assert.match(client, /non-loopback NoCanva application URL/);
   assert.match(worker, /createMcpHandler/);
@@ -36,6 +37,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(server, /contentWarnings: creativeContentWarnings/);
   assert.match(server, /requiredVisualAnswers/);
   assert.match(server, /Blindspot beta work requires a semantic compositionId/);
+  assert.match(server, /Never use coordinates/);
   assert.match(server, /maxAgentIterations: 3/);
   assert.match(fixture, /Create a Sprout post from a verified product repository/);
   assert.match(draftFixture, /stale\.isError/);

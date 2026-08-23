@@ -26,6 +26,8 @@ const initialContent = {
   headline: "Agents and workspaces share one revision.",
   support: "The first revision is created by an agent and remains pinned to its exact template version.",
 };
+const initialLayout = { headlineScale: .95, headlineAlignment: "left", density: "comfortable", compositionPosition: "balanced", supportPosition: "balanced" };
+const humanLayout = { ...initialLayout, density: "airy", supportPosition: "lowered" };
 
 try {
   await client.connect(transport);
@@ -44,7 +46,7 @@ try {
   }
 
   const created = await call("nocanva_create_draft", {
-    brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: initialContent,
+    brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: initialContent, layout: initialLayout,
     prompt: "Prove the shared agent and workspace revision lifecycle.",
   });
   assert.equal(created.draft.currentRevision, 1);
@@ -60,7 +62,7 @@ try {
       ...(appToken ? { authorization: `Bearer ${appToken}`, "x-nocanva-actor-id": "human:fixture" } : { "x-nocanva-created-by": "human:fixture" }),
       ...(workspaceId ? { "x-nocanva-workspace-id": workspaceId } : {}),
     },
-    body: JSON.stringify({ expectedRevision: 1, payload: { brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: humanContent }, prompt: "Human-edited fixture revision." }),
+    body: JSON.stringify({ expectedRevision: 1, payload: { brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: humanContent, layout: humanLayout }, prompt: "Human-edited fixture revision." }),
   });
   assert.equal(humanResponse.status, 200);
   const human = await humanResponse.json();
@@ -69,9 +71,10 @@ try {
 
   const retrieved = await call("nocanva_get_draft", { draftId: created.draft.id });
   assert.equal(retrieved.draft.payload.content.support, humanContent.support);
+  assert.deepEqual(retrieved.draft.payload.layout, humanLayout);
   assert.equal(retrieved.draft.currentRevision, 2);
 
-  const stale = await client.callTool({ name: "nocanva_update_draft", arguments: { draftId: created.draft.id, expectedRevision: 1, brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: humanContent } });
+  const stale = await client.callTool({ name: "nocanva_update_draft", arguments: { draftId: created.draft.id, expectedRevision: 1, brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: humanContent, layout: humanLayout } });
   assert.equal(stale.isError, true);
 
   await call("canvnah_create_template", { id: "sprint-one-statement", brandId: "sprint-one-fixture", name: "Sprint One statement", description: "A newer version created after the draft was pinned.", rendererKey: "statement" });
@@ -91,7 +94,7 @@ try {
   assert.equal(inspected.render.sha256, rendered.render.sha256);
   assert.equal(inspected.render.templateVersionId, pinnedVersion);
 
-  const edited = await call("nocanva_update_draft", { draftId: created.draft.id, expectedRevision: 2, brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: { ...humanContent, headline: "A new revision invalidates approval." }, prompt: "Post-approval edit fixture." });
+  const edited = await call("nocanva_update_draft", { draftId: created.draft.id, expectedRevision: 2, brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: { ...humanContent, headline: "A new revision invalidates approval." }, layout: humanLayout, prompt: "Post-approval edit fixture." });
   assert.equal(edited.draft.currentRevision, 3);
   assert.equal(edited.draft.status, "draft");
   assert.equal(edited.draft.approval, null);

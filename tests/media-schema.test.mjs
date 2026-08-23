@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { defaultPostPayload, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
+import { defaultPostPayload, draftLayoutSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
 import { compositions, compositionFromTemplateId, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
@@ -25,6 +25,14 @@ test("accepts deterministic image crop instructions and rejects drift", () => {
   assert.equal(payload.content.image.zoom, 1.4);
   assert.throws(() => parsePostPayload({ ...payload, content: { ...payload.content, image: { ...payload.content.image, zoom: 3.1 } } }));
   assert.throws(() => parsePostPayload({ ...payload, content: { ...payload.content, image: { ...payload.content.image, focalPoint: { x: -0.1, y: .5 } } } }));
+});
+
+test("accepts bounded semantic draft layout refinements and rejects freeform drift", () => {
+  const layout = draftLayoutSchema.parse({ headlineScale: 1.05, headlineAlignment: "center", density: "airy", compositionPosition: "raised", supportPosition: "lowered" });
+  const payload = parsePostPayload({ ...defaultPostPayload, layout });
+  assert.deepEqual(payload.layout, layout);
+  assert.throws(() => parsePostPayload({ ...defaultPostPayload, layout: { ...layout, headlineScale: 1.5 } }));
+  assert.throws(() => parsePostPayload({ ...defaultPostPayload, layout: { ...layout, x: 120 } }));
 });
 
 test("exposes six semantic compositions and the fixed visual review rubric", () => {

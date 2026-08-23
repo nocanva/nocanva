@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Puck, type Config, type Data } from "@puckeditor/core";
 import { compositions, type CompositionId } from "../../../lib/compositions";
-import type { BrandConfig, PostContent, PostPayload, RendererKey } from "../../../lib/media";
+import { draftLayoutSchema, type BrandConfig, type DraftLayout, type PostContent, type PostPayload, type RendererKey } from "../../../lib/media";
 import { PostArtwork } from "../../post-artwork";
 
 type CompositionProps = {
@@ -20,11 +20,18 @@ type CompositionProps = {
   stepThree: string;
   stepFour: string;
   cta: string;
+  headlineScale: number;
+  headlineAlignment: DraftLayout["headlineAlignment"];
+  density: DraftLayout["density"];
+  compositionPosition: DraftLayout["compositionPosition"];
+  supportPosition: DraftLayout["supportPosition"];
 };
 
 type EditorComponents = { Composition: CompositionProps };
 
-function propsFromContent(content: PostContent): CompositionProps {
+const defaultLayout = draftLayoutSchema.parse({});
+
+function propsFromContent(content: PostContent, layout: DraftLayout): CompositionProps {
   return {
     eyebrow: content.eyebrow,
     headline: content.headline,
@@ -39,6 +46,11 @@ function propsFromContent(content: PostContent): CompositionProps {
     stepThree: content.steps?.[2] ?? "",
     stepFour: content.steps?.[3] ?? "",
     cta: content.cta ?? "",
+    headlineScale: layout.headlineScale,
+    headlineAlignment: layout.headlineAlignment,
+    density: layout.density,
+    compositionPosition: layout.compositionPosition,
+    supportPosition: layout.supportPosition,
   };
 }
 
@@ -58,6 +70,16 @@ function contentFromProps(props: CompositionProps, previous: PostContent): PostC
   };
 }
 
+function layoutFromProps(props: CompositionProps): DraftLayout {
+  return draftLayoutSchema.parse({
+    headlineScale: props.headlineScale,
+    headlineAlignment: props.headlineAlignment,
+    density: props.density,
+    compositionPosition: props.compositionPosition,
+    supportPosition: props.supportPosition,
+  });
+}
+
 function fieldsFor(compositionId: CompositionId): NonNullable<Config<EditorComponents>["components"]["Composition"]["fields"]> {
   const definition = compositions[compositionId];
   const fields: Partial<NonNullable<Config<EditorComponents>["components"]["Composition"]["fields"]>> = {
@@ -74,28 +96,38 @@ function fieldsFor(compositionId: CompositionId): NonNullable<Config<EditorCompo
     stepThree: { type: "text", label: "Step 3" },
     stepFour: { type: "text", label: "Step 4 (optional)" },
     cta: { type: "text", label: "Call to action" },
+    headlineScale: { type: "radio", label: "Headline size", options: [
+      { label: "Small", value: .85 }, { label: "Compact", value: .95 }, { label: "Default", value: 1 }, { label: "Large", value: 1.05 }, { label: "XL", value: 1.1 },
+    ] },
+    headlineAlignment: { type: "radio", label: "Headline alignment", options: [{ label: "Left", value: "left" }, { label: "Centered", value: "center" }] },
+    density: { type: "radio", label: "Section spacing", options: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Airy", value: "airy" }] },
+    compositionPosition: { type: "radio", label: "Composition position", options: [{ label: "Raise", value: "raised" }, { label: "Balanced", value: "balanced" }, { label: "Lower", value: "lowered" }] },
+    supportPosition: { type: "radio", label: "Supporting section", options: [{ label: "Raise", value: "raised" }, { label: "Balanced", value: "balanced" }, { label: "Lower", value: "lowered" }] },
   };
   if (!definition.blocks.includes("Highlight")) delete fields.highlight;
   if (!definition.blocks.includes("Evidence")) { delete fields.evidenceSource; delete fields.evidenceDetail; }
   if (!definition.blocks.includes("Metric")) { delete fields.metric; delete fields.metricLabel; }
   if (compositionId !== "explainer") { delete fields.stepOne; delete fields.stepTwo; delete fields.stepThree; delete fields.stepFour; }
   if (!definition.blocks.includes("CTA")) delete fields.cta;
+  if (!["claim", "whats_missing", "explainer"].includes(compositionId)) delete fields.headlineAlignment;
   return fields as NonNullable<Config<EditorComponents>["components"]["Composition"]["fields"]>;
 }
 
-export function PuckCompositionEditor({ content, compositionId, payloadBase, brandConfig, template, disabled, onChange, onPublish }: {
+export function PuckCompositionEditor({ content, layout = defaultLayout, compositionId, payloadBase, brandConfig, template, disabled, onChange, onPublish }: {
   content: PostContent;
+  layout?: DraftLayout;
   compositionId: CompositionId;
   payloadBase: Pick<PostPayload, "brandId" | "templateId" | "format">;
   brandConfig: BrandConfig;
   template: { id: string; version: number; rendererKey: RendererKey };
   disabled: boolean;
-  onChange: (content: PostContent) => void;
-  onPublish: (content: PostContent) => void;
+  onChange: (value: { content: PostContent; layout: DraftLayout }) => void;
+  onPublish: (value: { content: PostContent; layout: DraftLayout }) => void;
 }) {
+  const [editorKey, setEditorKey] = useState(0);
   const [data, setData] = useState<Data<EditorComponents>>({
     root: { props: {} },
-    content: [{ type: "Composition", props: { id: `composition-${compositionId}`, ...propsFromContent(content) } }],
+    content: [{ type: "Composition", props: { id: `composition-${compositionId}`, ...propsFromContent(content, layout) } }],
   });
   const config = useMemo<Config<EditorComponents>>(() => ({
     root: { fields: {} },
@@ -104,7 +136,7 @@ export function PuckCompositionEditor({ content, compositionId, payloadBase, bra
         label: compositions[compositionId].name,
         fields: fieldsFor(compositionId),
         permissions: { delete: false, duplicate: false, edit: true, insert: false },
-        render: (props) => <PostArtwork payload={{ ...payloadBase, compositionId, content: contentFromProps(props, content) }} brandConfig={brandConfig} template={template} />,
+        render: (props) => <PostArtwork payload={{ ...payloadBase, compositionId, content: contentFromProps(props, content), layout: layoutFromProps(props) }} brandConfig={brandConfig} template={template} />,
       },
     },
   }), [brandConfig, compositionId, content, payloadBase, template]);
@@ -112,22 +144,34 @@ export function PuckCompositionEditor({ content, compositionId, payloadBase, bra
   function update(next: Data<EditorComponents>) {
     setData(next);
     const block = next.content[0];
-    if (block?.type === "Composition") onChange(contentFromProps(block.props, content));
+    if (block?.type === "Composition") onChange({ content: contentFromProps(block.props, content), layout: layoutFromProps(block.props) });
+  }
+
+  function resetLayout() {
+    const block = data.content[0];
+    if (block?.type !== "Composition") return;
+    const nextContent = contentFromProps(block.props, content);
+    const next: Data<EditorComponents> = { ...data, content: [{ ...block, props: { ...block.props, ...defaultLayout } }] };
+    setData(next);
+    setEditorKey((current) => current + 1);
+    onChange({ content: nextContent, layout: defaultLayout });
   }
 
   return <div className="puck-draft-editor" aria-disabled={disabled}>
+    <div className="puck-layout-toolbar"><div><strong>Guided layout</strong><span>Safe areas, brand type and colors stay locked.</span></div><button disabled={disabled} onClick={resetLayout} type="button">Reset layout</button></div>
     <Puck
+      key={editorKey}
       config={config}
       data={data}
       dnd={{ behavior: "static" }}
       headerTitle={`Edit ${compositions[compositionId].name}`}
-      headerPath="Blindspot · layout locked"
+      headerPath="Blindspot · guided layout"
       height="700px"
       iframe={{ enabled: false }}
       onChange={update}
       onPublish={(next) => {
         const block = next.content[0];
-        if (!disabled && block?.type === "Composition") onPublish(contentFromProps(block.props, content));
+        if (!disabled && block?.type === "Composition") onPublish({ content: contentFromProps(block.props, content), layout: layoutFromProps(block.props) });
       }}
       permissions={{ delete: false, duplicate: false, edit: true, insert: false }}
       ui={{ leftSideBarVisible: false, rightSideBarVisible: true, itemSelector: { index: 0, zone: "root:default-zone" }, previewMode: "edit" }}

@@ -1,5 +1,5 @@
 export type RenderCheck = {
-  id: "schema" | "bounds" | "overflow" | "structure" | "typography" | "contrast" | "fonts";
+  id: "schema" | "bounds" | "overflow" | "collision" | "structure" | "typography" | "contrast" | "fonts";
   label: string;
   passed: boolean;
   detail: string;
@@ -63,6 +63,24 @@ function headlineTypographyFailure(headline: HTMLElement, root: HTMLElement) {
   return headline.getBoundingClientRect().width < root.getBoundingClientRect().width * .38 || lineValues.length > 5 || splitToken || (text.includes(" ") && finalLine.length <= 4);
 }
 
+function countLayoutCollisions(root: HTMLElement) {
+  const zones = Array.from(root.querySelectorAll<HTMLElement>("[data-layout-zone]")).filter((zone) => !zone.querySelector("[data-layout-zone]"));
+  let collisions = 0;
+  for (let index = 0; index < zones.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < zones.length; otherIndex += 1) {
+      const first = zones[index];
+      const second = zones[otherIndex];
+      if (first.closest("[data-render-region='content']") !== second.closest("[data-render-region='content']")) continue;
+      const a = first.getBoundingClientRect();
+      const b = second.getBoundingClientRect();
+      const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+      const overlapY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+      if (overlapX > 2 && overlapY > 2) collisions += 1;
+    }
+  }
+  return collisions;
+}
+
 export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[]> {
   await document.fonts.ready;
   const rootRect = root.getBoundingClientRect();
@@ -84,6 +102,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
   });
   const typographic = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline']")).filter((headline) => headlineTypographyFailure(headline, root));
+  const collisions = countLayoutCollisions(root);
   const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foreground = parseRgb(getComputedStyle(region).color);
     const background = nearestOpaqueBackground(region, root);
@@ -94,6 +113,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "schema", label: "Content schema", passed: true, detail: "All required fields are valid." },
     { id: "bounds", label: "Safe canvas bounds", passed: outside.length === 0, detail: outside.length === 0 ? "Every region stays inside the canvas." : `${outside.length} region(s) leave the canvas.` },
     { id: "overflow", label: "Text overflow", passed: overflowing.length === 0, detail: overflowing.length === 0 ? "No text is clipped." : `${overflowing.length} region(s) are clipped.` },
+    { id: "collision", label: "Section separation", passed: collisions === 0, detail: collisions === 0 ? "Structured sections do not overlap." : `${collisions} section pair(s) overlap.` },
     { id: "structure", label: "Brand structure", passed: collapsed.length === 0, detail: collapsed.length === 0 ? "Brand header and footer remain visible." : `${collapsed.length} structural region(s) collapsed under content pressure.` },
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
     { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${lowContrastText.length} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },

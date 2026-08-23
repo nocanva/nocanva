@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
-import { formats, postPayloadSchema, type PostContent } from "../../../lib/media";
+import { draftLayoutSchema, formats, postPayloadSchema, type DraftLayout, type PostContent } from "../../../lib/media";
 import { compositionFromTemplateId } from "../../../lib/compositions";
 import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } from "../../../lib/server/media-repository";
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
@@ -26,10 +26,11 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   const [assets, setAssets] = useState(initialAssets);
   const [image, setImage] = useState<PostContent["image"]>(initialDraft.payload.content.image);
   const [compositionContent, setCompositionContent] = useState<PostContent>(initialDraft.payload.content);
+  const [layout, setLayout] = useState<DraftLayout>(draftLayoutSchema.parse(initialDraft.payload.layout ?? {}));
   const exportRef = useRef<HTMLElement>(null);
   const compositionId = initialDraft.payload.compositionId ?? compositionFromTemplateId(draft.templateId);
   const content = { ...compositionContent, eyebrow, headline, support, ...(image ? { image } : { image: undefined }) };
-  const payload = { brandId: draft.brandId, templateId: draft.templateId, ...(compositionId ? { compositionId } : {}), format, content };
+  const payload = { brandId: draft.brandId, templateId: draft.templateId, ...(compositionId ? { compositionId } : {}), format, content, layout };
   const valid = postPayloadSchema.safeParse(payload).success;
 
   async function request(path: string, init: RequestInit) {
@@ -40,8 +41,8 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
     return data;
   }
 
-  async function save(contentOverride?: PostContent) {
-    const payloadToSave = contentOverride ? { ...payload, content: contentOverride } : payload;
+  async function save(valueOverride?: { content: PostContent; layout: DraftLayout }) {
+    const payloadToSave = valueOverride ? { ...payload, ...valueOverride } : payload;
     if (!postPayloadSchema.safeParse(payloadToSave).success) return setNotice("Fix the structured content before saving.");
     setBusy(true);
     try {
@@ -125,7 +126,7 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   return <main className="studio-shell"><WorkspaceHeader active="drafts" /><section className="draft-workspace">
     <div className="draft-workspace-heading"><div><p className="kicker">Stable draft · revision {draft.currentRevision}</p><h1>{headline}</h1><p>{notice}</p></div><span className={`draft-status ${draft.status}`}>{draft.archivedAt ? "archived" : draft.status.replace("_", " ")}</span></div>
     <div className={compositionId ? "draft-workspace-grid composition-editor-active" : "draft-workspace-grid"}><section className="draft-form panel">
-      {compositionId ? <PuckCompositionEditor content={content} compositionId={compositionId} payloadBase={{ brandId: draft.brandId, templateId: draft.templateId, format }} brandConfig={brand.config} template={template} disabled={busy || Boolean(draft.archivedAt)} onChange={(next) => { setCompositionContent(next); setEyebrow(next.eyebrow); setHeadline(next.headline); setSupport(next.support); }} onPublish={(next) => { setCompositionContent(next); setEyebrow(next.eyebrow); setHeadline(next.headline); setSupport(next.support); void save(next); }} /> : <>
+      {compositionId ? <PuckCompositionEditor content={content} layout={layout} compositionId={compositionId} payloadBase={{ brandId: draft.brandId, templateId: draft.templateId, format }} brandConfig={brand.config} template={template} disabled={busy || Boolean(draft.archivedAt)} onChange={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); }} onPublish={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); void save(next); }} /> : <>
       <label className="field"><span>Eyebrow <small>{eyebrow.length}/28</small></span><input maxLength={28} value={eyebrow} onChange={(event) => setEyebrow(event.target.value)} /></label>
       <label className="field"><span>Headline <small>{headline.length}/84</small></span><textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} /></label>
       <label className="field"><span>Supporting copy <small>{support.length}/150</small></span><textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} /></label></>}

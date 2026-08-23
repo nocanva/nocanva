@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
-import { brandConfigSchema, postContentSchema, templateInputSchema } from "../lib/media";
+import { brandConfigSchema, draftLayoutSchema, postContentSchema, templateInputSchema } from "../lib/media";
 import { compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
 
 const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
@@ -11,12 +11,13 @@ const draftPayloadInputSchema = z.object({
   compositionId: compositionIdSchema.optional().describe("Approved semantic composition family."),
   format: z.enum(["portrait", "square"]),
   content: contentSchema,
+  layout: draftLayoutSchema.optional().describe("Optional bounded layout refinements: headline scale/alignment, density, and raised/balanced/lowered section positions. Never use coordinates."),
 }).refine((value) => value.templateId || value.compositionId, { message: "Provide compositionId or templateId." });
 
 function resolveDraftPayload(input: z.infer<typeof draftPayloadInputSchema>) {
   if (input.brandId === "blindspot" && !input.compositionId) throw new Error("Blindspot beta work requires a semantic compositionId. Legacy statement templates are retained only for historical renders.");
   const templateId = input.compositionId ? compositionTemplateIds[input.compositionId] : input.templateId!;
-  return { brandId: input.brandId, templateId, ...(input.compositionId ? { compositionId: input.compositionId } : {}), format: input.format, content: input.content };
+  return { brandId: input.brandId, templateId, ...(input.compositionId ? { compositionId: input.compositionId } : {}), format: input.format, content: input.content, ...(input.layout ? { layout: input.layout } : {}) };
 }
 
 function result(value: Record<string, unknown>) {
@@ -29,7 +30,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     {
       capabilities: { tools: {} },
       instructions:
-        "Primary workflow — Blindspot-first: get the approved brand, inspect approved compositions and recent work, choose a visually distinct semantic composition, create a stable draft, review its pinned revision and visually inspect the PNG against all eight rubric questions, revise up to three times, approve that exact review, render it, then inspect the immutable render. Retrieve current state before updating so expectedRevision cannot overwrite human edits. Never invent claims, expose Puck JSON, use arbitrary layout coordinates, or publish externally.",
+        "Primary workflow — Blindspot-first: get the approved brand, inspect approved compositions and recent work, choose a visually distinct semantic composition, create a stable draft, review its pinned revision and visually inspect the PNG against all eight rubric questions, revise up to three times, approve that exact review, render it, then inspect the immutable render. Retrieve current state before updating so expectedRevision cannot overwrite human edits, and preserve any human layout refinements unless intentionally changing them. Never invent claims, expose Puck JSON, use arbitrary layout coordinates, or publish externally.",
     },
   );
   const client = new CanvnahClient(baseUrl, context);
@@ -101,7 +102,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_update_draft", {
     title: "Update NoCanva draft",
-    description: "Create a new immutable draft revision. expectedRevision prevents overwriting newer human or agent edits.",
+    description: "Create a new immutable draft revision. expectedRevision prevents overwriting newer human or agent edits. Retrieve the draft first and preserve its semantic layout unless intentionally changing it.",
     inputSchema: draftPayloadInputSchema.safeExtend({ draftId: z.string().uuid(), expectedRevision: z.number().int().positive(), prompt: z.string().trim().max(500).optional() }),
     annotations: { destructiveHint: false, idempotentHint: false },
   }, async ({ draftId, expectedRevision, prompt, ...input }) => result({ draft: await client.updateDraft(draftId, expectedRevision, resolveDraftPayload(input), prompt) }));
