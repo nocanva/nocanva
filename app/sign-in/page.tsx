@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "../../lib/server/auth";
+import { getAuth } from "../../lib/server/auth";
 import { SignInCard } from "./sign-in-card";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -26,7 +26,7 @@ function oauthContinuation(params: Record<string, string | string[] | undefined>
 export default async function SignInPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const callbackURL = oauthContinuation(params) ?? safeReturnTo(single(params.returnTo));
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getAuth().api.getSession({ headers: await headers() });
   if (session?.user) redirect(callbackURL);
 
   return <main className="auth-shell"><SignInCard callbackURL={callbackURL} /></main>;

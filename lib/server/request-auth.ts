@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { chatGPTSignInPath } from "../../app/chatgpt-auth";
-import { auth } from "./auth";
+import { getAuth } from "./auth";
 import { resolvePrincipal, type NoCanvaPrincipal } from "./auth-policy";
 import { getOrCreatePersonalWorkspace } from "./personal-workspace";
 
@@ -27,7 +27,7 @@ export async function resolveNoCanvaPrincipal(requestHeaders: Headers): Promise<
   if (trustedPrincipal) return trustedPrincipal;
   if (mode !== "better_auth") return null;
 
-  const session = await auth.api.getSession({ headers: requestHeaders });
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
   if (!session?.user) return null;
   const workspace = await getOrCreatePersonalWorkspace(session.user);
   return {
