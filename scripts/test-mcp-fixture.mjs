@@ -98,7 +98,7 @@ try {
       brandId: "sprout",
       templateId: "sprout-statement",
       format: "portrait",
-      prompt: "Create a Sprout post from the Fortwin AI product repository.",
+      prompt: "Create a Sprout post from a verified product repository.",
       content: sampleContent,
     },
   }));

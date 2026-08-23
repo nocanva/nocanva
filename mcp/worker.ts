@@ -7,7 +7,7 @@ import { buildServer } from "./server";
 interface Env extends McpWorkerEnv {
   NOCANVA_APP: Fetcher;
   NOCANVA_APP_TOKEN: string;
-  NOCANVA_SITES_BYPASS_TOKEN: string;
+  NOCANVA_SITES_BYPASS_TOKEN?: string;
   NOCANVA_MCP_TOKEN?: string;
   NOCANVA_MCP_TOKENS?: string;
   NOCANVA_AUTH_ISSUER: string;
@@ -18,6 +18,13 @@ const remoteKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 function applicationRequest(env: Env, path: string, init?: RequestInit) {
   return env.NOCANVA_APP.fetch(new Request(new URL(path, "https://nocanva.internal"), init));
+}
+
+function applicationAuthHeaders(env: Env, init?: HeadersInit) {
+  const headers = new Headers(init);
+  headers.set("authorization", `Bearer ${env.NOCANVA_APP_TOKEN}`);
+  if (env.NOCANVA_SITES_BYPASS_TOKEN) headers.set("oai-sites-authorization", `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`);
+  return headers;
 }
 
 function isRenderProxyPath(pathname: string) {
@@ -40,7 +47,8 @@ function proxyRenderRequest(request: Request, env: Env, url: URL) {
   if (!applicationProxyAuthorized(request, env)) return json(401, { error: "Render proxy authentication is required." });
   const headers = new Headers(request.headers);
   headers.set("authorization", `Bearer ${env.NOCANVA_APP_TOKEN}`);
-  headers.set("oai-sites-authorization", `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`);
+  if (env.NOCANVA_SITES_BYPASS_TOKEN) headers.set("oai-sites-authorization", `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`);
+  else headers.delete("oai-sites-authorization");
   return applicationRequest(env, `${url.pathname}${url.search}`, {
     method: request.method,
     headers,
@@ -64,10 +72,7 @@ function json(status: number, value: Record<string, unknown>, headers: HeadersIn
 async function applicationHealth(env: Env) {
   try {
     const response = await applicationRequest(env, "/api/health", {
-      headers: {
-        authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
-        "oai-sites-authorization": `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`,
-      },
+      headers: applicationAuthHeaders(env),
     });
     return { reachable: response.ok, status: response.status };
   } catch (error) {
@@ -80,11 +85,7 @@ async function authenticateManagedToken(authorization: string | null, env: Env) 
   if (!match || !match[1].startsWith("ncv_")) return null;
   const response = await applicationRequest(env, "/api/internal/mcp/auth", {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
-      "content-type": "application/json",
-      "oai-sites-authorization": `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`,
-    },
+    headers: applicationAuthHeaders(env, { "content-type": "application/json" }),
     body: JSON.stringify({ token: match[1] }),
   });
   if (response.status === 401) return null;
@@ -97,11 +98,7 @@ async function authenticateManagedToken(authorization: string | null, env: Env) 
 async function principalForOAuthUser(userId: string, env: Env) {
   const response = await applicationRequest(env, "/api/internal/mcp/oauth-principal", {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${env.NOCANVA_APP_TOKEN}`,
-      "content-type": "application/json",
-      "oai-sites-authorization": `Bearer ${env.NOCANVA_SITES_BYPASS_TOKEN}`,
-    },
+    headers: applicationAuthHeaders(env, { "content-type": "application/json" }),
     body: JSON.stringify({ userId }),
   });
   if (response.status === 401) return null;

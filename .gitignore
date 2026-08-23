@@ -45,3 +45,6 @@ next-env.d.ts
 /backups/
 .env.self-host
 *.tsbuildinfo
+.mcp.json
+.claude/settings.local.json
+.codex/

@@ -118,7 +118,7 @@ These checks establish mechanical validity, not beauty. The calling multimodal a
 
 Review and approval are recorded against a specific immutable revision and reviewed artifact. Editing an approved draft invalidates the previous approval.
 
-Workspaces can permit agent approval for autonomous operation or require a human actor before final rendering.
+The hosted beta requires a human actor before final rendering. A loopback-only self-hosted workspace can opt into agent approval for autonomous local workflows.
 
 ### 7. Promote the reviewed bytes
 
@@ -166,13 +166,11 @@ Humans can:
 
 Structured editing is a deliberate product feature. A user can change the message, image, format, or approved composition without casually destroying the brand system.
 
-### Experimental template editor
+### Constrained composition editor
 
-NoCanva is evaluating Puck, an MIT-licensed React visual editor, for constrained template composition.
+Draft workspaces use Puck as a constrained editing adapter over canonical NoCanva content. A user can edit the fields allowed by the selected semantic composition while brand chrome, layout geometry, safe areas, and template rules remain locked.
 
-The local proof lets a template designer choose among approved compositions and edit exposed fields while the brand header, footer, and core rules remain locked. It saves portable JSON and renders the same React component tree used by the preview.
-
-This is currently an isolated proof of fit. It stores data locally in the browser and is not yet connected to production template versions or drafts. It will be adopted only if it removes substantial editor engineering without weakening deterministic rendering or brand governance.
+NoCanva stores the resulting structured content and immutable draft revision, not arbitrary Puck JSON. The editor and PNG renderer share the same React artwork tree.
 
 ## How agents use NoCanva
 
@@ -312,7 +310,7 @@ NoCanva currently avoids:
 - Dozens of unrelated output categories.
 - A mandatory embedded LLM.
 - Claims that mechanical checks establish aesthetic quality.
-- Creating a new brand or template for every post.
+- Reusing approved brands and templates instead of creating a new design system for every post.
 
 These are product boundaries, not missing checkboxes. The goal is a dependable media workflow for agents, not feature parity with every creative application.
 
@@ -328,6 +326,7 @@ The current release candidate includes:
 - Durable brands, templates, drafts, revisions, approvals, and renders.
 - Stable draft and carousel URLs.
 - Local and authenticated remote MCP interfaces.
+- Google OAuth with one personal hosted workspace per user.
 - Immutable reviewed artifacts and exact-byte promotion.
 - Workspace isolation and revocable managed tokens.
 - Docker self-hosting.

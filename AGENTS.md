@@ -4,7 +4,7 @@ NoCanva is a deterministic, agent-native media workspace. It does not make embed
 
 ## Development
 
-- Use Node.js 22.13 or newer.
+- Use Node.js 22.18 or newer.
 - Keep local development on stdio MCP with `npm run mcp:dev` and the web app at `http://localhost:3000`.
 - Use the `nocanva_*` draft lifecycle for new work. `canvnah_*` exists only for advanced brand/template administration and backward compatibility.
 - Preserve deterministic rendering, exact template-version pinning, immutable revisions, and stable workspace URLs.

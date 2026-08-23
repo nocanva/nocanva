@@ -1,52 +1,45 @@
-# NoCanva beta release
+# Public beta checklist
 
-## Recommended release shape
+## Ready now
 
-Ship an **invite-only developer beta** first:
+- [x] Open Google sign-in; no invite list.
+- [x] One isolated personal workspace for every user.
+- [x] OAuth MCP flow with PKCE, dynamic client registration, and refresh tokens.
+- [x] End-to-end login verified with Codex and Claude Code.
+- [x] UI and MCP resolve the same `user_id` and `workspace_id`.
+- [x] Human-only final approval in the hosted environment.
+- [x] Immutable reviewed PNGs, revisions, hashes, and carousel ZIPs.
+- [x] Revocable workspace-scoped tokens for CI and headless agents.
+- [x] Public privacy, terms, support email, and Google-only authentication pages.
+- [x] Two-workspace isolation and anonymous fail-closed contract tests.
 
-- Google sign-in through Cloudflare Access
-- one personal workspace per user
-- bearer tokens created and revoked in **Connections**
-- human approval required before final rendering
-- hosted UI and MCP on NoCanva-owned domains
+## Owner actions before announcing broadly
 
-Do not open sign-in to everyone yet. The current hosted configuration maps authenticated users to one `default` workspace. Public access must wait until workspace and token isolation are enforced.
+- [ ] Publish the Google OAuth consent screen for external users and verify its app name, logo, support email, privacy URL, and terms URL.
+- [ ] Decide beta limits for uploads, renders, storage, and bearer tokens per workspace.
+- [ ] Decide retention, account deletion, and data export behavior.
+- [ ] Choose the public support/feedback channel and response owner.
+- [ ] Run a production dogfood pass with two unrelated Google accounts.
+- [ ] Verify backups and complete one restore drill.
+- [ ] Make the GitHub repository public, enable private vulnerability reporting, and protect `main` with required CI.
+- [ ] Create the release tag and GitHub release notes after the final smoke test.
 
-## Decisions needed from the founder
+A custom domain is intentionally not a beta blocker. Replace the two `workers.dev` origins together when a domain is ready; OAuth issuer, resource metadata, Google callback, and client documentation must stay consistent.
 
-- [ ] **Domains:** choose the UI and MCP domains, for example `app.nocanva.com` and `mcp.nocanva.com`.
-- [ ] **Beta access:** invite-only email allowlist or open signup. Invite-only is recommended for the first release.
-- [ ] **Workspace model:** personal workspace per user now; teams and organizations later is recommended.
-- [ ] **Google identity:** provide or approve the Google OAuth client used by Cloudflare Access.
-- [ ] **First testers:** provide the initial email allowlist.
-- [ ] **Approval:** keep a human approval gate for hosted beta renders. Recommended: yes.
-- [ ] **Limits:** decide uploads, renders per day, storage, and token count per workspace.
-- [ ] **Retention:** decide how long drafts, assets, and renders are kept and how deletion/export works.
-- [ ] **Legal:** provide the owner/contact plus Privacy Policy and Terms URLs.
-- [ ] **Support:** choose one public feedback channel and response owner.
-- [ ] **Launch:** approve the one-line positioning, demo content, launch date, and launch channels.
+## Launch smoke test
 
-## Engineering gates
+1. Create a clean Google account session and sign in to the UI.
+2. Connect a fresh Codex installation through OAuth.
+3. Connect a fresh Claude Code installation through OAuth.
+4. Create a draft, open its stable workspace URL, edit it in the UI, and retrieve that revision through MCP.
+5. Review the rendered PNG, approve it as a human, render it, and verify the final SHA-256 matches the reviewed artifact.
+6. Repeat with a second account and prove neither account can read the other's draft, asset, render, or token.
 
-- [ ] Create a workspace for each new identity; never fall back to a shared public workspace.
-- [ ] Add workspace membership checks to every UI API, asset, draft, render, and MCP-token path.
-- [ ] Require human approval in the hosted environment.
-- [ ] Add rate limits and basic abuse controls to token creation, uploads, reviews, and renders.
-- [ ] Attach custom domains and verify Cloudflare Access policies do not include `Everyone`.
-- [ ] Add onboarding, empty, error, expired-session, revoked-token, and quota states.
-- [ ] Add account data export and deletion procedures.
-- [ ] Run the complete test suite and a two-user isolation test in production.
-- [ ] Verify analytics, error reporting, backups, restore, and support contact.
+## After beta
 
-## Launch order
+- Teams and shared workspaces.
+- Account deletion and export UI.
+- Quotas, billing, and abuse controls informed by beta usage.
+- Custom domains.
 
-1. Finish workspace isolation and hosted approval enforcement.
-2. Configure Google sign-in, custom domains, limits, and legal links.
-3. Dogfood with two separate accounts and prove neither can see the other's data.
-4. Invite 10–20 developers and watch their first connection and first render.
-5. Fix onboarding friction, then expand the allowlist.
-6. Open self-serve signup only after abuse, deletion, support, and reliability are proven.
-
-## Auth after beta
-
-Bearer tokens are simple and suitable for the invite beta. Add standards-based MCP OAuth when NoCanva moves to public self-serve onboarding; keep revocable scoped tokens for CI and service agents.
+Scheduling, publishing, video, marketplaces, and a freeform canvas remain outside the beta scope.

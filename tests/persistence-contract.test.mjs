@@ -36,9 +36,10 @@ test("migration defines the durable media graph and query indexes", async () => 
 });
 
 test("hosting binds relational data and immutable assets", async () => {
-  const hosting = JSON.parse(await readFile(new URL(".openai/hosting.json", root), "utf8"));
-  assert.equal(hosting.d1, "DB");
-  assert.equal(hosting.r2, "MEDIA");
+  const wrangler = JSON.parse(await readFile(new URL("wrangler.jsonc", root), "utf8"));
+  assert.equal(wrangler.d1_databases[0].binding, "DB");
+  assert.equal(wrangler.d1_databases[0].migrations_dir, "drizzle");
+  assert.equal(wrangler.r2_buckets[0].binding, "MEDIA");
 
   const repository = await readFile(new URL("lib/server/media-repository.ts", root), "utf8");
   assert.match(repository, /INSERT INTO renders/);

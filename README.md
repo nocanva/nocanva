@@ -8,46 +8,61 @@ No embedded LLM. No mystery rerender. No design-by-coordinate prompts.
 
 ![NoCanva: prompt, review, approve, ship](./docs/assets/nocanva-beta-demo.gif)
 
-## Try the hosted beta
+## Hosted beta
 
-1. Open [NoCanva](https://nocanva-app.sidsaini1196.workers.dev) and continue with Google. A personal workspace is created automatically.
-2. Connect Codex:
+Open [NoCanva](https://nocanva-app.sidsaini1196.workers.dev) and continue with Google. Every user gets a personal workspace.
+
+### Codex
 
 ```bash
 codex mcp add nocanva --url https://nocanva-mcp.sidsaini1196.workers.dev/mcp
 codex mcp login nocanva
 ```
 
-Your browser opens once. Continue with Google and approve the connection. The MCP is then bound to your personal workspace.
-
-3. Install the media workflow in Codex:
+Then install the workflow skill in Codex:
 
 ```text
 $skill-installer https://github.com/nocanva/nocanva/tree/main/skills/nocanva-media
 ```
 
-4. Restart Codex if asked, then try:
+### Claude Code
 
-```text
-$nocanva-media Turn this verified brief into a 4-slide carousel.
-Show me the draft before approval.
+```bash
+claude mcp add --transport http nocanva https://nocanva-mcp.sidsaini1196.workers.dev/mcp
+claude mcp login nocanva
 ```
 
-The skill teaches the agent NoCanva's draft, review, human-approval, and immutable-render workflow. Need headless access for CI? Create a revocable token under **Connect** and use `--bearer-token-env-var` instead.
+Install the workflow skill for Claude Code:
 
-## What happens in the UI
+```bash
+mkdir -p ~/.claude/skills/nocanva-media
+curl -fsSL https://raw.githubusercontent.com/nocanva/nocanva/main/skills/nocanva-media/SKILL.md \
+  -o ~/.claude/skills/nocanva-media/SKILL.md
+```
 
-- Review the actual rendered design—not a text preview.
+Your browser opens once. Sign in with Google and approve the requested NoCanva scopes. The client is then connected to the same personal workspace you see in the UI.
+
+Try:
+
+```text
+Turn this verified brief into a four-slide carousel with NoCanva.
+Show me every rendered draft before asking for approval.
+```
+
+Full client setup and troubleshooting: [MCP clients](./docs/MCP_CLIENTS.md)
+
+## Use the UI
+
+- Open agent-created drafts and carousels from their stable workspace URLs.
+- Review the real rendered PNG, not a text approximation.
 - Edit copy, choose media, and adjust crop or focal point.
-- Approve one exact revision.
-- Download the approved PNG or carousel ZIP.
-- Connect interactive MCP clients with Google; create revocable tokens only for CI or headless agents.
-
-Draft URLs stay stable. Approved exports do not change.
+- Approve one exact revision. Hosted approval is human-only.
+- Download the immutable PNG or carousel ZIP.
+- Create a revocable bearer token under **Connect** only for CI or headless agents.
 
 ## Self-host
 
-Requires Docker and Node.js 22.18+.
+Requires Docker and Node.js 22.18 or newer.
 
 ```bash
 git clone https://github.com/nocanva/nocanva.git
@@ -56,18 +71,9 @@ npm install
 npm run self-host
 ```
 
-Open `http://localhost:3000`, then connect Codex:
+Open `http://localhost:3000`. Full setup: [Self-hosting](./docs/SELF_HOSTING.md)
 
-```bash
-export NOCANVA_MCP_TOKEN="$(npm run --silent self-host:token)"
-codex mcp add nocanva \
-  --url http://localhost:3100/mcp \
-  --bearer-token-env-var NOCANVA_MCP_TOKEN
-```
-
-Full setup: [Self-hosting](./docs/SELF_HOSTING.md)
-
-## Develop locally
+## Develop
 
 ```bash
 npm install
@@ -75,34 +81,39 @@ npm run dev                 # UI: http://localhost:3000
 npm run connect -- codex    # local stdio MCP
 ```
 
-Useful checks:
+Before opening a pull request:
 
 ```bash
 npm test
 npm run lint
 npx tsc --noEmit
+npm run mcp:fixture
 npm run mcp:draft-fixture
 npm run mcp:carousel-fixture
 ```
 
-## The contract
+## Product contract
 
 - Agents supply verified copy and creative judgment.
-- NoCanva owns brands, constrained compositions, revisions, checks, approvals, and rendering.
+- NoCanva owns constrained brands, compositions, revisions, checks, approvals, and rendering.
 - Every edit is revisioned; stale writes fail.
 - Approval pins a reviewed revision and its PNG hash.
-- Final rendering promotes those exact bytes.
+- Final rendering promotes those exact reviewed bytes.
 - Templates and brand rules are versioned.
 
-The daily MCP API uses `nocanva_*`. The older `canvnah_*` namespace remains for advanced administration and compatibility.
+The daily MCP API uses `nocanva_*`. The older `canvnah_*` namespace remains only for advanced brand/template administration and compatibility.
 
-## Read next
+## Documentation
 
+- [MCP clients](./docs/MCP_CLIENTS.md)
+- [Media workflow skill](./skills/nocanva-media/SKILL.md)
+- [Layout-authoring skill](./skills/nocanva-layout/SKILL.md)
 - [What is NoCanva?](./docs/WHAT_IS_NOCANVA.md)
-- [Build media with the NoCanva skill](./skills/nocanva-media/SKILL.md)
-- [Author layouts](./skills/nocanva-layout/SKILL.md)
+- [Self-hosting](./docs/SELF_HOSTING.md)
 - [Cloud deployment](./docs/CLOUD_DEPLOYMENT.md)
-- [Beta release checklist](./docs/BETA_RELEASE.md)
 - [Operations](./docs/OPERATIONS.md)
+- [Public beta checklist](./docs/BETA_RELEASE.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security](./SECURITY.md)
 
 MIT licensed.

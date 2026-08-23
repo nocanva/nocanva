@@ -12,7 +12,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
     readFile(new URL("mcp/worker.ts", root), "utf8"),
     readFile(new URL("scripts/test-mcp-fixture.mjs", root), "utf8"),
     readFile(new URL("scripts/test-draft-lifecycle.mjs", root), "utf8"),
-    readFile(new URL("FORTWIN_SPROUT_AGENTS.md", root), "utf8"),
+    readFile(new URL("docs/MCP_CLIENTS.md", root), "utf8"),
     readFile(new URL("package.json", root), "utf8"),
   ]);
   for (const tool of ["canvnah_list_brands", "canvnah_create_brand", "canvnah_list_templates", "canvnah_create_template", "canvnah_review_template", "canvnah_create_post", "canvnah_list_posts", "canvnah_render_post", "canvnah_list_renders", "canvnah_get_render", "canvnah_rerender"]) {
@@ -36,13 +36,13 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(server, /contentWarnings: creativeContentWarnings/);
   assert.match(server, /Blindspot beta work requires a semantic compositionId/);
   assert.match(server, /maxAgentIterations: 3/);
-  assert.match(fixture, /Create a Sprout post from the Fortwin AI product repository/);
+  assert.match(fixture, /Create a Sprout post from a verified product repository/);
   assert.match(draftFixture, /stale\.isError/);
   assert.match(draftFixture, /pinnedTemplateVersionId/);
-  assert.match(agentInstructions, /Codex discovers this file automatically/);
-  assert.match(agentInstructions, /@AGENTS\.md/);
   assert.match(agentInstructions, /codex mcp add nocanva/);
-  assert.match(agentInstructions, /claude mcp add nocanva/);
+  assert.match(agentInstructions, /codex mcp login nocanva/);
+  assert.match(agentInstructions, /claude mcp add --transport http nocanva/);
+  assert.match(agentInstructions, /claude mcp login nocanva/);
   assert.match(packageJson, /"mcp:fixture"/);
   assert.match(packageJson, /"mcp:draft-fixture"/);
   assert.match(packageJson, /"mcp:carousel-fixture"/);

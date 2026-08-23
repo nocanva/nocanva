@@ -1,40 +1,89 @@
-# NoCanva Cloud deployment gate
+# Deploy NoCanva to Cloudflare
 
-NoCanva Cloud must remain private until every gate below passes.
+The hosted stack uses two Workers:
 
-## Application boundary
+- `nocanva-app`: UI, API, Better Auth, D1, and R2.
+- `nocanva-mcp`: Streamable HTTP MCP, OAuth token verification, Browser Rendering, and a service binding to the app.
 
-- Set `NOCANVA_AUTH_MODE=cloudflare_access` for a Worker protected by Cloudflare Access. Keep `sites_private` only for ChatGPT Sites hosting.
-- Set `NOCANVA_ACCESS_TEAM_DOMAIN` and `NOCANVA_ACCESS_AUD` from the Access application. Hostname-based Access JWTs are verified against the team JWKS before identity headers are injected.
-- Store an independent random `NOCANVA_APP_TOKEN` as an application and MCP Worker secret.
-- Store agent-facing MCP tokens separately in `NOCANVA_MCP_TOKENS`.
-- Store the Sites dispatch credential only as `NOCANVA_SITES_BYPASS_TOKEN` on the MCP Worker.
-- Protect the application Worker with an Access allow policy. The Worker reads the verified identity from `ctx.access`, strips spoofable inbound identity headers, and forwards only trusted identity fields to the application router.
-- Expose only the TLS-protected MCP `/mcp` route from the sidecar. Keep the application origin private where the platform permits it.
+The public UI uses Google sign-in. Do not place Cloudflare Access in front of the app Worker; it would intercept NoCanva's own sign-in and MCP consent flow.
 
-In hosted mode, anonymous API and page requests fail closed. Cloudflare Access users are attributed from the verified Access identity; Sites users remain supported on ChatGPT Sites deployments. The MCP Worker authenticates the external bearer token, then forwards only its trusted token ID and workspace through the internal application credential. Hosted screenshots use the Cloudflare Browser Rendering binding; the application itself still makes no LLM calls.
+## Prerequisites
 
-## Workspace isolation
+- Node.js 22.18 or newer.
+- A Cloudflare account authenticated with Wrangler.
+- A Google OAuth web application.
+- D1 database `nocanva-db` and R2 bucket `nocanva-media`, or equivalent bindings in `wrangler.jsonc`.
 
-Every brand, template, template version, draft, revision, review, approval, post, render, and event row carries `workspace_id`. Repository reads and writes require the authenticated workspace, reusable slug IDs are physically namespaced, and immutable R2 objects live below `workspaces/<workspace-id>/renders/`.
+For a fork, replace the Cloudflare resource IDs, Worker names, and `workers.dev` origins in both Wrangler files before deploying.
 
-The release fixture must use two workspaces in one database and prove:
+## Google OAuth
 
-- the same logical brand or template ID can exist independently in both workspaces;
-- list operations return only the caller's records;
-- cross-workspace draft reads and updates fail;
-- cross-workspace render metadata and PNG asset reads return not found.
+Configure this callback in Google Cloud:
 
-The 2026-08-20 container contract passed all of those checks. Repeat it against the private cloud deployment before release.
+```text
+https://YOUR_APP_ORIGIN/api/auth/callback/google
+```
 
-## Managed free-tier topology
+Set the OAuth consent screen to external when any Google user should be able to sign in. Add the production privacy, terms, support email, and application branding before publishing it.
 
-The application remains in its owner-only Sites project and uses the Sites-managed D1 and R2 bindings. `nocanva-mcp` is a separate Workers Free script with a Browser Rendering binding. It exposes `/mcp`, `/healthz`, and authenticated `/diagnostics`; it does not use Containers. Cloudflare Free-plan platform limits stop excess Worker or browser usage instead of requiring application-side billing.
+## Secrets
 
-## Release checks
+Create independent random values. Never reuse an MCP bearer token as an internal service secret.
 
-1. Run build, lint, TypeScript, unit, stdio MCP, draft lifecycle, and authenticated HTTP MCP suites.
-2. Prove anonymous application API requests return `401` in hosted mode.
-3. Prove an authenticated MCP token cannot read another workspace's IDs or assets.
-4. Prove the exact render hash survives backup and restore.
-5. Deploy privately and run the authenticated MCP draft lifecycle against the Worker endpoint.
+App Worker:
+
+```bash
+npx wrangler secret put BETTER_AUTH_SECRET --config wrangler.jsonc
+npx wrangler secret put GOOGLE_CLIENT_ID --config wrangler.jsonc
+npx wrangler secret put GOOGLE_CLIENT_SECRET --config wrangler.jsonc
+npx wrangler secret put NOCANVA_APP_TOKEN --config wrangler.jsonc
+```
+
+MCP Worker:
+
+```bash
+npx wrangler secret put NOCANVA_APP_TOKEN --config wrangler.mcp.jsonc
+```
+
+`NOCANVA_APP_TOKEN` must have the same value on both Workers. It authenticates internal app requests and must never be returned to users.
+
+## Database and deployment
+
+```bash
+npm ci
+npx wrangler d1 migrations apply nocanva-db --remote --config wrangler.jsonc
+npm run deploy:cloudflare
+npm run mcp:worker:deploy
+```
+
+Deploy the app before the MCP Worker whenever OAuth, JWKS, internal identity, or API contracts change.
+
+## Required configuration
+
+`wrangler.jsonc` must use:
+
+- `NOCANVA_AUTH_MODE=better_auth`
+- `NOCANVA_APPROVAL_MODE=human_required`
+- the public app origin as `BETTER_AUTH_URL`
+- the public MCP URL as `NOCANVA_MCP_RESOURCE`
+
+`wrangler.mcp.jsonc` must use that same resource URL and `${BETTER_AUTH_URL}/api/auth` as `NOCANVA_AUTH_ISSUER`. Its `NOCANVA_APP` service binding must target the deployed app Worker.
+
+## Verify
+
+```bash
+curl -fsSL https://YOUR_APP_ORIGIN/api/health
+curl -fsSL https://YOUR_MCP_ORIGIN/.well-known/oauth-protected-resource/mcp
+curl -fsSL https://YOUR_APP_ORIGIN/.well-known/oauth-authorization-server/api/auth
+```
+
+Then complete fresh OAuth connections from Codex and Claude Code. A successful browser callback is not enough: each client must report connected and successfully initialize the MCP endpoint.
+
+## Security invariants
+
+- Anonymous media API and workspace requests fail closed.
+- Every user receives a personal workspace; there is no shared public fallback workspace.
+- OAuth access tokens are audience-bound to the MCP resource and require `nocanva:read` and `nocanva:write`.
+- The MCP Worker retrieves JWKS through its app service binding and never logs token contents.
+- Hosted final rendering requires a human approval on the exact reviewed revision.
+- D1 queries and R2 keys are workspace-scoped.

@@ -27,7 +27,7 @@ export NOCANVA_MCP_TOKEN="$(npm run --silent self-host:token)"
 codex mcp add nocanva --url http://localhost:3100/mcp --bearer-token-env-var NOCANVA_MCP_TOKEN
 ```
 
-Codex supports Streamable HTTP server URLs and bearer tokens sourced from an environment variable, as documented in the [official MCP configuration guide](https://learn.chatgpt.com/docs/extend/mcp?surface=cli). Restart the client or open a new task after adding the server.
+Codex supports Streamable HTTP server URLs and bearer tokens sourced from an environment variable, as documented in the [official OpenAI MCP configuration guide](https://developers.openai.com/codex/mcp/). Restart the client or open a new task after adding the server.
 
 ### Connect Claude Code
 
@@ -51,8 +51,6 @@ claude mcp add --scope project -e NOCANVA_BASE_URL=http://localhost:3000 nocanva
 The Compose defaults bind both ports to loopback. For remote MCP, place TLS at a reverse proxy or platform edge, set `NOCANVA_MCP_BIND_IP=0.0.0.0`, and expose only the MCP `/mcp` route. Set a unique `NOCANVA_MCP_TOKEN`; never reuse the bootstrap token between installations.
 
 Local self-hosting defaults to `NOCANVA_AUTH_MODE=disabled` and binds the workspace to loopback. Keep port 3000 on a trusted network; do not expose an auth-disabled workspace directly to the public internet.
-
-Hosted private Sites deployments use `NOCANVA_AUTH_MODE=sites_private`. Browser requests require the Sites-authenticated user headers, while the MCP sidecar reaches the application with `NOCANVA_APP_TOKEN`. The sidecar forwards its authenticated token identity and workspace as trusted internal context. Never expose or reuse the application service token as an agent-facing MCP token.
 
 For multiple workspaces or revocation, replace the single token with `NOCANVA_MCP_TOKENS`, a JSON array:
 
