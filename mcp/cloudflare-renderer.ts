@@ -1,10 +1,20 @@
-import { launch, type BrowserWorker } from "@cloudflare/playwright";
+import { acquire, connect, limits, sessions, type BrowserWorker } from "@cloudflare/playwright";
 import type { MediaRenderer } from "./canvnah-client";
+import { acquireReusableBrowser, type BrowserSessionApi } from "./cloudflare-browser-session";
 import { inspectRenderLayout } from "./render-layout";
+
+const browserSessionApi: BrowserSessionApi = {
+  acquire,
+  connect,
+  limits,
+  now: () => Date.now(),
+  sessions,
+  wait: (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+};
 
 export function createCloudflareRenderer(binding: BrowserWorker): MediaRenderer {
   return async (input) => {
-    const browser = await launch(binding);
+    const browser = await acquireReusableBrowser(binding, browserSessionApi);
     try {
       const page = await browser.newPage({ viewport: { width: input.width, height: input.height }, deviceScaleFactor: 1 });
       if (Object.keys(input.headers).length) await page.setExtraHTTPHeaders(input.headers);
@@ -23,6 +33,8 @@ export function createCloudflareRenderer(binding: BrowserWorker): MediaRenderer 
         templateVersion: await target.getAttribute("data-template-version"),
       };
     } finally {
+      // Browsers obtained through connect() disconnect on close while the
+      // underlying acquired session remains available for the next review.
       await browser.close();
     }
   };
