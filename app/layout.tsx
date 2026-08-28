@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { DM_Sans, Fraunces, Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
+import { DM_Sans, Fraunces, Geist, Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
 import { headers } from "next/headers";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
+
+const geist = Geist({ subsets: ["latin"], variable: "--font-ui" });
 
 const dmSans = DM_Sans({
   variable: "--font-sans",
@@ -33,8 +36,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const imageUrl = `${protocol}://${host}/og-nocanva.png`;
 
   return {
-    title: "NoCanva — A proper media desk for you and your agent",
-    description: "Turn verified briefs into on-brand, reviewable, exact-pixel media with a human and an agent at the same desk.",
+    title: "NoCanva — Media workspace",
+    description: "Create, review, approve, and export deterministic brand media with your agent.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
       title: "NoCanva — A proper media desk for you and your agent",
@@ -54,9 +57,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var saved=localStorage.getItem("nocanva-theme");var theme=saved==="light"||saved==="dark"?saved:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme}catch(e){}})();` }} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var saved=localStorage.getItem("nocanva-theme");var theme=saved==="light"||saved==="dark"?saved:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=theme;document.documentElement.classList.toggle("dark",theme==="dark");document.documentElement.style.colorScheme=theme}catch(e){}})();` }} />
       </head>
-      <body className={`${dmSans.variable} ${sourceSerif.variable} ${fraunces.variable} ${jakarta.variable}`}>{children}</body>
+      <body className={`${geist.variable} ${dmSans.variable} ${sourceSerif.variable} ${fraunces.variable} ${jakarta.variable}`}>
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }

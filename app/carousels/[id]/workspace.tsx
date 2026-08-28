@@ -9,7 +9,7 @@ import type { BrandRecord, TemplateRecord } from "../../../lib/server/media-repo
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
-import { WorkspaceHeader } from "../../workspace-header";
+import { AppShell } from "../../workspace-shell";
 
 export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAssets, initialRender, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; initialAssets: WorkspaceAsset[]; initialRender: CarouselRenderRecord | null; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
@@ -147,7 +147,7 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
 
   if (!current) return null;
   const payload = { brandId: carousel.brandId, templateId: carousel.templateId, format, content: current };
-  return <main className="studio-shell"><WorkspaceHeader active="carousels" /><section className="draft-workspace">
+  return <AppShell><section className="draft-workspace page-frame">
     <div className="draft-workspace-heading"><div><p className="kicker">Stable carousel · revision {carousel.currentRevision}</p><h1>{slides[0].headline}</h1><p>{notice}</p></div><span className={`draft-status ${carousel.status}`}>{carousel.archivedAt ? "archived" : carousel.status.replace("_", " ")}</span></div>
     <div className="draft-workspace-grid"><section className="draft-form panel">
       <div className="carousel-tabs" aria-label="Carousel slides">{slides.map((slide, index) => <button className={index === activeSlide ? "active" : ""} key={index} onClick={() => setActiveSlide(index)} type="button"><span>{String(index + 1).padStart(2, "0")}</span><strong>{slide.headline}</strong></button>)}</div>
@@ -178,5 +178,5 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
       {slides.map((content, index) => <div className="export-surface" aria-hidden="true" key={index}><PostArtwork ref={(node) => { exportRefs.current[index] = node; }} payload={{ brandId: carousel.brandId, templateId: carousel.templateId, format, content }} brandConfig={brand.config} template={template} mode="export" /></div>)}
       <div className="draft-actions"><button disabled={busy || Boolean(carousel.archivedAt) || !valid} onClick={review} type="button">Review every slide</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve reviewed set</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button>{currentRender ? <><a className="export-action" href={`/carousel-renders/${currentRender.id}`}>Open exported PNGs →</a><a href={currentRender.zipUrl} download>Download all PNGs (.zip) ↓</a></> : <button disabled={busy || (carousel.status !== "approved" && carousel.status !== "rendered")} onClick={render} type="button">Render carousel + ZIP</button>}<button disabled={busy} onClick={archive} type="button">{carousel.archivedAt ? "Restore carousel" : "Archive carousel"}</button></div>
     </aside></div>
-  </section></main>;
+  </section></AppShell>;
 }

@@ -4,7 +4,7 @@ import type { PostPayload } from "../../lib/media";
 import { listBrands, listTemplates } from "../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
 import { PostArtwork } from "../post-artwork";
-import { WorkspaceHeader } from "../workspace-header";
+import { AppShell } from "../workspace-shell";
 
 export const metadata: Metadata = { title: "Templates — NoCanva", description: "Versioned visual templates in NoCanva." };
 
@@ -19,7 +19,7 @@ export default async function TemplatesPage() {
     return true;
   });
   return (
-    <main className="studio-shell"><WorkspaceHeader active="templates" /><section className="collection-page">
+    <AppShell><section className="collection-page page-frame">
       <div className="collection-heading"><p className="kicker">Template library</p><h1>Reusable visual systems.</h1><p>Versioned templates turn validated content into predictable layouts.</p><Link className="primary-button" href="/labs/template-editor">Open constrained editor proof <span>→</span></Link></div>
       <div className="template-library">{latestRecords.map((item) => {
         const brandRecord = brandRecords.get(item.brandId);
@@ -39,6 +39,6 @@ export default async function TemplatesPage() {
           <div><span className="record-badge">V{item.version}</span><h2>{item.name}</h2><p>{item.description}</p><small>3 fields · {brandRecord.name} · {item.rendererKey}</small></div>
         </article>;
       })}</div>
-    </section></main>
+    </section></AppShell>
   );
 }

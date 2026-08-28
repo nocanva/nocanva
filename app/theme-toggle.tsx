@@ -1,12 +1,15 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Switch } from "./ui/switch";
+import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Theme = "light" | "dark";
 
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
+  document.documentElement.classList.toggle("dark", theme === "dark");
   document.documentElement.style.colorScheme = theme;
   window.localStorage.setItem("nocanva-theme", theme);
   window.dispatchEvent(new Event("nocanva-theme-change"));
@@ -28,14 +31,12 @@ function getTheme(): Theme {
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getTheme, () => "light");
 
-  function changeTheme(checked: boolean) {
-    applyTheme(checked ? "dark" : "light");
-  }
-
   return (
-    <label className="theme-control">
-      <span className="theme-control-label">{theme === "dark" ? "Night" : "Day"}</span>
-      <Switch aria-label="Use dark mode" checked={theme === "dark"} onCheckedChange={changeTheme} />
-    </label>
+    <Tooltip>
+      <TooltipTrigger render={<Button aria-label={`Use ${theme === "dark" ? "light" : "dark"} mode`} size="icon-sm" variant="ghost" onClick={() => applyTheme(theme === "dark" ? "light" : "dark")} />}>
+        {theme === "dark" ? <Sun /> : <Moon />}
+      </TooltipTrigger>
+      <TooltipContent>{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
+    </Tooltip>
   );
 }

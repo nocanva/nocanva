@@ -4,7 +4,7 @@ import { listCarousels } from "../../lib/server/carousel-repository";
 import { getBrandById, getTemplateVersionById } from "../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
 import { PostArtwork } from "../post-artwork";
-import { WorkspaceHeader } from "../workspace-header";
+import { AppShell } from "../workspace-shell";
 
 export const metadata: Metadata = { title: "Carousels — NoCanva", description: "Stable, versioned multi-slide media workspaces." };
 
@@ -16,7 +16,7 @@ export default async function CarouselsPage() {
     brand: await getBrandById(carousel.brandId, principal.workspaceId),
     template: await getTemplateVersionById(carousel.templateVersionId, principal.workspaceId),
   })));
-  return <main className="studio-shell"><WorkspaceHeader active="carousels" /><section className="collection-page">
+  return <AppShell><section className="collection-page page-frame">
     <div className="collection-heading"><p className="kicker">Multi-slide workspaces</p><h1>One story. One system. Every slide inspected.</h1><p>Agents create 3–7 slide carousels under a single pinned brand and template version.</p></div>
     {cards.length === 0 ? <div className="empty-history"><span>00</span><h2>No carousels yet.</h2><p>Create the first carousel through the NoCanva MCP workflow.</p></div> : <div className="draft-grid">{cards.map(({ carousel, brand, template }) => {
       if (!brand || !template) return null;
@@ -26,5 +26,5 @@ export default async function CarouselsPage() {
         <span className="draft-card-copy"><small>{carousel.status.replace("_", " ")} · revision {carousel.currentRevision}</small><strong>{carousel.slides[0].headline}</strong><em>{carousel.brandName} · {carousel.templateName} v{carousel.templateVersion}</em></span>
       </Link>;
     })}</div>}
-  </section></main>;
+  </section></AppShell>;
 }

@@ -1,6 +1,6 @@
 import { checkMediaHealth, getActivationSummary, listManagedMcpTokens } from "@/lib/server/media-repository";
 import { requireNoCanvaViewer } from "@/lib/server/request-auth";
-import { WorkspaceHeader } from "../workspace-header";
+import { AppShell } from "../workspace-shell";
 import { TokenManager } from "./token-manager";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,8 @@ export default async function ConnectionsPage() {
     dependencies = null;
   }
 
-  return <main className="studio-shell">
-    <WorkspaceHeader active="connections" />
-    <section className="collection-page connection-page">
+  return <AppShell>
+    <section className="collection-page connection-page page-frame">
       <div className="collection-heading">
         <p className="kicker">Agent connections</p>
         <h1>Connect once. Create from anywhere.</h1>
@@ -59,7 +58,7 @@ export default async function ConnectionsPage() {
       </div>
       <TokenManager initialTokens={tokens} />
     </section>
-  </main>;
+  </AppShell>;
 }
 
 function formatDuration(value: number | null) {

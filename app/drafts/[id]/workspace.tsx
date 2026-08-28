@@ -9,7 +9,7 @@ import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } fr
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
-import { WorkspaceHeader } from "../../workspace-header";
+import { AppShell } from "../../workspace-shell";
 import { PuckCompositionEditor } from "./puck-composition-editor";
 
 export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
@@ -123,7 +123,7 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
     finally { setBusy(false); }
   }
 
-  return <main className="studio-shell"><WorkspaceHeader active="drafts" /><section className="draft-workspace">
+  return <AppShell><section className="draft-workspace page-frame">
     <div className="draft-workspace-heading"><div><p className="kicker">Stable draft · revision {draft.currentRevision}</p><h1>{headline}</h1><p>{notice}</p></div><span className={`draft-status ${draft.status}`}>{draft.archivedAt ? "archived" : draft.status.replace("_", " ")}</span></div>
     <div className={compositionId ? "draft-workspace-grid composition-editor-active" : "draft-workspace-grid"}><section className="draft-form panel">
       {compositionId ? <PuckCompositionEditor content={content} layout={layout} compositionId={compositionId} payloadBase={{ brandId: draft.brandId, templateId: draft.templateId, format }} brandConfig={brand.config} template={template} disabled={busy || Boolean(draft.archivedAt)} onChange={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); }} onPublish={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); void save(next); }} /> : <>
@@ -152,5 +152,5 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
       <div className="export-surface" aria-hidden="true"><PostArtwork ref={exportRef} payload={payload} brandConfig={brand.config} template={template} mode="export" /></div>
       <div className="draft-actions"><button disabled={busy || Boolean(draft.archivedAt)} onClick={review} type="button">Run mechanical review</button><button disabled={busy || draft.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve revision</button><button disabled={busy || draft.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button><button disabled={busy || draft.status !== "approved"} onClick={render} type="button">Render approved PNG</button><button disabled={busy} onClick={archive} type="button">{draft.archivedAt ? "Restore draft" : "Archive draft"}</button></div>
     </aside></div>
-  </section></main>;
+  </section></AppShell>;
 }

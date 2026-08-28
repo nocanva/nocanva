@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WorkspaceHeader } from "../../workspace-header";
+import { AppShell } from "../../workspace-shell";
 import { TemplateEditorLab } from "./template-editor-lab";
 import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
 import "@puckeditor/core/puck.css";
@@ -12,9 +12,8 @@ export const metadata: Metadata = {
 export default async function TemplateEditorLabPage() {
   await requireNoCanvaViewer("/labs/template-editor");
   return (
-    <main className="studio-shell">
-      <WorkspaceHeader active="templates" />
+    <AppShell>
       <TemplateEditorLab />
-    </main>
+    </AppShell>
   );
 }

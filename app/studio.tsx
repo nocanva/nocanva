@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
+import { Check, RotateCcw, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PostArtwork } from "./post-artwork";
 import {
   formats,
@@ -14,7 +20,7 @@ import {
   type TemplateId,
 } from "../lib/media";
 import { inspectRenderNode, type RenderCheck } from "../lib/render-checks";
-import { WorkspaceHeader } from "./workspace-header";
+import { AppShell } from "./workspace-shell";
 
 type ClientRender = { id: string; templateName: string; createdAt: number; payload: PostPayload };
 
@@ -139,56 +145,14 @@ export function Studio() {
   }
 
   return (
-    <main className="studio-shell">
-      <WorkspaceHeader active="create" />
+    <AppShell>
+      <section className="create-workspace page-frame" id="create">
+        <div className="create-heading"><div><Badge variant="secondary"><Sparkles /> Quick create</Badge><h1>Make a single post.</h1><p>Choose the visual system, shape the message, and export exact pixels.</p></div><Button variant="outline" onClick={resetContent}><RotateCcw /> Reset</Button></div>
 
-      <section className="workspace" id="create">
-        <aside className="rail" aria-label="Workspace context">
-          <div>
-            <p className="section-label">Active brand</p>
-            <button className="brand-card" type="button">
-              <span className="brand-monogram">B.</span>
-              <span><strong>Blindspot</strong><small>Investigative editorial</small></span>
-              <span className="chevron">⌄</span>
-            </button>
-          </div>
-
-          <div className="rail-section">
-            <p className="section-label">Build status</p>
-            <ol className="milestone-list">
-              <li className="done"><span>01</span><div><strong>Brand foundation</strong><small>Complete</small></div></li>
-              <li className="done"><span>02</span><div><strong>PNG renderer</strong><small>Complete</small></div></li>
-              <li className="done"><span>03</span><div><strong>Durable workspace</strong><small>Complete</small></div></li>
-              <li className="current"><span>04</span><div><strong>Agent workflow</strong><small>Local development</small></div></li>
-            </ol>
-          </div>
-
-          <div className="brand-tokens">
-            <p className="section-label">Brand tokens</p>
-            <div className="swatches" aria-label="Blindspot brand colors">
-              <i style={{ background: "#efede6" }} />
-              <i style={{ background: "#171714" }} />
-              <i style={{ background: "#e4402d" }} />
-            </div>
-            <p>DM Sans · Source Serif<br />48 px safe area · fixed logo</p>
-          </div>
-        </aside>
-
-        <div className="editor-column">
-          <div className="page-heading">
-            <div>
-              <p className="kicker">New post</p>
-              <h1>Turn an idea into a branded frame.</h1>
-              <p>Structured content in. Deterministic design out.</p>
-            </div>
-            <button className="secondary-button" onClick={resetContent} type="button">Reset</button>
-          </div>
-
-          <section className="panel" id="templates">
-            <div className="panel-heading">
-              <span className="step-number">01</span>
-              <div><h2>Choose a template</h2><p>The template owns layout. Your copy fills the allowed fields.</p></div>
-            </div>
+        <div className="create-grid"><div className="editor-column">
+          <Card id="templates">
+            <CardHeader><CardTitle>Choose a template</CardTitle><CardDescription>The template owns the layout and brand constraints.</CardDescription></CardHeader>
+            <CardContent>
             <div className="template-grid">
               {(Object.keys(templates) as TemplateId[]).map((id) => (
                 <button
@@ -202,31 +166,31 @@ export function Studio() {
                     <i /><b /><em />
                   </span>
                   <span><strong>{templates[id].name}</strong><small>{templates[id].description}</small></span>
-                  <span className="radio" />
+                  <span className="radio">{template === id ? <Check /> : null}</span>
                 </button>
               ))}
             </div>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section className="panel content-panel">
-            <div className="panel-heading">
-              <span className="step-number">02</span>
-              <div><h2>Shape the message</h2><p>Each field maps to a controlled region in the template.</p></div>
-            </div>
+          <Card className="content-panel">
+            <CardHeader><CardTitle>Shape the message</CardTitle><CardDescription>Each field maps to a controlled region in the template.</CardDescription></CardHeader>
+            <CardContent>
             <label className="field">
               <span>Eyebrow <small>{eyebrow.length}/28</small></span>
-              <input maxLength={28} value={eyebrow} onChange={(event) => setEyebrow(event.target.value)} />
+              <Input maxLength={28} value={eyebrow} onChange={(event) => setEyebrow(event.target.value)} />
             </label>
             <label className="field">
               <span>Headline <small className={headline.length > 84 ? "warning" : ""}>{headline.length}/84</small></span>
-              <textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} />
+              <Textarea maxLength={84} rows={3} value={headline} onChange={(event) => setHeadline(event.target.value)} />
               <em>{headlineState}</em>
             </label>
             <label className="field">
               <span>Supporting copy <small>{support.length}/150</small></span>
-              <textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} />
+              <Textarea maxLength={150} rows={4} value={support} onChange={(event) => setSupport(event.target.value)} />
             </label>
-          </section>
+            </CardContent>
+          </Card>
         </div>
 
         <aside className="preview-column">
@@ -253,9 +217,9 @@ export function Studio() {
             <div><span>Template</span><strong>{templates[template].name}</strong></div>
             <div><span>Brand rules</span><strong>{validation.success ? "Schema passed" : "Needs attention"}</strong></div>
           </div>
-          <button className="primary-button" disabled={isRendering || !validation.success} onClick={renderPng} type="button">
+          <Button className="w-full" size="lg" disabled={isRendering || !validation.success} onClick={renderPng} type="button">
             {isRendering ? "Rendering PNG…" : "Render & download PNG"}<span>↓</span>
-          </button>
+          </Button>
           <p className="export-note">Exports a checked, Instagram-ready 1080 px PNG.</p>
           {checks.length > 0 && (
             <div className="render-checks" aria-live="polite">
@@ -274,8 +238,8 @@ export function Studio() {
               </Link>
             ))}
           </section>
-        </aside>
+        </aside></div>
       </section>
-    </main>
+    </AppShell>
   );
 }

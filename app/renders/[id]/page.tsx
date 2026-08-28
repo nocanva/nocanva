@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { getRenderById } from "../../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../../lib/server/request-auth";
-import { WorkspaceHeader } from "../../workspace-header";
+import { AppShell } from "../../workspace-shell";
 
 const getRender = cache(getRenderById);
 
@@ -38,7 +38,7 @@ export default async function RenderDetailPage({ params }: { params: Promise<{ i
   const render = await getRender(id, principal.workspaceId);
   if (!render) notFound();
   return (
-    <main className="studio-shell"><WorkspaceHeader active="renders" /><section className="render-detail-page">
+    <AppShell><section className="render-detail-page page-frame">
       <div className="detail-breadcrumb"><Link href="/renders">← Render history</Link><span>Immutable record</span></div>
       <div className="render-detail-grid">
         <div className="detail-art-stage"><Image src={render.assetUrl} alt={render.payload.content.headline} width={render.width} height={render.height} unoptimized /></div>
@@ -55,6 +55,6 @@ export default async function RenderDetailPage({ params }: { params: Promise<{ i
           {render.parentRenderId && <p className="iteration-link">Iteration of <Link href={`/renders/${render.parentRenderId}`}>{render.parentRenderId.slice(0, 8)}…</Link></p>}
         </aside>
       </div>
-    </section></main>
+    </section></AppShell>
   );
 }

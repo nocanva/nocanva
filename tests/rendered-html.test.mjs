@@ -5,35 +5,35 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("NoCanva Studio exposes the durable render workflow", async () => {
-  const [studio, header, packageJson] = await Promise.all([
+  const [studio, shell, packageJson] = await Promise.all([
     readFile(new URL("app/studio.tsx", root), "utf8"),
-    readFile(new URL("app/workspace-header.tsx", root), "utf8"),
+    readFile(new URL("app/workspace-shell.tsx", root), "utf8"),
     readFile(new URL("package.json", root), "utf8"),
   ]);
   assert.match(studio, /Render & download PNG/);
   assert.match(studio, /Saving immutable render/);
   assert.match(studio, /\/api\/renders/);
-  assert.match(header, /href="\/brands"/);
-  assert.match(header, /href="\/templates"/);
-  assert.match(header, /href="\/drafts"/);
-  assert.match(header, /href="\/renders"/);
+  assert.match(shell, /href:\s*"\/brands"/);
+  assert.match(shell, /href:\s*"\/templates"/);
+  assert.match(shell, /href:\s*"\/drafts"/);
+  assert.match(shell, /href:\s*"\/renders"/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
 
 test("workspace theme is persistent, accessible, and independent from artwork colors", async () => {
-  const [layout, header, toggle, css, artwork] = await Promise.all([
+  const [layout, shell, toggle, css, artwork] = await Promise.all([
     readFile(new URL("app/layout.tsx", root), "utf8"),
-    readFile(new URL("app/workspace-header.tsx", root), "utf8"),
+    readFile(new URL("app/workspace-shell.tsx", root), "utf8"),
     readFile(new URL("app/theme-toggle.tsx", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
     readFile(new URL("app/post-artwork.tsx", root), "utf8"),
   ]);
   assert.match(layout, /nocanva-theme/);
-  assert.match(header, /<ThemeToggle/);
-  assert.match(toggle, /aria-label="Use dark mode"/);
+  assert.match(shell, /<ThemeToggle/);
+  assert.match(toggle, /aria-label={`Use \$\{theme === "dark" \? "light" : "dark"\} mode`}/);
   assert.match(toggle, /useSyncExternalStore/);
   assert.match(css, /:root\[data-theme="dark"\]/);
-  assert.match(css, /\.ui-switch\[data-checked\]/);
+  assert.match(css, /--sidebar:/);
   assert.match(artwork, /backgroundColor: brandConfig\.colors\.paper/);
 });
 
