@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
 import { brandConfigSchema, draftLayoutSchema, postContentSchema, templateInputSchema } from "../lib/media";
-import { compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
+import { carouselStoryWarnings, compositionDiversityGuidance, compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions";
 
 const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
 const draftPayloadInputSchema = z.object({
@@ -65,18 +65,31 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_list_compositions", {
     title: "List approved NoCanva compositions",
-    description: "List Blindspot's six semantic composition families plus recent usage warnings. Choose by story purpose, not coordinates.",
+    description: "List Blindspot's six semantic composition families plus one compact diversity recommendation based on recent drafts and carousels. Choose by story purpose, not coordinates.",
     inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20) }),
     annotations: { readOnlyHint: true },
   }, async ({ brandId, candidate, recentLimit }) => {
-    const recent = (await client.listDrafts(recentLimit, false)).filter((draft) => draft.brandId === brandId).map((draft) => ({
+    const [drafts, carousels] = await Promise.all([client.listDrafts(recentLimit, false), client.listCarousels(recentLimit, false)]);
+    const recentDrafts = drafts.filter((draft) => draft.brandId === brandId).map((draft) => ({
+      kind: "draft" as const,
       draftId: draft.id,
       compositionId: draft.payload.compositionId,
       backgroundStyle: draft.payload.content.backgroundStyle,
       headline: draft.payload.content.headline,
       workspaceUrl: draft.workspaceUrl,
+      updatedAt: draft.updatedAt,
     }));
-    return result({ brandId, compositions: Object.values(compositions), recent, warnings: recentCompositionWarnings(recent, candidate) });
+    const recentCarousels = carousels.filter((carousel) => carousel.brandId === brandId).map((carousel) => ({
+      kind: "carousel" as const,
+      carouselId: carousel.id,
+      compositionId: compositionFromTemplateId(carousel.templateId),
+      backgroundStyle: carousel.slides[0]?.backgroundStyle,
+      headline: carousel.slides[0]?.headline,
+      workspaceUrl: carousel.workspaceUrl,
+      updatedAt: carousel.updatedAt,
+    }));
+    const recent = [...recentDrafts, ...recentCarousels].sort((first, second) => second.updatedAt - first.updatedAt).slice(0, recentLimit);
+    return result({ brandId, compositions: Object.values(compositions), recent, diversity: compositionDiversityGuidance(recent), warnings: recentCompositionWarnings(recent, candidate) });
   });
 
   server.registerTool("nocanva_list_drafts", {
@@ -168,7 +181,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_create_carousel", {
     title: "Create NoCanva carousel",
-    description: "Create a stable editable 3–7 slide carousel using one existing brand and approved template. For Blindspot, reserve What’s missing for omitted-context stories; use Explainer for screenshot-free feature education and Product only with real product screenshots.",
+    description: "Create a stable editable 3–7 slide carousel using one existing brand and approved template. No layout roles are required: NoCanva infers hook, context, evidence, and close from slide order. For Blindspot, reserve What’s missing for omitted-context stories; use Explainer for screenshot-free feature education and Product only with real product screenshots.",
     inputSchema: z.object({
       brandId: z.string(), templateId: z.string(), format: z.enum(["portrait", "square"]), slides: z.array(contentSchema).min(3).max(7),
       prompt: z.string().trim().max(500).optional(),
@@ -194,7 +207,10 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   }, async ({ carouselId, reviewer, notes }) => {
     const reviewed = await client.reviewCarousel(carouselId, reviewer, notes);
     const compositionId = compositionFromTemplateId(reviewed.carousel.templateId);
-    const contentWarnings = reviewed.carousel.slides.flatMap((slide, slideIndex) => creativeContentWarnings(slide).map((warning) => `Slide ${slideIndex + 1}: ${warning}`));
+    const contentWarnings = [
+      ...reviewed.carousel.slides.flatMap((slide, slideIndex) => creativeContentWarnings(slide).map((warning) => `Slide ${slideIndex + 1}: ${warning}`)),
+      ...carouselStoryWarnings(reviewed.carousel.slides),
+    ];
     return {
       content: [
         { type: "text" as const, text: JSON.stringify({ carousel: reviewed.carousel, review: reviewed.review, compositionId, contentWarnings, visualReviewRubric, requiredVisualAnswers: reviewed.carousel.slides.map((_, slideIndex) => ({ slide: slideIndex + 1, questions: visualReviewRubric })) }, null, 2) },

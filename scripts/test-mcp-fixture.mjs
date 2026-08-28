@@ -31,6 +31,8 @@ try {
   assert.ok(toolNames.includes("nocanva_list_compositions"), "Missing MCP tool: nocanva_list_compositions");
   const compositionResult = structured(await client.callTool({ name: "nocanva_list_compositions", arguments: { brandId: "blindspot", recentLimit: 20 } }));
   assert.deepEqual(compositionResult.compositions.map((composition) => composition.id), ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
+  assert.ok(Array.isArray(compositionResult.diversity.underusedCompositionIds));
+  assert.match(compositionResult.diversity.instruction, /story purpose first/);
   const handleReview = structured(await client.callTool({
     name: "canvnah_review_template",
     arguments: {

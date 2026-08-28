@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const compositionIdSchema = z.enum(["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
 export type CompositionId = z.infer<typeof compositionIdSchema>;
+export type CarouselSequenceRole = "hook" | "context" | "evidence" | "close";
 
 export const compositionBlockSchema = z.enum(["Headline", "Eyebrow", "Body", "Image", "Screenshot", "Evidence", "Quote", "Metric", "Highlight", "LogoFooter", "CTA"]);
 export type CompositionBlock = z.infer<typeof compositionBlockSchema>;
@@ -68,6 +69,44 @@ export const visualReviewRubric = [
   "Does it look professionally designed?",
   "Is it too similar to recent posts?",
 ] as const;
+
+export function carouselSequenceRole(index: number, total: number): CarouselSequenceRole {
+  if (index <= 0) return "hook";
+  if (index >= total - 1) return "close";
+  if (index === total - 2 || index % 2 === 0) return "evidence";
+  return "context";
+}
+
+export function carouselSequenceSurface(role: CarouselSequenceRole) {
+  return role === "context" ? "paper" : role === "evidence" ? "ink" : "signal_wash";
+}
+
+function headlineOpening(headline: string) {
+  return headline.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim().split(/\s+/).slice(0, 2).join(" ");
+}
+
+export function carouselStoryWarnings(slides: Array<{ headline: string; backgroundStyle?: string }>) {
+  const warnings: string[] = [];
+  const backgrounds = slides.map((slide, index) => slide.backgroundStyle ?? carouselSequenceSurface(carouselSequenceRole(index, slides.length)));
+  if (new Set(backgrounds).size === 1) warnings.push("Every slide uses the same surface. Alternate at least one background treatment to create story rhythm.");
+  const openings = slides.map((slide) => headlineOpening(slide.headline)).filter(Boolean);
+  const repeatedOpenings = [...new Set(openings.filter((opening, index) => openings.indexOf(opening) !== index))];
+  if (repeatedOpenings.length) warnings.push(`Slides repeat the same headline opening (${repeatedOpenings.join(", ")}). Reframe the hooks so each beat advances.`);
+  return warnings;
+}
+
+export function compositionDiversityGuidance(recent: Array<{ compositionId?: string; backgroundStyle?: string; headline?: string }>) {
+  const previousThree = recent.slice(0, 3);
+  const counts = Object.fromEntries(Object.keys(compositions).map((id) => [id, recent.filter((item) => item.compositionId === id).length]));
+  const minimum = Math.min(...Object.values(counts));
+  return {
+    avoidCompositionIds: [...new Set(previousThree.map((item) => item.compositionId).filter(Boolean))],
+    avoidBackgroundStyles: recent.length >= 2 && recent.slice(0, 2).every((item) => item.backgroundStyle === recent[0]?.backgroundStyle) ? [recent[0]?.backgroundStyle].filter(Boolean) : [],
+    avoidHeadlineOpenings: [...new Set(previousThree.map((item) => item.headline ? headlineOpening(item.headline) : "").filter(Boolean))],
+    underusedCompositionIds: Object.entries(counts).filter(([, count]) => count === minimum).map(([id]) => id),
+    instruction: "Choose by story purpose first. When more than one composition fits, prefer an underused option and avoid the recent surface and headline openings.",
+  };
+}
 
 export function isCompositionId(value: string): value is CompositionId {
   return compositionIdSchema.safeParse(value).success;

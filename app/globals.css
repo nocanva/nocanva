@@ -464,6 +464,17 @@ button { color: inherit; }
 .post-canvas.whats_missing.background-ink .missing-answer .composition-body { color: var(--brand-muted); }
 .post-canvas.whats_missing.background-signal_wash .missing-answer .composition-body { color: var(--brand-muted); }
 
+/* Carousel rhythm is inferred from sequence position; users and agents do not manage layout roles. */
+.post-canvas.whats_missing.carousel-role-hook .missing-question .composition-headline { max-width: 94% !important; }
+.post-canvas.whats_missing.carousel-role-hook .missing-answer { margin-left: 24%; }
+.post-canvas.whats_missing.carousel-role-context .missing-question { margin-left: 10%; }
+.post-canvas.whats_missing.carousel-role-context .missing-answer { margin-left: 0; margin-right: 18%; }
+.post-canvas.whats_missing.carousel-role-evidence .missing-answer { margin-left: 28%; }
+.post-canvas.whats_missing.carousel-role-evidence .missing-source { margin-left: 0; }
+.post-canvas.whats_missing.carousel-role-close .missing-answer { margin-left: 0; padding: 7%; }
+.post-canvas.whats_missing.carousel-role-close .missing-source { margin-left: 0; }
+.post-canvas.whats_missing.carousel-role-close .missing-index { color: color-mix(in srgb,var(--brand-signal) 22%,transparent); font-family: var(--font-sans),sans-serif; font-weight: 800; }
+
 /* Product: a precise announcement above one annotated screenshot. */
 .post-canvas.product { background: var(--brand-ink) !important; color: var(--brand-paper) !important; }
 .post-canvas.product .composition-brand-header, .post-canvas.product .composition-logo-footer { color: var(--brand-paper); }
@@ -497,6 +508,13 @@ button { color: inherit; }
 .explainer-slide-footer { align-items: end; display: flex; gap: 5%; justify-content: space-between; min-height: 0; }
 .explainer-slide-footer .composition-cta { max-width: 50%; text-align: right; }
 .post-canvas.background-signal_wash .explainer-slide-action > strong { color: var(--brand-ink); }
+.post-canvas.explainer.carousel-role-context .explainer-slide-action { grid-template-columns: 1fr .45fr; }
+.post-canvas.explainer.carousel-role-context .explainer-slide-action > strong { order: 2; text-align: right; }
+.post-canvas.explainer.carousel-role-context .explainer-slide-action .composition-body { order: 1; }
+.post-canvas.explainer.carousel-role-evidence .explainer-slide-action { border-left: 4px solid var(--brand-signal); padding-left: 7%; }
+.post-canvas.explainer.carousel-role-close .explainer-slide-action { background: var(--brand-ink); border: 0; color: var(--brand-paper); margin-inline: -4%; padding: 9% 6%; }
+.post-canvas.explainer.carousel-role-close .explainer-slide-action .composition-body { color: color-mix(in srgb,var(--brand-paper) 84%,transparent); }
+.post-canvas.explainer.carousel-role-close .explainer-slide-action > strong { color: var(--brand-signal); }
 
 /* Semantic backgrounds are content decisions, not accidental template defaults. */
 .post-canvas.background-ink { background: var(--brand-ink) !important; color: var(--brand-paper) !important; }

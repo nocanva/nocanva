@@ -246,8 +246,8 @@ export class CanvnahClient {
   async reviewCarousel(id: string, reviewer = "agent:mcp", notes?: string): Promise<{ carousel: CarouselResult; review: CarouselReviewResult; imagesBase64: string[] }> {
     const carousel = await this.getCarousel(id);
     const captures = [];
-    for (const content of carousel.slides) {
-      captures.push(await this.capturePayload({ brandId: carousel.brandId, templateId: carousel.templateId, format: carousel.format, content }, carousel.templateVersionId));
+    for (const [index, content] of carousel.slides.entries()) {
+      captures.push(await this.capturePayload({ brandId: carousel.brandId, templateId: carousel.templateId, format: carousel.format, content }, carousel.templateVersionId, { index, total: carousel.slides.length }));
     }
     const form = new FormData();
     form.set("expectedRevision", String(carousel.currentRevision));
@@ -348,11 +348,15 @@ export class CanvnahClient {
     return this.presentRender(data.render);
   }
 
-  private async capturePayload(payload: PostPayload, templateVersionId?: string): Promise<{ png: Uint8Array; review: Omit<ReviewResult, "imageBase64"> }> {
+  private async capturePayload(payload: PostPayload, templateVersionId?: string, sequence?: { index: number; total: number }): Promise<{ png: Uint8Array; review: Omit<ReviewResult, "imageBase64"> }> {
     if (!this.context.render) throw new Error("No media renderer is configured for this NoCanva MCP runtime.");
     const dimensions = formats[payload.format];
     const query = new URLSearchParams({ payload: JSON.stringify(payload) });
     if (templateVersionId) query.set("templateVersionId", templateVersionId);
+    if (sequence) {
+      query.set("slideIndex", String(sequence.index));
+      query.set("slideTotal", String(sequence.total));
+    }
     const renderBaseUrl = this.context.renderBaseUrl?.replace(/\/$/, "") ?? this.baseUrl;
     const previewUrl = `${renderBaseUrl}/render/preview?${query.toString()}`;
     const capture = await this.context.render({

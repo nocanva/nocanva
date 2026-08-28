@@ -113,7 +113,7 @@ async function generate() {
         await writeFile(reviewPath, Buffer.from(images[index].data, "base64"));
         reviewPaths.push(reviewPath);
       }
-      items.push({ id: task.id, kind: "carousel", category: task.category, composition: task.composition, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, carouselId: reviewed.carousel.id, currentRevision: reviewed.carousel.currentRevision, templateVersionId: reviewed.carousel.templateVersionId, workspaceUrl: reviewed.carousel.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.status === "passed", mechanicalChecks: reviewed.review.checks, contentWarnings: [], artifacts: reviewed.review.artifacts, reviewPaths });
+      items.push({ id: task.id, kind: "carousel", category: task.category, composition: task.composition, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, carouselId: reviewed.carousel.id, currentRevision: reviewed.carousel.currentRevision, templateVersionId: reviewed.carousel.templateVersionId, workspaceUrl: reviewed.carousel.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.status === "passed", mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings ?? [], artifacts: reviewed.review.artifacts, reviewPaths });
       continue;
     }
 

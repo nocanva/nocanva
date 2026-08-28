@@ -20,10 +20,11 @@ function decodePayload(raw?: string) {
   return defaultPostPayload;
 }
 
-export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string; templateVersionId?: string }> }) {
+export default async function RenderPreview({ searchParams }: { searchParams: Promise<{ payload?: string; templateVersionId?: string; slideIndex?: string; slideTotal?: string }> }) {
   const principal = await requireNoCanvaViewer("/render/preview");
-  const { payload, templateVersionId } = await searchParams;
+  const { payload, templateVersionId, slideIndex, slideTotal } = await searchParams;
   const decoded = decodePayload(payload);
+  const sequence = Number.isInteger(Number(slideIndex)) && Number(slideTotal) >= 3 ? { index: Number(slideIndex), total: Number(slideTotal) } : undefined;
   const [brandRecord, templateRecord] = await Promise.all([
     getBrandById(decoded.brandId, principal.workspaceId),
     templateVersionId ? getTemplateVersionById(templateVersionId, principal.workspaceId) : getTemplateById(decoded.templateId, principal.workspaceId),
@@ -31,5 +32,5 @@ export default async function RenderPreview({ searchParams }: { searchParams: Pr
   if (!brandRecord || !templateRecord || templateRecord.brandId !== brandRecord.id) {
     return <main className="render-route"><p>Brand or template not found.</p></main>;
   }
-  return <main className="render-route"><PostArtwork payload={decoded} brandConfig={brandRecord.config} template={templateRecord} mode="export" /></main>;
+  return <main className="render-route"><PostArtwork payload={decoded} brandConfig={brandRecord.config} template={templateRecord} mode="export" sequence={sequence} /></main>;
 }

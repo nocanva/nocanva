@@ -16,6 +16,10 @@ Puck is a replaceable editing adapter. It receives one approved semantic composi
 
 Agents choose meaning rather than coordinates. The six approved families are `claim`, `real_but`, `receipt`, `whats_missing`, `product`, and `explainer`. Brand chrome, spacing, hierarchy, safe areas, and artwork geometry remain locked.
 
+`nocanva_list_compositions` considers recent drafts and carousels together and returns compact diversity guidance: recently used compositions, repeated surfaces and headline openings, plus underused options. Story purpose still wins; the guidance only breaks ties.
+
+Carousel layout roles are automatic. Slide order deterministically becomes hook, alternating context/evidence beats, and close. Agents send only ordered semantic content, while the editor exposes those inferred labels without adding layout controls.
+
 ## Autonomous loop
 
 1. Build an evidence ledger from source material; never invent a claim.

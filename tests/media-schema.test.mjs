@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { defaultPostPayload, draftLayoutSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
-import { compositions, compositionFromTemplateId, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions.ts";
+import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
   assert.deepEqual(parsePostPayload(defaultPostPayload), defaultPostPayload);
@@ -48,6 +48,27 @@ test("flags generic creative copy and anonymous evidence", () => {
   assert.match(warnings[0], /generic/);
   assert.match(warnings[1], /marketing adjective/);
   assert.match(warnings[2], /primary source/);
+});
+
+test("creates carousel rhythm and feed diversity without new agent layout inputs", () => {
+  assert.deepEqual([0, 1, 2, 3].map((index) => carouselSequenceRole(index, 4)), ["hook", "context", "evidence", "close"]);
+  assert.deepEqual(["hook", "context", "evidence", "close"].map(carouselSequenceSurface), ["signal_wash", "paper", "ink", "signal_wash"]);
+  assert.deepEqual(carouselStoryWarnings([
+    { headline: "Name the claim" }, { headline: "Read the source" }, { headline: "Keep the receipt" },
+  ]), []);
+  assert.match(carouselStoryWarnings([
+    { headline: "Check the date", backgroundStyle: "ink" },
+    { headline: "Check the source", backgroundStyle: "ink" },
+    { headline: "Keep the receipt", backgroundStyle: "ink" },
+  ]).join(" "), /same surface.*same headline opening/i);
+  const guidance = compositionDiversityGuidance([
+    { compositionId: "claim", backgroundStyle: "ink", headline: "Check the date" },
+    { compositionId: "receipt", backgroundStyle: "ink", headline: "Read the source" },
+    { compositionId: "claim", backgroundStyle: "paper", headline: "Name the claim" },
+  ]);
+  assert.deepEqual(guidance.avoidCompositionIds, ["claim", "receipt"]);
+  assert.deepEqual(guidance.avoidBackgroundStyles, ["ink"]);
+  assert.ok(guidance.underusedCompositionIds.includes("product"));
 });
 
 test("keeps the Blindspot benchmark and approved visual references measurable", async () => {

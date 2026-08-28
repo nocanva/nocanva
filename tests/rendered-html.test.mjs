@@ -105,6 +105,7 @@ test("beta renderers preserve the product object instead of collapsing into stat
     assert.match(css, new RegExp(`\\.${renderer}-layout`));
   }
   assert.match(artwork, /background-\$\{resolvedBackgroundStyle\}/);
+  assert.match(artwork, /carousel-role-\$\{sequenceRole\}/);
   assert.match(artworkBlocks, /composition-image-stage/);
   assert.match(artwork, /transformOrigin/);
   assert.match(samples, /quality-reviews\.json/);
@@ -116,6 +117,7 @@ test("beta renderers preserve the product object instead of collapsing into stat
   assert.match(benchmarkRunner, /status: "mechanically-reviewed"/);
   assert.match(benchmarkRunner, /nocanva_list_compositions/);
   assert.match(benchmarkRunner, /nocanva_review_carousel/);
+  assert.match(await readFile(new URL("mcp/server.ts", root), "utf8"), /compositionDiversityGuidance/);
   assert.match(benchmarkEvaluator, /immutable render/);
 });
 
