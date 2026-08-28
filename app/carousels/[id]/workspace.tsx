@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
+import { Archive, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Download, Plus, RotateCcw, Save, ScanSearch, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { carouselUpdateInputSchema, formats, type PostContent } from "../../../lib/media";
 import type { CarouselRecord, CarouselRenderRecord, CarouselRevisionRecord } from "../../../lib/server/carousel-repository";
 import type { BrandRecord, TemplateRecord } from "../../../lib/server/media-repository";
@@ -10,6 +13,7 @@ import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { AppShell } from "../../workspace-shell";
+import { WorkflowProgress } from "../../workflow-progress";
 
 export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAssets, initialRender, brand, template }: { initialCarousel: CarouselRecord; initialRevisions: CarouselRevisionRecord[]; initialAssets: WorkspaceAsset[]; initialRender: CarouselRenderRecord | null; brand: BrandRecord; template: TemplateRecord }) {
   const router = useRouter();
@@ -28,6 +32,7 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
   const valid = carouselUpdateInputSchema.safeParse(updateInput).success;
   const current = slides[activeSlide] ?? slides[0];
   const currentRender = renderRecord?.carouselRevisionId === carousel.revisionId ? renderRecord : null;
+  const hasChanges = JSON.stringify({ format, slides, prompt }) !== JSON.stringify({ format: carousel.format, slides: carousel.slides, prompt: carousel.prompt ?? "" });
 
   async function request(path: string, init: RequestInit) {
     const response = await fetch(path, init);
@@ -71,6 +76,17 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
     if (slides.length <= 3) return;
     setSlides((items) => items.filter((_, index) => index !== activeSlide));
     setActiveSlide((index) => Math.max(0, Math.min(index, slides.length - 2)));
+  }
+
+  function moveSlide(direction: -1 | 1) {
+    const target = activeSlide + direction;
+    if (target < 0 || target >= slides.length) return;
+    setSlides((items) => {
+      const next = [...items];
+      [next[activeSlide], next[target]] = [next[target], next[activeSlide]];
+      return next;
+    });
+    setActiveSlide(target);
   }
 
   async function save() {
@@ -148,10 +164,12 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
   if (!current) return null;
   const payload = { brandId: carousel.brandId, templateId: carousel.templateId, format, content: current };
   return <AppShell><section className="draft-workspace page-frame">
-    <div className="draft-workspace-heading"><div><p className="kicker">Stable carousel · revision {carousel.currentRevision}</p><h1>{slides[0].headline}</h1><p>{notice}</p></div><span className={`draft-status ${carousel.status}`}>{carousel.archivedAt ? "archived" : carousel.status.replace("_", " ")}</span></div>
+    <div className="draft-workspace-heading"><div><div className="workspace-title-meta"><p className="kicker">Stable carousel · revision {carousel.currentRevision}</p><Badge variant="outline" className={hasChanges ? "change-badge dirty" : "change-badge"}>{hasChanges ? "Unsaved changes" : "Revision saved"}</Badge></div><h1>{slides[0].headline}</h1><p className="workspace-notice" aria-live="polite">{notice}</p></div><span className={`draft-status ${carousel.status}`}>{carousel.archivedAt ? "archived" : carousel.status.replace("_", " ")}</span></div>
+    <WorkflowProgress status={carousel.status} archived={Boolean(carousel.archivedAt)} />
     <div className="draft-workspace-grid"><section className="draft-form panel">
-      <div className="carousel-tabs" aria-label="Carousel slides">{slides.map((slide, index) => <button className={index === activeSlide ? "active" : ""} key={index} onClick={() => setActiveSlide(index)} type="button"><span>{String(index + 1).padStart(2, "0")}</span><strong>{slide.headline}</strong></button>)}</div>
-      <div className="carousel-slide-actions"><button disabled={slides.length >= 7} onClick={addSlide} type="button">+ Add slide</button><button disabled={slides.length <= 3} onClick={removeSlide} type="button">− Remove current</button></div>
+      <div className="carousel-editor-heading"><div><span className="section-overline">Story sequence</span><strong>{slides.length} slides</strong></div><Button disabled={slides.length >= 7} onClick={addSlide} size="sm" variant="outline" type="button"><Plus />Add slide</Button></div>
+      <div className="carousel-tabs" aria-label="Carousel slides">{slides.map((slide, index) => <button aria-label={`Edit slide ${index + 1}: ${slide.headline}`} className={index === activeSlide ? "active" : ""} key={index} onClick={() => setActiveSlide(index)} type="button"><span>{String(index + 1).padStart(2, "0")}</span><strong>{slide.headline}</strong><small>{index === 0 ? "Hook" : index === slides.length - 1 ? "Close" : "Story"}</small></button>)}</div>
+      <div className="carousel-slide-actions"><Button aria-label="Move slide earlier" disabled={activeSlide === 0} onClick={() => moveSlide(-1)} size="icon-sm" variant="outline" type="button"><ArrowUp /></Button><Button aria-label="Move slide later" disabled={activeSlide === slides.length - 1} onClick={() => moveSlide(1)} size="icon-sm" variant="outline" type="button"><ArrowDown /></Button><span>Slide {activeSlide + 1} selected</span><Button disabled={slides.length <= 3} onClick={removeSlide} size="sm" variant="ghost" type="button"><Trash2 />Remove</Button></div>
       <label className="field"><span>Eyebrow <small>{current.eyebrow.length}/28</small></span><input maxLength={28} value={current.eyebrow} onChange={(event) => updateSlide("eyebrow", event.target.value)} /></label>
       <label className="field"><span>Headline <small>{current.headline.length}/84</small></span><textarea maxLength={84} rows={3} value={current.headline} onChange={(event) => updateSlide("headline", event.target.value)} /></label>
       <label className="field"><span>Supporting copy <small>{current.support.length}/150</small></span><textarea maxLength={150} rows={4} value={current.support} onChange={(event) => updateSlide("support", event.target.value)} /></label>
@@ -169,14 +187,14 @@ export function CarouselWorkspace({ initialCarousel, initialRevisions, initialAs
       </fieldset>
       <label className="field"><span>Source prompt</span><textarea maxLength={500} rows={3} value={prompt} onChange={(event) => setPrompt(event.target.value)} /></label>
       <div className="format-switch" aria-label="Carousel format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
-      <button className="primary-button" disabled={busy || !valid || Boolean(carousel.archivedAt)} onClick={save} type="button">Save all slides as one revision <span>→</span></button>
+      <Button className="workspace-save-button" disabled={busy || !valid || !hasChanges || Boolean(carousel.archivedAt)} onClick={save} size="lg" type="button"><Save />{busy ? "Working…" : hasChanges ? "Save carousel revision" : "Revision saved"}</Button>
       <dl className="draft-meta"><div><dt>Brand</dt><dd>{carousel.brandName}</dd></div><div><dt>Template</dt><dd>{carousel.templateName} v{carousel.templateVersion}</dd></div><div><dt>Slides</dt><dd>{slides.length}</dd></div><div><dt>Approval</dt><dd>{carousel.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>
       <div className="revision-history"><p className="section-label">Revision history</p>{revisions.map((revision) => <div key={revision.id}><strong>v{revision.revision}</strong><span>{revision.slides.length} slides · {revision.createdBy}</span><time>{new Date(revision.createdAt).toISOString().replace("T", " ").slice(0, 16)} UTC</time></div>)}</div>
     </section><aside className="draft-preview-panel">
-      <div className="carousel-preview-label"><span>Slide {activeSlide + 1} of {slides.length}</span><strong>Shared brand · template v{carousel.templateVersion}</strong></div>
+      <div className="carousel-preview-label"><Button aria-label="Previous slide" disabled={activeSlide === 0} onClick={() => setActiveSlide((value) => value - 1)} size="icon-sm" variant="outline"><ArrowLeft /></Button><span>Slide {activeSlide + 1} of {slides.length}</span><strong>Shared brand · template v{carousel.templateVersion}</strong><Button aria-label="Next slide" disabled={activeSlide === slides.length - 1} onClick={() => setActiveSlide((value) => value + 1)} size="icon-sm" variant="outline"><ArrowRight /></Button></div>
       <div className="canvas-stage"><PostArtwork payload={payload} brandConfig={brand.config} template={template} /></div>
       {slides.map((content, index) => <div className="export-surface" aria-hidden="true" key={index}><PostArtwork ref={(node) => { exportRefs.current[index] = node; }} payload={{ brandId: carousel.brandId, templateId: carousel.templateId, format, content }} brandConfig={brand.config} template={template} mode="export" /></div>)}
-      <div className="draft-actions"><button disabled={busy || Boolean(carousel.archivedAt) || !valid} onClick={review} type="button">Review every slide</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve reviewed set</button><button disabled={busy || carousel.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button>{currentRender ? <><a className="export-action" href={`/carousel-renders/${currentRender.id}`}>Open exported PNGs →</a><a href={currentRender.zipUrl} download>Download all PNGs (.zip) ↓</a></> : <button disabled={busy || (carousel.status !== "approved" && carousel.status !== "rendered")} onClick={render} type="button">Render carousel + ZIP</button>}<button disabled={busy} onClick={archive} type="button">{carousel.archivedAt ? "Restore carousel" : "Archive carousel"}</button></div>
+      <div className="workflow-action-card"><div><span className="section-overline">Next action</span><strong>{carousel.status === "draft" ? "Review the complete story" : carousel.status === "in_review" ? "Approve every slide together" : carousel.status === "approved" ? "Export the slide set" : "Carousel export is ready"}</strong><small>{carousel.status === "draft" ? "All slides are checked and reviewed as one pinned revision." : carousel.status === "in_review" ? "Approval applies to this exact ordered set—not individual slides." : carousel.status === "approved" ? "Create immutable PNGs and a single ZIP download." : "Open the export to inspect or download every slide."}</small></div><div className="workflow-primary-actions">{carousel.status === "draft" && <Button disabled={busy || Boolean(carousel.archivedAt) || !valid || hasChanges} onClick={review} type="button"><ScanSearch />Review every slide</Button>}{carousel.status === "in_review" && <><Button disabled={busy} onClick={() => approve("approved")} type="button"><Check />Approve reviewed set</Button><Button disabled={busy} onClick={() => approve("rejected")} variant="outline" type="button"><RotateCcw />Request changes</Button></>}{currentRender ? <><Button nativeButton={false} render={<a href={`/carousel-renders/${currentRender.id}`} />}><ArrowRight />Open exported PNGs</Button><Button nativeButton={false} render={<a download href={currentRender.zipUrl} />} variant="outline"><Download />Download all PNGs (.zip)</Button></> : carousel.status === "approved" ? <Button disabled={busy} onClick={render} type="button"><Download />Render carousel + ZIP</Button> : null}</div><div className="workflow-secondary-actions"><Button disabled={busy} onClick={archive} size="sm" variant="ghost" type="button">{carousel.archivedAt ? <RotateCcw /> : <Archive />}{carousel.archivedAt ? "Restore carousel" : "Archive"}</Button></div>{hasChanges && carousel.status === "draft" ? <p className="action-hint">Save the reordered or edited slides before review.</p> : null}</div>
     </aside></div>
   </section></AppShell>;
 }

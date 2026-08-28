@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
+import { Archive, Check, Download, ImagePlus, RotateCcw, Save, ScanSearch } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { draftLayoutSchema, formats, postPayloadSchema, type DraftLayout, type PostContent } from "../../../lib/media";
 import { compositionFromTemplateId } from "../../../lib/compositions";
 import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } from "../../../lib/server/media-repository";
@@ -10,6 +13,7 @@ import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
 import { PostArtwork } from "../../post-artwork";
 import { AppShell } from "../../workspace-shell";
+import { WorkflowProgress } from "../../workflow-progress";
 import { PuckCompositionEditor } from "./puck-composition-editor";
 
 export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
@@ -32,6 +36,8 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   const content = { ...compositionContent, eyebrow, headline, support, ...(image ? { image } : { image: undefined }) };
   const payload = { brandId: draft.brandId, templateId: draft.templateId, ...(compositionId ? { compositionId } : {}), format, content, layout };
   const valid = postPayloadSchema.safeParse(payload).success;
+  const savedPayload = { ...draft.payload, layout: draftLayoutSchema.parse(draft.payload.layout ?? {}) };
+  const hasChanges = JSON.stringify({ payload, prompt }) !== JSON.stringify({ payload: savedPayload, prompt: draft.prompt ?? "" });
 
   async function request(path: string, init: RequestInit) {
     const response = await fetch(path, init);
@@ -124,7 +130,8 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   }
 
   return <AppShell><section className="draft-workspace page-frame">
-    <div className="draft-workspace-heading"><div><p className="kicker">Stable draft · revision {draft.currentRevision}</p><h1>{headline}</h1><p>{notice}</p></div><span className={`draft-status ${draft.status}`}>{draft.archivedAt ? "archived" : draft.status.replace("_", " ")}</span></div>
+    <div className="draft-workspace-heading"><div><div className="workspace-title-meta"><p className="kicker">Stable draft · revision {draft.currentRevision}</p><Badge variant="outline" className={hasChanges ? "change-badge dirty" : "change-badge"}>{hasChanges ? "Unsaved changes" : "Revision saved"}</Badge></div><h1>{headline}</h1><p className="workspace-notice" aria-live="polite">{notice}</p></div><span className={`draft-status ${draft.status}`}>{draft.archivedAt ? "archived" : draft.status.replace("_", " ")}</span></div>
+    <WorkflowProgress status={draft.status} archived={Boolean(draft.archivedAt)} />
     <div className={compositionId ? "draft-workspace-grid composition-editor-active" : "draft-workspace-grid"}><section className="draft-form panel">
       {compositionId ? <PuckCompositionEditor content={content} layout={layout} compositionId={compositionId} payloadBase={{ brandId: draft.brandId, templateId: draft.templateId, format }} brandConfig={brand.config} template={template} disabled={busy || Boolean(draft.archivedAt)} onChange={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); }} onPublish={(next) => { setCompositionContent(next.content); setLayout(next.layout); setEyebrow(next.content.eyebrow); setHeadline(next.content.headline); setSupport(next.content.support); void save(next); }} /> : <>
       <label className="field"><span>Eyebrow <small>{eyebrow.length}/28</small></span><input maxLength={28} value={eyebrow} onChange={(event) => setEyebrow(event.target.value)} /></label>
@@ -144,13 +151,13 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
         </div>}
       </fieldset>
       <div className="format-switch" aria-label="Draft format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
-      <button className="primary-button" disabled={busy || !valid || Boolean(draft.archivedAt)} onClick={() => save()} type="button">Save new revision <span>→</span></button>
+      <Button className="workspace-save-button" disabled={busy || !valid || !hasChanges || Boolean(draft.archivedAt)} onClick={() => save()} size="lg" type="button"><Save />{busy ? "Working…" : hasChanges ? "Save as new revision" : "Revision saved"}</Button>
       <dl className="draft-meta"><div><dt>Brand</dt><dd>{draft.brandName}</dd></div><div><dt>Template</dt><dd>{draft.templateName} v{draft.templateVersion}</dd></div><div><dt>Created by</dt><dd>{draft.revisionCreatedBy}</dd></div><div><dt>Approval</dt><dd>{draft.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>
       <div className="revision-history"><p className="section-label">Revision history</p>{revisions.map((revision) => <div key={revision.id}><strong>v{revision.revision}</strong><span>{revision.createdBy}</span><time>{new Date(revision.createdAt).toISOString().replace("T", " ").slice(0, 16)} UTC</time></div>)}</div>
     </section><aside className="draft-preview-panel">
       <div className="canvas-stage"><PostArtwork payload={payload} brandConfig={brand.config} template={template} /></div>
       <div className="export-surface" aria-hidden="true"><PostArtwork ref={exportRef} payload={payload} brandConfig={brand.config} template={template} mode="export" /></div>
-      <div className="draft-actions"><button disabled={busy || Boolean(draft.archivedAt)} onClick={review} type="button">Run mechanical review</button><button disabled={busy || draft.status !== "in_review"} onClick={() => approve("approved")} type="button">Approve revision</button><button disabled={busy || draft.status !== "in_review"} onClick={() => approve("rejected")} type="button">Request changes</button><button disabled={busy || draft.status !== "approved"} onClick={render} type="button">Render approved PNG</button><button disabled={busy} onClick={archive} type="button">{draft.archivedAt ? "Restore draft" : "Archive draft"}</button></div>
+      <div className="workflow-action-card"><div><span className="section-overline">Next action</span><strong>{draft.status === "draft" ? "Review this revision" : draft.status === "in_review" ? "Make the human decision" : draft.status === "approved" ? "Create the final PNG" : "Export is ready"}</strong><small>{draft.status === "draft" ? "Mechanical checks verify dimensions, bounds, overflow and deterministic output." : draft.status === "in_review" ? "Inspect the artwork—not only the checks—before approving." : draft.status === "approved" ? "The exported asset will stay pinned to this exact revision." : "Open Exports to download or inspect the immutable file."}</small></div><div className="workflow-primary-actions">{draft.status === "draft" && <Button disabled={busy || Boolean(draft.archivedAt) || hasChanges} onClick={review} type="button"><ScanSearch />Run review</Button>}{draft.status === "in_review" && <><Button disabled={busy} onClick={() => approve("approved")} type="button"><Check />Approve revision</Button><Button disabled={busy} onClick={() => approve("rejected")} variant="outline" type="button"><RotateCcw />Request changes</Button></>}{draft.status === "approved" && <Button disabled={busy} onClick={render} type="button"><Download />Render approved PNG</Button>}</div><div className="workflow-secondary-actions"><Button disabled={busy} onClick={archive} size="sm" variant="ghost" type="button">{draft.archivedAt ? <RotateCcw /> : <Archive />}{draft.archivedAt ? "Restore draft" : "Archive"}</Button>{image ? <span><ImagePlus /> Image attached</span> : null}</div>{hasChanges && draft.status === "draft" ? <p className="action-hint">Save the current changes before running review.</p> : null}</div>
     </aside></div>
   </section></AppShell>;
 }

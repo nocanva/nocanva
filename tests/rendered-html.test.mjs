@@ -38,17 +38,23 @@ test("workspace theme is persistent, accessible, and independent from artwork co
 });
 
 test("draft workspace exposes stable editable lifecycle actions", async () => {
-  const [page, workspace, renderDetail] = await Promise.all([
+  const [page, workspace, workflow, carousel, renderDetail] = await Promise.all([
     readFile(new URL("app/drafts/[id]/page.tsx", root), "utf8"),
     readFile(new URL("app/drafts/[id]/workspace.tsx", root), "utf8"),
+    readFile(new URL("app/workflow-progress.tsx", root), "utf8"),
+    readFile(new URL("app/carousels/[id]/workspace.tsx", root), "utf8"),
     readFile(new URL("app/renders/[id]/page.tsx", root), "utf8"),
   ]);
   assert.match(page, /getDraftById/);
-  assert.match(workspace, /Save new revision/);
-  assert.match(workspace, /Run mechanical review/);
+  assert.match(workspace, /Save as new revision/);
+  assert.match(workspace, /Run review/);
   assert.match(workspace, /Approve revision/);
   assert.match(workspace, /Render approved PNG/);
   assert.match(workspace, /Revision history/);
+  assert.match(workflow, /Edit.*Review.*Approve.*Export/s);
+  assert.match(carousel, /moveSlide/);
+  assert.match(carousel, /Unsaved changes/);
+  assert.match(carousel, /Review every slide/);
   assert.match(renderDetail, /Template version ID/);
   assert.match(renderDetail, /Draft revision/);
 });
