@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
@@ -130,8 +130,9 @@ async function generate() {
     items.push({ id: task.id, kind: "draft", category: task.category, composition: task.composition, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, draftId: reviewed.draft.id, currentRevision: reviewed.draft.currentRevision, templateVersionId: reviewed.draft.templateVersionId, workspaceUrl: reviewed.draft.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.passed, mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings, artifacts: [{ width: reviewed.review.width, height: reviewed.review.height, sha256: reviewed.review.sha256 }], reviewPaths: [reviewPath] });
   }
 
-  const manifest = { benchmark: benchmark.name, generatedAt: new Date().toISOString(), status: "reviewed", baseUrl, evidenceLedger: fixture.evidenceLedger, assets: uploaded, items };
+  const manifest = { benchmark: benchmark.name, generatedAt: new Date().toISOString(), status: "mechanically-reviewed", baseUrl, evidenceLedger: fixture.evidenceLedger, assets: uploaded, items };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await rm(resultsPath, { force: true });
   process.stdout.write(`${JSON.stringify({ manifestPath, tasks: items.length, reviewPngs: items.reduce((total, item) => total + item.reviewPaths.length, 0), mechanicalFailures: items.filter((item) => !item.mechanicalPassed).map((item) => item.id), contentWarningTasks: items.filter((item) => item.contentWarnings.length).map((item) => item.id) }, null, 2)}\n`);
 }
 
@@ -164,6 +165,8 @@ async function downloadArtifact(url, outputPath) {
 async function finalize() {
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const quality = JSON.parse(await readFile(qualityReviewPath, "utf8"));
+  assert.equal(quality.manifestGeneratedAt, manifest.generatedAt, "quality-reviews.json belongs to a different benchmark run. Review the current PNGs and copy manifest.generatedAt exactly.");
+  assert.equal(Number.isFinite(Date.parse(quality.reviewedAt)) && Date.parse(quality.reviewedAt) >= Date.parse(manifest.generatedAt), true, "quality-reviews.json needs a reviewedAt timestamp after the current benchmark was generated.");
   assert.equal(quality.reviewedBy?.trim().length > 0, true, "quality-reviews.json must name the visual reviewer.");
   const results = [];
 

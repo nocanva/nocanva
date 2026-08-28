@@ -1,5 +1,5 @@
 export type RenderCheck = {
-  id: "schema" | "bounds" | "overflow" | "collision" | "structure" | "typography" | "contrast" | "fonts";
+  id: "schema" | "bounds" | "overflow" | "collision" | "structure" | "typography" | "readability" | "contrast" | "fonts";
   label: string;
   passed: boolean;
   detail: string;
@@ -102,6 +102,21 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
   });
   const typographic = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline']")).filter((headline) => headlineTypographyFailure(headline, root));
+  const minimumBodySize = rootRect.width * (21 / 1080);
+  const minimumUtilitySize = rootRect.width * (18 / 1080);
+  const undersizedText = Array.from(root.querySelectorAll<HTMLElement>([
+    "[data-render-region='support']",
+    "[data-render-region='evidence'] > strong",
+    "[data-render-region='evidence'] > p",
+    "[data-render-region='evidence'] > span",
+    "[data-render-region='highlight']",
+    "[data-render-region='cta']",
+    ".explainer-layout li span",
+  ].join(", "))).filter((region) => {
+    if (!region.textContent?.trim()) return false;
+    const minimum = region.matches("[data-render-region='highlight'], [data-render-region='cta'], [data-render-region='evidence'] > span") ? minimumUtilitySize : minimumBodySize;
+    return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
+  });
   const collisions = countLayoutCollisions(root);
   const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foreground = parseRgb(getComputedStyle(region).color);
@@ -116,6 +131,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "collision", label: "Section separation", passed: collisions === 0, detail: collisions === 0 ? "Structured sections do not overlap." : `${collisions} section pair(s) overlap.` },
     { id: "structure", label: "Brand structure", passed: collapsed.length === 0, detail: collapsed.length === 0 ? "Brand header and footer remain visible." : `${collapsed.length} structural region(s) collapsed under content pressure.` },
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
+    { id: "readability", label: "Phone-size readability", passed: undersizedText.length === 0, detail: undersizedText.length === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${undersizedText.length} supporting, evidence, or action text region(s) are too small at phone size.` },
     { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${lowContrastText.length} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },
     { id: "fonts", label: "Font readiness", passed: true, detail: "Renderer fonts are loaded." },
   ];

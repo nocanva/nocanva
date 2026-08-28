@@ -26,15 +26,21 @@ Agents choose meaning rather than coordinates. The six approved families are `cl
 6. Retrieve the current revision, update, and review again when needed. Stop after three agent iterations.
 7. Approve the exact reviewed revision and promote it to an immutable render.
 
-Mechanical checks establish dimensions, bounds, overflow, font readiness, and deterministic hashes. They do not establish aesthetic quality; the calling multimodal agent owns that judgment.
+Mechanical checks establish dimensions, bounds, overflow, minimum phone-size type, font readiness, and deterministic hashes. They do not establish aesthetic quality; the calling multimodal agent owns that judgment.
 
 ## Measurement gate
 
-The versioned 20-task benchmark is in `benchmarks/blindspot-v1.json`. Record whether each result was publishable without design edits and the human edit time in seconds, then run:
+The versioned 20-task benchmark is in `benchmarks/blindspot-v1.json`:
 
 ```sh
-npm run benchmark:blindspot -- path/to/results.json
+npm run benchmark:blindspot:run
+# inspect every *-review.png in outputs/blindspot-benchmark-v1/
+# record all eight decisions per PNG in quality-reviews.json
+npm run benchmark:blindspot:run -- --finalize
+npm run benchmark:blindspot -- outputs/blindspot-benchmark-v1/results.json
 ```
+
+`quality-reviews.json` must copy the current manifest's `generatedAt` into `manifestGeneratedAt`, include a later `reviewedAt`, and name the reviewer. A new generation deletes stale results, and finalization rejects reviews from an older run. Mechanical success is never a visual pass.
 
 The engine passes at 70% or more publishable without design edits and a median human effort below 120 seconds. Do not expand platform scope while it fails this gate.
 

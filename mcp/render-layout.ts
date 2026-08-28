@@ -59,6 +59,21 @@ export function inspectRenderLayout(root: Element) {
     }
     return headline.getBoundingClientRect().width < rootRect.width * .38 || lineValues.length > 5 || splitToken || (text.includes(" ") && finalLine.length <= 4);
   }).length;
+  const minimumBodySize = rootRect.width * (21 / 1080);
+  const minimumUtilitySize = rootRect.width * (18 / 1080);
+  const undersized = Array.from(root.querySelectorAll<HTMLElement>([
+    "[data-render-region='support']",
+    "[data-render-region='evidence'] > strong",
+    "[data-render-region='evidence'] > p",
+    "[data-render-region='evidence'] > span",
+    "[data-render-region='highlight']",
+    "[data-render-region='cta']",
+    ".explainer-layout li span",
+  ].join(", "))).filter((region) => {
+    if (!region.textContent?.trim()) return false;
+    const minimum = region.matches("[data-render-region='highlight'], [data-render-region='cta'], [data-render-region='evidence'] > span") ? minimumUtilitySize : minimumBodySize;
+    return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
+  }).length;
   const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foregroundMatch = getComputedStyle(region).color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
     let current: HTMLElement | null = region;
@@ -81,5 +96,5 @@ export function inspectRenderLayout(root: Element) {
     const darker = Math.min(values[0], values[1]);
     return (lighter + .05) / (darker + .05) < 3;
   }).length;
-  return { outside, overflowing, collisions, collapsed, typographic, contrast };
+  return { outside, overflowing, collisions, collapsed, typographic, undersized, contrast };
 }

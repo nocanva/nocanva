@@ -59,6 +59,7 @@ export type RenderCaptureOutput = {
   collisions: number;
   collapsed: number;
   typographic: number;
+  undersized: number;
   contrast: number;
   templateVersion: string | null;
 };
@@ -375,6 +376,7 @@ export class CanvnahClient {
       { id: "collision", passed: capture.collisions === 0, detail: capture.collisions === 0 ? "Structured sections do not overlap." : `${capture.collisions} section pair(s) overlap.` },
       { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
       { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, token integrity, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
+      { id: "readability", passed: capture.undersized === 0, detail: capture.undersized === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${capture.undersized} supporting, evidence, or action text region(s) are too small at phone size.` },
       { id: "contrast", passed: capture.contrast === 0, detail: capture.contrast === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${capture.contrast} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];

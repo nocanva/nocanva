@@ -112,6 +112,8 @@ test("beta renderers preserve the product object instead of collapsing into stat
   assert.match(samples, /Verified source asset changed/);
   assert.doesNotMatch(samples, /const visualRubric\s*=\s*\{[\s\S]*professionallyDesigned:\s*true/);
   assert.match(benchmarkRunner, /one visual rubric per PNG/);
+  assert.match(benchmarkRunner, /belongs to a different benchmark run/);
+  assert.match(benchmarkRunner, /status: "mechanically-reviewed"/);
   assert.match(benchmarkRunner, /nocanva_list_compositions/);
   assert.match(benchmarkRunner, /nocanva_review_carousel/);
   assert.match(benchmarkEvaluator, /immutable render/);
@@ -134,7 +136,9 @@ test("carousel exports remain discoverable and force exact PNG downloads", async
   assert.match(repository, /getCarouselRenderForRevision/);
   assert.match(checks, /headline.*eyebrow/);
   assert.match(checks, /split token/);
+  assert.match(checks, /Phone-size readability/);
   assert.match(remoteChecks, /contrast/);
+  assert.match(remoteChecks, /undersized/);
   assert.match(remoteChecks, /splitToken/);
   assert.match(workspace, /initialRender/);
   assert.match(await readFile(new URL("app/post-artwork.tsx", root), "utf8"), /--headline-fit/);
