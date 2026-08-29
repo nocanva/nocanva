@@ -108,6 +108,8 @@ NoCanva renders the exact-size PNG and performs mechanical checks such as:
 - Output dimensions.
 - Canvas bounds.
 - Clipping and overflow.
+- Minimum phone-size typography and critical text contrast.
+- Image prominence, weak letterboxing, and destructive crop detection.
 - Font readiness.
 - Safe-area compliance where applicable.
 - Repeated-render hash consistency.

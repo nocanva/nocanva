@@ -139,11 +139,28 @@ test("carousel exports remain discoverable and force exact PNG downloads", async
   assert.match(checks, /headline.*eyebrow/);
   assert.match(checks, /split token/);
   assert.match(checks, /Phone-size readability/);
+  assert.match(checks, /Image prominence/);
   assert.match(remoteChecks, /contrast/);
   assert.match(remoteChecks, /undersized/);
+  assert.match(remoteChecks, /minimumCoverage/);
   assert.match(remoteChecks, /splitToken/);
   assert.match(workspace, /initialRender/);
   assert.match(await readFile(new URL("app/post-artwork.tsx", root), "utf8"), /--headline-fit/);
+});
+
+test("draft and carousel galleries size artwork from the live card width", async () => {
+  const [thumbnail, drafts, carousels, css] = await Promise.all([
+    readFile(new URL("app/artwork-thumbnail.tsx", root), "utf8"),
+    readFile(new URL("app/drafts/page.tsx", root), "utf8"),
+    readFile(new URL("app/carousels/page.tsx", root), "utf8"),
+    readFile(new URL("app/globals.css", root), "utf8"),
+  ]);
+  assert.match(thumbnail, /frame\.clientWidth \/ 1080/);
+  assert.match(thumbnail, /ResizeObserver/);
+  assert.match(thumbnail, /payload\.format === "square"/);
+  assert.match(drafts, /<ArtworkThumbnail/);
+  assert.match(carousels, /<ArtworkThumbnail/);
+  assert.match(css, /\.draft-card-preview\.square\s*\{\s*aspect-ratio:\s*1\/1/);
 });
 
 test("template library renders the real latest template artwork", async () => {

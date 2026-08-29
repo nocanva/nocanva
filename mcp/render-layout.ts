@@ -74,6 +74,28 @@ export function inspectRenderLayout(root: Element) {
     const minimum = region.matches("[data-render-region='highlight'], [data-render-region='cta'], [data-render-region='evidence'] > span") ? minimumUtilitySize : minimumBodySize;
     return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
   }).length;
+  const media = Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]")).flatMap((figure) => {
+    const stage = figure.querySelector<HTMLElement>(".composition-image-stage");
+    const image = figure.querySelector<HTMLImageElement>("img");
+    if (!stage || !image?.naturalWidth || !image.naturalHeight) return ["An image could not be measured after loading."];
+    const frame = { width: stage.clientWidth, height: stage.clientHeight };
+    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
+    const zoom = Number(figure.dataset.imageZoom ?? 1);
+    const fit = figure.dataset.imageFit;
+    const role = figure.dataset.imageRole ?? "image";
+    const baseScale = fit === "contain" ? Math.min(frame.width / image.naturalWidth, frame.height / image.naturalHeight) : Math.max(frame.width / image.naturalWidth, frame.height / image.naturalHeight);
+    const renderedWidth = image.naturalWidth * baseScale * zoom;
+    const renderedHeight = image.naturalHeight * baseScale * zoom;
+    const visibleArea = Math.min(frame.width, renderedWidth) * Math.min(frame.height, renderedHeight);
+    const coverage = visibleArea / (frame.width * frame.height);
+    const retained = (frame.width * frame.height) / (renderedWidth * renderedHeight);
+    const minimumCoverage = role === "evidence" ? .58 : role === "screenshot" ? .5 : .4;
+    const label = role === "image" ? "Image" : `${role} image`;
+    const issues: string[] = [];
+    if (fit === "contain" && coverage < minimumCoverage) issues.push(`${label} occupies ${Math.round(coverage * 100)}% of its frame; increase zoom or use a tighter crop.`);
+    if (fit === "cover" && retained < .14 && !figure.querySelector(".asset-highlight")) issues.push(`${label} retains only ${Math.round(retained * 100)}% of the source without a highlighted focal region; reduce zoom or adjust the crop.`);
+    return issues;
+  });
   const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foregroundMatch = getComputedStyle(region).color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
     let current: HTMLElement | null = region;
@@ -96,5 +118,5 @@ export function inspectRenderLayout(root: Element) {
     const darker = Math.min(values[0], values[1]);
     return (lighter + .05) / (darker + .05) < 3;
   }).length;
-  return { outside, overflowing, collisions, collapsed, typographic, undersized, contrast };
+  return { outside, overflowing, collisions, collapsed, typographic, undersized, media, contrast };
 }

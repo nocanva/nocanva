@@ -30,7 +30,7 @@ Carousel layout roles are automatic. Slide order deterministically becomes hook,
 6. Retrieve the current revision, update, and review again when needed. Stop after three agent iterations.
 7. Approve the exact reviewed revision and promote it to an immutable render.
 
-Mechanical checks establish dimensions, bounds, overflow, minimum phone-size type, font readiness, and deterministic hashes. They do not establish aesthetic quality; the calling multimodal agent owns that judgment.
+Mechanical checks establish dimensions, bounds, overflow, minimum phone-size type, critical contrast, image prominence, font readiness, and deterministic hashes. Image review flags weak letterboxing and destructive crops without an annotated focal region. These checks do not establish aesthetic quality; the calling multimodal agent owns that judgment.
 
 ## Measurement gate
 

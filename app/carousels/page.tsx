@@ -3,7 +3,7 @@ import Link from "next/link";
 import { listCarousels } from "../../lib/server/carousel-repository";
 import { getBrandById, getTemplateVersionById } from "../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
-import { PostArtwork } from "../post-artwork";
+import { ArtworkThumbnail } from "../artwork-thumbnail";
 import { AppShell } from "../workspace-shell";
 
 export const metadata: Metadata = { title: "Carousels — NoCanva", description: "Stable, versioned multi-slide media workspaces." };
@@ -22,7 +22,7 @@ export default async function CarouselsPage() {
       if (!brand || !template) return null;
       const payload = { brandId: carousel.brandId, templateId: carousel.templateId, format: carousel.format, content: carousel.slides[0] };
       return <Link className="draft-card carousel-card" href={`/carousels/${carousel.id}`} key={carousel.id}>
-        <span className="draft-card-preview"><PostArtwork payload={payload} brandConfig={brand.config} template={template} mode="export" /><b className="slide-count">{carousel.slides.length} slides</b></span>
+        <ArtworkThumbnail payload={payload} brandConfig={brand.config} template={template}><b className="slide-count">{carousel.slides.length} slides</b></ArtworkThumbnail>
         <span className="draft-card-copy"><small>{carousel.status.replace("_", " ")} · revision {carousel.currentRevision}</small><strong>{carousel.slides[0].headline}</strong><em>{carousel.brandName} · {carousel.templateName} v{carousel.templateVersion}</em></span>
       </Link>;
     })}</div>}

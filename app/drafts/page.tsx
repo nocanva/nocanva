@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getBrandById, getTemplateVersionById, listDrafts } from "../../lib/server/media-repository";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
-import { PostArtwork } from "../post-artwork";
+import { ArtworkThumbnail } from "../artwork-thumbnail";
 import { AppShell } from "../workspace-shell";
 
 export const metadata: Metadata = { title: "Drafts — NoCanva", description: "Stable agent and human media drafts." };
@@ -20,7 +20,7 @@ export default async function DraftsPage() {
     {cards.length === 0 ? <div className="empty-history"><span>00</span><h2>No drafts yet.</h2><p>Create the first draft through the NoCanva MCP workflow.</p></div> : <div className="draft-grid">{cards.map(({ draft, brand, template }) => {
       if (!brand || !template) return null;
       return <Link className="draft-card" href={`/drafts/${draft.id}`} key={draft.id}>
-        <span className="draft-card-preview"><PostArtwork payload={draft.payload} brandConfig={brand.config} template={template} mode="export" /></span>
+        <ArtworkThumbnail payload={draft.payload} brandConfig={brand.config} template={template} />
         <span className="draft-card-copy"><small>{draft.status.replace("_", " ")} · revision {draft.currentRevision}</small><strong>{draft.payload.content.headline}</strong><em>{draft.brandName} · {draft.templateName} v{draft.templateVersion}</em></span>
       </Link>;
     })}</div>}

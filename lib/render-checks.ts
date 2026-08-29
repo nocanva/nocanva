@@ -1,9 +1,24 @@
 export type RenderCheck = {
-  id: "schema" | "bounds" | "overflow" | "collision" | "structure" | "typography" | "readability" | "contrast" | "fonts";
+  id: "schema" | "bounds" | "overflow" | "collision" | "structure" | "typography" | "readability" | "media" | "contrast" | "fonts";
   label: string;
   passed: boolean;
   detail: string;
 };
+
+export function imageFrameQuality(input: { naturalWidth: number; naturalHeight: number; frameWidth: number; frameHeight: number; zoom: number; fit: "contain" | "cover"; role: string; hasHighlight: boolean }) {
+  const baseScale = input.fit === "contain" ? Math.min(input.frameWidth / input.naturalWidth, input.frameHeight / input.naturalHeight) : Math.max(input.frameWidth / input.naturalWidth, input.frameHeight / input.naturalHeight);
+  const renderedWidth = input.naturalWidth * baseScale * input.zoom;
+  const renderedHeight = input.naturalHeight * baseScale * input.zoom;
+  const visibleArea = Math.min(input.frameWidth, renderedWidth) * Math.min(input.frameHeight, renderedHeight);
+  const coverage = visibleArea / (input.frameWidth * input.frameHeight);
+  const retained = (input.frameWidth * input.frameHeight) / (renderedWidth * renderedHeight);
+  const minimumCoverage = input.role === "evidence" ? .58 : input.role === "screenshot" ? .5 : .4;
+  const label = input.role === "image" ? "Image" : `${input.role} image`;
+  const issues: string[] = [];
+  if (input.fit === "contain" && coverage < minimumCoverage) issues.push(`${label} occupies ${Math.round(coverage * 100)}% of its frame; increase zoom or use a tighter crop.`);
+  if (input.fit === "cover" && retained < .14 && !input.hasHighlight) issues.push(`${label} retains only ${Math.round(retained * 100)}% of the source without a highlighted focal region; reduce zoom or adjust the crop.`);
+  return { coverage, retained, issues };
+}
 
 type Rgb = { r: number; g: number; b: number; a: number };
 
@@ -81,6 +96,20 @@ function countLayoutCollisions(root: HTMLElement) {
   return collisions;
 }
 
+function mediaTreatmentIssues(root: HTMLElement) {
+  return Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]")).flatMap((figure) => {
+    const stage = figure.querySelector<HTMLElement>(".composition-image-stage");
+    const image = figure.querySelector<HTMLImageElement>("img");
+    if (!stage || !image?.naturalWidth || !image.naturalHeight) return ["An image could not be measured after loading."];
+    const frame = { width: stage.clientWidth, height: stage.clientHeight };
+    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
+    const zoom = Number(figure.dataset.imageZoom ?? 1);
+    const fit = figure.dataset.imageFit;
+    const role = figure.dataset.imageRole ?? "image";
+    return imageFrameQuality({ naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, frameWidth: frame.width, frameHeight: frame.height, zoom, fit: fit === "contain" ? "contain" : "cover", role, hasHighlight: Boolean(figure.querySelector(".asset-highlight")) }).issues;
+  });
+}
+
 export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[]> {
   await document.fonts.ready;
   const rootRect = root.getBoundingClientRect();
@@ -117,6 +146,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     const minimum = region.matches("[data-render-region='highlight'], [data-render-region='cta'], [data-render-region='evidence'] > span") ? minimumUtilitySize : minimumBodySize;
     return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
   });
+  const mediaIssues = mediaTreatmentIssues(root);
   const collisions = countLayoutCollisions(root);
   const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
     const foreground = parseRgb(getComputedStyle(region).color);
@@ -132,6 +162,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "structure", label: "Brand structure", passed: collapsed.length === 0, detail: collapsed.length === 0 ? "Brand header and footer remain visible." : `${collapsed.length} structural region(s) collapsed under content pressure.` },
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
     { id: "readability", label: "Phone-size readability", passed: undersizedText.length === 0, detail: undersizedText.length === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${undersizedText.length} supporting, evidence, or action text region(s) are too small at phone size.` },
+    { id: "media", label: "Image prominence", passed: mediaIssues.length === 0, detail: mediaIssues.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : mediaIssues.join(" ") },
     { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${lowContrastText.length} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },
     { id: "fonts", label: "Font readiness", passed: true, detail: "Renderer fonts are loaded." },
   ];
