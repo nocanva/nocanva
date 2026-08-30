@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          <Button nativeButton={false} render={<Link href="/create" />} className="new-design-button group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:px-0" size="lg">
+          <Button nativeButton={false} render={<Link href="/create" aria-label="New design" />} className="new-design-button group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center! group-data-[collapsible=icon]:p-0!" size="lg">
             <Plus /><span className="group-data-[collapsible=icon]:hidden">New design</span>
           </Button>
         </SidebarHeader>
