@@ -1,8 +1,12 @@
 # NoCanva
 
-**The shared media desk for humans and agents.**
+[![License: MIT](https://img.shields.io/badge/license-MIT-ef4438?style=flat-square)](./LICENSE)
+![Node 22.18+](https://img.shields.io/badge/node-22.18%2B-171714?style=flat-square)
+![MCP native](https://img.shields.io/badge/MCP-native-171714?style=flat-square)
 
-Your agent drafts. You review in the browser. NoCanva keeps every revision and exports the exact PNG you approved.
+**Brand-ready media for agents, with a human at the final mile.**
+
+Give your agent a verified brief. Review the real pixels in NoCanva. Export the exact PNG you approved.
 
 No embedded LLM. No mystery rerender. No design-by-coordinate prompts.
 
@@ -42,12 +46,16 @@ curl -fsSL https://raw.githubusercontent.com/nocanva/nocanva/main/skills/nocanva
 
 Your browser opens once. Sign in with Google and approve the requested NoCanva scopes. The client is then connected to the same personal workspace you see in the UI.
 
-Try:
+### Try it
 
 ```text
-Turn this verified brief into a four-slide carousel with NoCanva.
-Show me every rendered draft before asking for approval.
+Use NoCanva to turn this verified brief into an Instagram-ready post.
+Let NoCanva choose the composition and visual direction from the content and
+recent feed history. Review the actual rendered PNG, fix every warning, and
+show me the workspace URL before asking for approval.
 ```
+
+Testing the Blindspot creative engine? Use the [five-post validation prompt](./docs/BLINDSPOT_VALIDATION.md).
 
 Full client setup and troubleshooting: [MCP clients](./docs/MCP_CLIENTS.md)
 
@@ -108,6 +116,7 @@ The daily MCP API uses `nocanva_*`. The older `canvnah_*` namespace remains only
 
 - [MCP clients](./docs/MCP_CLIENTS.md)
 - [Creative Engine v2](./docs/CREATIVE_ENGINE_V2.md)
+- [Blindspot validation prompt](./docs/BLINDSPOT_VALIDATION.md)
 - [Media workflow skill](./skills/nocanva-media/SKILL.md)
 - [Layout-authoring skill](./skills/nocanva-layout/SKILL.md)
 - [What is NoCanva?](./docs/WHAT_IS_NOCANVA.md)
