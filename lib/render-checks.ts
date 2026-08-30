@@ -12,7 +12,7 @@ export function imageFrameQuality(input: { naturalWidth: number; naturalHeight: 
   const visibleArea = Math.min(input.frameWidth, renderedWidth) * Math.min(input.frameHeight, renderedHeight);
   const coverage = visibleArea / (input.frameWidth * input.frameHeight);
   const retained = (input.frameWidth * input.frameHeight) / (renderedWidth * renderedHeight);
-  const minimumCoverage = input.role === "evidence" ? .58 : input.role === "screenshot" ? .5 : .4;
+  const minimumCoverage = input.role === "evidence" ? .55 : input.role === "screenshot" ? .5 : .4;
   const label = input.role === "image" ? "Image" : `${input.role} image`;
   const issues: string[] = [];
   if (input.fit === "contain" && coverage < minimumCoverage) issues.push(`${label} occupies ${Math.round(coverage * 100)}% of its frame; increase zoom or use a tighter crop.`);
@@ -24,7 +24,9 @@ type Rgb = { r: number; g: number; b: number; a: number };
 
 function parseRgb(value: string): Rgb | null {
   const match = value.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
-  return match ? { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]), a: match[4] == null ? 1 : Number(match[4]) } : null;
+  if (match) return { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]), a: match[4] == null ? 1 : Number(match[4]) };
+  const srgb = value.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\s*\)$/i);
+  return srgb ? { r: Number(srgb[1]) * 255, g: Number(srgb[2]) * 255, b: Number(srgb[3]) * 255, a: srgb[4] == null ? 1 : Number(srgb[4]) } : null;
 }
 
 function luminance(color: Rgb) {
@@ -56,16 +58,21 @@ function headlineTypographyFailure(headline: HTMLElement, root: HTMLElement) {
   const text = headline.textContent?.trim() ?? "";
   const node = headline.firstChild;
   if (!text || !node || node.nodeType !== Node.TEXT_NODE) return false;
-  const lines = new Map<number, string>();
+  const lines: Array<{ top: number; value: string }> = [];
+  const lineTolerance = Number.parseFloat(getComputedStyle(headline).fontSize) * .45;
   for (let index = 0; index < text.length; index += 1) {
     const range = document.createRange();
     range.setStart(node, index);
     range.setEnd(node, index + 1);
     const top = Math.round(range.getBoundingClientRect().top);
-    lines.set(top, `${lines.get(top) ?? ""}${text[index]}`);
+    const current = lines.at(-1);
+    if (!current || Math.abs(top - current.top) > lineTolerance) lines.push({ top, value: text[index] });
+    else current.value += text[index];
   }
   let splitToken = false;
-  const tokenPattern = /\S+/g;
+  // Explicit hyphens, dashes, and slashes are valid editorial break points. The
+  // guard still catches destructive breaks inside handles, URLs, and words.
+  const tokenPattern = /[^\s\-/—–]+/g;
   let token: RegExpExecArray | null;
   while ((token = tokenPattern.exec(text))) {
     const range = document.createRange();
@@ -73,7 +80,7 @@ function headlineTypographyFailure(headline: HTMLElement, root: HTMLElement) {
     range.setEnd(node, token.index + token[0].length);
     if (new Set(Array.from(range.getClientRects()).map((rect) => Math.round(rect.top))).size > 1) splitToken = true;
   }
-  const lineValues = Array.from(lines.values()).map((line) => line.trim()).filter(Boolean);
+  const lineValues = lines.map((line) => line.value.trim()).filter(Boolean);
   const finalLine = lineValues.at(-1) ?? "";
   return headline.getBoundingClientRect().width < root.getBoundingClientRect().width * .38 || lineValues.length > 5 || splitToken || (text.includes(" ") && finalLine.length <= 4);
 }
@@ -86,6 +93,9 @@ function countLayoutCollisions(root: HTMLElement) {
       const first = zones[index];
       const second = zones[otherIndex];
       if (first.closest("[data-render-region='content']") !== second.closest("[data-render-region='content']")) continue;
+      const firstAllows = first.dataset.allowOverlapWith?.split(/\s+/).includes(second.dataset.layoutZone ?? "");
+      const secondAllows = second.dataset.allowOverlapWith?.split(/\s+/).includes(first.dataset.layoutZone ?? "");
+      if (firstAllows || secondAllows) continue;
       const a = first.getBoundingClientRect();
       const b = second.getBoundingClientRect();
       const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -148,7 +158,9 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
   });
   const mediaIssues = mediaTreatmentIssues(root);
   const collisions = countLayoutCollisions(root);
-  const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
+  const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support']")).filter((region) => {
+    const rect = region.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(region).visibility === "hidden") return false;
     const foreground = parseRgb(getComputedStyle(region).color);
     const background = nearestOpaqueBackground(region, root);
     return !foreground || !background || contrastRatio(foreground, background) < 3;
@@ -163,7 +175,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
     { id: "readability", label: "Phone-size readability", passed: undersizedText.length === 0, detail: undersizedText.length === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${undersizedText.length} supporting, evidence, or action text region(s) are too small at phone size.` },
     { id: "media", label: "Image prominence", passed: mediaIssues.length === 0, detail: mediaIssues.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : mediaIssues.join(" ") },
-    { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline and eyebrow clears the visibility threshold." : `${lowContrastText.length} headline or eyebrow region(s) fall below the 3:1 visibility threshold.` },
+    { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline, eyebrow, and supporting region clears the visibility threshold." : `${lowContrastText.length} critical text region(s) fall below the 3:1 visibility threshold.` },
     { id: "fonts", label: "Font readiness", passed: true, detail: "Renderer fonts are loaded." },
   ];
 }

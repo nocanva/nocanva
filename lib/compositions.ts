@@ -3,6 +3,8 @@ import { z } from "zod";
 export const compositionIdSchema = z.enum(["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
 export type CompositionId = z.infer<typeof compositionIdSchema>;
 export type CarouselSequenceRole = "hook" | "context" | "evidence" | "close";
+export const visualDirectionSchema = z.enum(["editorial", "documentary", "bulletin", "field_notes", "monument", "interface"]);
+export type VisualDirection = z.infer<typeof visualDirectionSchema>;
 
 export const compositionBlockSchema = z.enum(["Headline", "Eyebrow", "Body", "Image", "Screenshot", "Evidence", "Quote", "Metric", "Highlight", "LogoFooter", "CTA"]);
 export type CompositionBlock = z.infer<typeof compositionBlockSchema>;
@@ -59,6 +61,99 @@ export const compositions: Record<CompositionId, CompositionDefinition> = {
   },
 };
 
+export type VisualDirectionDefinition = {
+  id: VisualDirection;
+  name: string;
+  purpose: string;
+  silhouette: string;
+  compatibleCompositions: CompositionId[];
+  requiresImage: boolean;
+};
+
+export const visualDirections: Record<VisualDirection, VisualDirectionDefinition> = {
+  editorial: { id: "editorial", name: "Editorial", purpose: "A restrained, balanced report for sourced statements.", silhouette: "Balanced type and proof inside a quiet editorial frame.", compatibleCompositions: ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"], requiresImage: false },
+  documentary: { id: "documentary", name: "Documentary", purpose: "Make source media dominant and treat copy as a precise caption.", silhouette: "Large source frame, overlaid identity, and caption-like copy.", compatibleCompositions: ["real_but", "receipt", "whats_missing", "product"], requiresImage: true },
+  bulletin: { id: "bulletin", name: "Bulletin", purpose: "Deliver an urgent hook through decisive sans typography and color blocks.", silhouette: "High-contrast field, oversized sans headline, and compact utility labels.", compatibleCompositions: ["claim", "real_but", "whats_missing", "product", "explainer"], requiresImage: false },
+  field_notes: { id: "field_notes", name: "Field notes", purpose: "Expose the reporting trail through annotations, labels, and irregular proof objects.", silhouette: "Paper grid, evidence tabs, handwritten-feeling marks, and offset objects.", compatibleCompositions: ["claim", "real_but", "receipt", "whats_missing", "explainer"], requiresImage: false },
+  monument: { id: "monument", name: "Monument", purpose: "Give one decisive fact, date, or conclusion extreme scale and whitespace.", silhouette: "One dominant typographic object with minimal supporting material.", compatibleCompositions: ["claim", "whats_missing", "explainer"], requiresImage: false },
+  interface: { id: "interface", name: "Interface", purpose: "Turn a real interface or evidence screenshot into the stage.", silhouette: "Product or source UI fills the canvas with precise callouts.", compatibleCompositions: ["receipt", "product"], requiresImage: true },
+};
+
+type DirectionContent = {
+  headline: string;
+  support?: string;
+  backgroundStyle?: string;
+  image?: unknown;
+  evidence?: unknown;
+  quote?: string;
+  metric?: string;
+  steps?: string[];
+  visualDirection?: VisualDirection;
+};
+
+type RecentCreative = { visualDirection?: string; compositionId?: string; backgroundStyle?: string; headline?: string; visualFingerprint?: string };
+
+export function visualFingerprint(compositionId: CompositionId, content: DirectionContent) {
+  const direction = content.visualDirection ?? "editorial";
+  const dominantRegion = content.image && (direction === "documentary" || direction === "interface") ? "media" : content.metric && direction === "monument" ? "metric" : content.steps ? "sequence" : "headline";
+  const characterCount = content.headline.length + (content.support?.length ?? 0) + (content.steps?.join("").length ?? 0);
+  const density = characterCount > 250 ? "dense" : characterCount > 150 ? "balanced" : "airy";
+  const alignment = direction === "monument" ? "center" : direction === "field_notes" ? "offset" : "left";
+  const brandMarkPlacement = direction === "documentary" ? "overlay" : direction === "monument" ? "corner" : "frame";
+  const surface = content.backgroundStyle ?? (direction === "bulletin" ? "signal_wash" : direction === "documentary" || direction === "interface" ? "ink" : direction === "field_notes" ? "paper_grid" : "paper");
+  const key = [compositionId, direction, surface, dominantRegion, alignment, density, brandMarkPlacement].join(":");
+  return { key, compositionId, direction, surface, dominantRegion, alignment, density, brandMarkPlacement };
+}
+
+export function visualSimilarityWarnings(recent: RecentCreative[], candidateFingerprint: string) {
+  const exact = recent.find((item) => item.visualFingerprint === candidateFingerprint);
+  return exact ? ["A recent output has the same composition, direction, surface, dominant region, alignment, density, and brand-mark placement. Choose another visual direction."] : [];
+}
+
+const preferredDirections: Record<CompositionId, VisualDirection[]> = {
+  claim: ["monument", "bulletin", "field_notes", "editorial"],
+  real_but: ["documentary", "bulletin", "field_notes", "editorial"],
+  receipt: ["interface", "documentary", "field_notes", "editorial"],
+  whats_missing: ["bulletin", "field_notes", "monument", "documentary", "editorial"],
+  product: ["interface", "documentary", "bulletin", "editorial"],
+  explainer: ["field_notes", "bulletin", "monument", "editorial"],
+};
+
+export function rankVisualDirections({ compositionId, content, recent = [], sequenceRole }: { compositionId: CompositionId; content: DirectionContent; recent?: RecentCreative[]; sequenceRole?: CarouselSequenceRole }) {
+  const previousThree = recent.slice(0, 3);
+  const directionCounts = Object.fromEntries(Object.keys(visualDirections).map((id) => [id, recent.filter((item) => item.visualDirection === id).length]));
+  return visualDirectionSchema.options
+    .filter((id) => visualDirections[id].compatibleCompositions.includes(compositionId))
+    .filter((id) => !visualDirections[id].requiresImage || Boolean(content.image))
+    .map((id) => {
+      const reasons: string[] = [];
+      const preference = preferredDirections[compositionId].indexOf(id);
+      let score = 100 - (preference < 0 ? 60 : preference * 10);
+      if (previousThree.some((item) => item.visualDirection === id)) { score -= 120; reasons.push("avoids a direction used in the previous three outputs"); }
+      score -= Number(directionCounts[id] ?? 0) * 8;
+      if (content.image && id === "documentary") { score += 26; reasons.push("source media can own the canvas"); }
+      if (content.image && compositionId === "product" && id === "interface") { score += 38; reasons.push("a real product screenshot can become the stage"); }
+      if (content.evidence && id === "field_notes") { score += 22; reasons.push("named evidence benefits from an annotated reporting surface"); }
+      if (content.evidence && content.image && id === "interface") { score += 18; reasons.push("the evidence screenshot can remain readable and central"); }
+      if (content.steps && id === "field_notes") { score += 24; reasons.push("ordered steps suit a field-guide rhythm"); }
+      if (content.metric && id === "monument") { score += 28; reasons.push("the sourced metric can carry the hierarchy"); }
+      if (content.quote && id === "field_notes") { score += 12; reasons.push("the quotation can behave like a source annotation"); }
+      if (content.headline.length <= 46 && id === "monument") { score += 16; reasons.push("the concise headline supports extreme scale"); }
+      if (content.headline.length > 64 && id === "editorial") { score += 12; reasons.push("the longer headline needs a restrained reading frame"); }
+      if (sequenceRole === "hook" && (id === "bulletin" || id === "monument")) score += 24;
+      if (sequenceRole === "context" && (id === "field_notes" || id === "editorial")) score += 24;
+      if (sequenceRole === "evidence" && (id === "documentary" || id === "interface" || id === "field_notes")) score += 28;
+      if (sequenceRole === "close" && (id === "monument" || id === "bulletin")) score += 24;
+      if (reasons.length === 0) reasons.push(visualDirections[id].purpose.toLowerCase());
+      return { id, name: visualDirections[id].name, score, reason: reasons.join("; ") };
+    })
+    .sort((first, second) => second.score - first.score || visualDirectionSchema.options.indexOf(first.id) - visualDirectionSchema.options.indexOf(second.id));
+}
+
+export function chooseVisualDirection(input: Parameters<typeof rankVisualDirections>[0]) {
+  return rankVisualDirections(input)[0]?.id ?? "editorial";
+}
+
 export const visualReviewRubric = [
   "Is the hook understandable in under one second?",
   "Is there one clear visual hierarchy?",
@@ -85,22 +180,26 @@ function headlineOpening(headline: string) {
   return headline.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim().split(/\s+/).slice(0, 2).join(" ");
 }
 
-export function carouselStoryWarnings(slides: Array<{ headline: string; backgroundStyle?: string }>) {
+export function carouselStoryWarnings(slides: Array<{ headline: string; backgroundStyle?: string; visualDirection?: VisualDirection }>) {
   const warnings: string[] = [];
   const backgrounds = slides.map((slide, index) => slide.backgroundStyle ?? carouselSequenceSurface(carouselSequenceRole(index, slides.length)));
   if (new Set(backgrounds).size === 1) warnings.push("Every slide uses the same surface. Alternate at least one background treatment to create story rhythm.");
   const openings = slides.map((slide) => headlineOpening(slide.headline)).filter(Boolean);
   const repeatedOpenings = [...new Set(openings.filter((opening, index) => openings.indexOf(opening) !== index))];
   if (repeatedOpenings.length) warnings.push(`Slides repeat the same headline opening (${repeatedOpenings.join(", ")}). Reframe the hooks so each beat advances.`);
+  const directions = slides.map((slide) => slide.visualDirection).filter(Boolean);
+  const minimumDirections = slides.length >= 4 ? 3 : 2;
+  if (directions.length === slides.length && new Set(directions).size < minimumDirections) warnings.push(`The carousel uses only ${new Set(directions).size} visual direction(s). Use at least ${minimumDirections} distinct silhouettes to create Instagram story rhythm.`);
   return warnings;
 }
 
-export function compositionDiversityGuidance(recent: Array<{ compositionId?: string; backgroundStyle?: string; headline?: string }>) {
+export function compositionDiversityGuidance(recent: RecentCreative[]) {
   const previousThree = recent.slice(0, 3);
   const counts = Object.fromEntries(Object.keys(compositions).map((id) => [id, recent.filter((item) => item.compositionId === id).length]));
   const minimum = Math.min(...Object.values(counts));
   return {
     avoidCompositionIds: [...new Set(previousThree.map((item) => item.compositionId).filter(Boolean))],
+    avoidVisualDirections: [...new Set(previousThree.map((item) => item.visualDirection).filter(Boolean))],
     avoidBackgroundStyles: recent.length >= 2 && recent.slice(0, 2).every((item) => item.backgroundStyle === recent[0]?.backgroundStyle) ? [recent[0]?.backgroundStyle].filter(Boolean) : [],
     avoidHeadlineOpenings: [...new Set(previousThree.map((item) => item.headline ? headlineOpening(item.headline) : "").filter(Boolean))],
     underusedCompositionIds: Object.entries(counts).filter(([, count]) => count === minimum).map(([id]) => id),
@@ -125,10 +224,11 @@ export function compositionFromTemplateId(templateId: string): CompositionId | u
   return (Object.entries(compositionTemplateIds) as Array<[CompositionId, string]>).find(([, id]) => id === templateId)?.[0];
 }
 
-export function recentCompositionWarnings(recent: Array<{ compositionId?: string; backgroundStyle?: string; headline?: string }>, candidate?: CompositionId) {
+export function recentCompositionWarnings(recent: RecentCreative[], candidate?: CompositionId, visualDirection?: VisualDirection) {
   const previousThree = recent.slice(0, 3);
   const warnings: string[] = [];
   if (candidate && previousThree.some((item) => item.compositionId === candidate)) warnings.push(`Composition ${candidate} appears in the previous three posts; choose another unless the story strongly requires it.`);
+  if (visualDirection && previousThree.some((item) => item.visualDirection === visualDirection)) warnings.push(`Visual direction ${visualDirection} appears in the previous three outputs; use another compatible direction unless the story requires it.`);
   const latestBackground = recent[0]?.backgroundStyle;
   if (latestBackground && recent.slice(0, 2).every((item) => item.backgroundStyle === latestBackground)) warnings.push(`The last two posts use ${latestBackground}; change the background treatment.`);
   const latestHeadline = recent[0]?.headline?.trim().toLowerCase();

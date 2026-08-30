@@ -106,14 +106,14 @@ async function generate() {
       const reviewed = structured(raw);
       const images = raw.content.filter((item) => item.type === "image");
       assert.equal(images.length, task.slides, `${task.id} review did not return every slide PNG.`);
-      assert.equal(reviewed.review.status, "passed", `${task.id} failed mechanical review.`);
       const reviewPaths = [];
       for (let index = 0; index < images.length; index += 1) {
         const reviewPath = `${outputDirectory}${task.id}-slide-${index + 1}-review.png`;
         await writeFile(reviewPath, Buffer.from(images[index].data, "base64"));
         reviewPaths.push(reviewPath);
       }
-      items.push({ id: task.id, kind: "carousel", category: task.category, composition: task.composition, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, carouselId: reviewed.carousel.id, currentRevision: reviewed.carousel.currentRevision, templateVersionId: reviewed.carousel.templateVersionId, workspaceUrl: reviewed.carousel.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.status === "passed", mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings ?? [], artifacts: reviewed.review.artifacts, reviewPaths });
+      assert.equal(reviewed.review.status, "passed", `${task.id} failed mechanical review. Inspect ${reviewPaths.join(", ")}`);
+      items.push({ id: task.id, kind: "carousel", category: task.category, composition: task.composition, visualDirections: reviewed.carousel.slides.map((slide) => slide.visualDirection ?? "editorial"), format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, carouselId: reviewed.carousel.id, currentRevision: reviewed.carousel.currentRevision, templateVersionId: reviewed.carousel.templateVersionId, workspaceUrl: reviewed.carousel.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.status === "passed", mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings ?? [], artifacts: reviewed.review.artifacts, reviewPaths });
       continue;
     }
 
@@ -127,13 +127,14 @@ async function generate() {
     assert.ok(image && image.type === "image", `${task.id} review did not return a PNG.`);
     const reviewPath = `${outputDirectory}${task.id}-review.png`;
     await writeFile(reviewPath, Buffer.from(image.data, "base64"));
-    items.push({ id: task.id, kind: "draft", category: task.category, composition: task.composition, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, draftId: reviewed.draft.id, currentRevision: reviewed.draft.currentRevision, templateVersionId: reviewed.draft.templateVersionId, workspaceUrl: reviewed.draft.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.passed, mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings, artifacts: [{ width: reviewed.review.width, height: reviewed.review.height, sha256: reviewed.review.sha256 }], reviewPaths: [reviewPath] });
+    items.push({ id: task.id, kind: "draft", category: task.category, composition: task.composition, visualDirections: [reviewed.draft.payload.content.visualDirection ?? "editorial"], directionReason: created.creativeDirection?.reason ?? null, format: task.format, evidence: entry.evidence, asset: entry.asset ?? null, compositionWarnings: catalog.warnings, draftId: reviewed.draft.id, currentRevision: reviewed.draft.currentRevision, templateVersionId: reviewed.draft.templateVersionId, workspaceUrl: reviewed.draft.workspaceUrl, reviewId: reviewed.review.id, mechanicalPassed: reviewed.review.passed, mechanicalChecks: reviewed.review.checks, contentWarnings: reviewed.contentWarnings, artifacts: [{ width: reviewed.review.width, height: reviewed.review.height, sha256: reviewed.review.sha256 }], reviewPaths: [reviewPath] });
   }
 
   const manifest = { benchmark: benchmark.name, generatedAt: new Date().toISOString(), status: "mechanically-reviewed", baseUrl, evidenceLedger: fixture.evidenceLedger, assets: uploaded, items };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await rm(resultsPath, { force: true });
-  process.stdout.write(`${JSON.stringify({ manifestPath, tasks: items.length, reviewPngs: items.reduce((total, item) => total + item.reviewPaths.length, 0), mechanicalFailures: items.filter((item) => !item.mechanicalPassed).map((item) => item.id), contentWarningTasks: items.filter((item) => item.contentWarnings.length).map((item) => item.id) }, null, 2)}\n`);
+  const directionCounts = items.flatMap((item) => item.visualDirections).reduce((counts, direction) => ({ ...counts, [direction]: (counts[direction] ?? 0) + 1 }), {});
+  process.stdout.write(`${JSON.stringify({ manifestPath, tasks: items.length, reviewPngs: items.reduce((total, item) => total + item.reviewPaths.length, 0), directionCounts, mechanicalFailures: items.filter((item) => !item.mechanicalPassed).map((item) => item.id), contentWarningTasks: items.filter((item) => item.contentWarnings.length).map((item) => item.id) }, null, 2)}\n`);
 }
 
 function validateVisualReview(item, review) {

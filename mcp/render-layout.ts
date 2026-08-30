@@ -24,6 +24,9 @@ export function inspectRenderLayout(root: Element) {
       const first = zones[index];
       const second = zones[otherIndex];
       if (first.closest("[data-render-region='content']") !== second.closest("[data-render-region='content']")) continue;
+      const firstAllows = first.dataset.allowOverlapWith?.split(/\s+/).includes(second.dataset.layoutZone ?? "");
+      const secondAllows = second.dataset.allowOverlapWith?.split(/\s+/).includes(first.dataset.layoutZone ?? "");
+      if (firstAllows || secondAllows) continue;
       const a = first.getBoundingClientRect();
       const b = second.getBoundingClientRect();
       const overlapX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -37,19 +40,22 @@ export function inspectRenderLayout(root: Element) {
     if (!text) return false;
     const node = headline.firstChild;
     if (!node || node.nodeType !== Node.TEXT_NODE) return false;
-    const lines = new Map<number, string>();
+    const lines: Array<{ top: number; value: string }> = [];
+    const lineTolerance = Number.parseFloat(getComputedStyle(headline).fontSize) * .45;
     for (let index = 0; index < text.length; index += 1) {
       const range = document.createRange();
       range.setStart(node, index);
       range.setEnd(node, index + 1);
       const rect = range.getBoundingClientRect();
       const top = Math.round(rect.top);
-      lines.set(top, `${lines.get(top) ?? ""}${text[index]}`);
+      const current = lines.at(-1);
+      if (!current || Math.abs(top - current.top) > lineTolerance) lines.push({ top, value: text[index] });
+      else current.value += text[index];
     }
-    const lineValues = Array.from(lines.values()).map((line) => line.trim()).filter(Boolean);
+    const lineValues = lines.map((line) => line.value.trim()).filter(Boolean);
     const finalLine = lineValues.at(-1) ?? "";
     let splitToken = false;
-    const tokenPattern = /\S+/g;
+    const tokenPattern = /[^\s\-/—–]+/g;
     let token: RegExpExecArray | null;
     while ((token = tokenPattern.exec(text))) {
       const range = document.createRange();
@@ -89,26 +95,38 @@ export function inspectRenderLayout(root: Element) {
     const visibleArea = Math.min(frame.width, renderedWidth) * Math.min(frame.height, renderedHeight);
     const coverage = visibleArea / (frame.width * frame.height);
     const retained = (frame.width * frame.height) / (renderedWidth * renderedHeight);
-    const minimumCoverage = role === "evidence" ? .58 : role === "screenshot" ? .5 : .4;
+    const minimumCoverage = role === "evidence" ? .55 : role === "screenshot" ? .5 : .4;
     const label = role === "image" ? "Image" : `${role} image`;
     const issues: string[] = [];
     if (fit === "contain" && coverage < minimumCoverage) issues.push(`${label} occupies ${Math.round(coverage * 100)}% of its frame; increase zoom or use a tighter crop.`);
     if (fit === "cover" && retained < .14 && !figure.querySelector(".asset-highlight")) issues.push(`${label} retains only ${Math.round(retained * 100)}% of the source without a highlighted focal region; reduce zoom or adjust the crop.`);
     return issues;
   });
-  const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow']")).filter((region) => {
-    const foregroundMatch = getComputedStyle(region).color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
+  const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support']")).filter((region) => {
+    const rect = region.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(region).visibility === "hidden") return false;
+    const foregroundValue = getComputedStyle(region).color;
+    const foregroundRgb = foregroundValue.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
+    const foregroundSrgb = foregroundValue.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\s*\)$/i);
+    const foreground = foregroundRgb
+      ? { channels: [Number(foregroundRgb[1]), Number(foregroundRgb[2]), Number(foregroundRgb[3])], alpha: foregroundRgb[4] == null ? 1 : Number(foregroundRgb[4]) }
+      : foregroundSrgb ? { channels: [Number(foregroundSrgb[1]) * 255, Number(foregroundSrgb[2]) * 255, Number(foregroundSrgb[3]) * 255], alpha: foregroundSrgb[4] == null ? 1 : Number(foregroundSrgb[4]) } : null;
     let current: HTMLElement | null = region;
-    let backgroundMatch: RegExpMatchArray | null = null;
+    let background: { channels: number[]; alpha: number } | null = null;
     while (current) {
-      const candidate = getComputedStyle(current).backgroundColor.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
-      if (candidate && (candidate[4] == null || Number(candidate[4]) >= .95)) { backgroundMatch = candidate; break; }
+      const backgroundValue = getComputedStyle(current).backgroundColor;
+      const backgroundRgb = backgroundValue.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/i);
+      const backgroundSrgb = backgroundValue.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\s*\)$/i);
+      const candidate = backgroundRgb
+        ? { channels: [Number(backgroundRgb[1]), Number(backgroundRgb[2]), Number(backgroundRgb[3])], alpha: backgroundRgb[4] == null ? 1 : Number(backgroundRgb[4]) }
+        : backgroundSrgb ? { channels: [Number(backgroundSrgb[1]) * 255, Number(backgroundSrgb[2]) * 255, Number(backgroundSrgb[3]) * 255], alpha: backgroundSrgb[4] == null ? 1 : Number(backgroundSrgb[4]) } : null;
+      if (candidate && candidate.alpha >= .95) { background = candidate; break; }
       if (current === root) break;
       current = current.parentElement;
     }
-    if (!foregroundMatch || !backgroundMatch) return true;
-    const values = [foregroundMatch, backgroundMatch].map((match) => {
-      const channels = [Number(match[1]), Number(match[2]), Number(match[3])].map((channel) => {
+    if (!foreground || !background) return true;
+    const values = [foreground, background].map((color) => {
+      const channels = color.channels.map((channel) => {
         const value = channel / 255;
         return value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
       });

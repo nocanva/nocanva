@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { carouselCreateInputSchema, carouselUpdateInputSchema, draftDecisionSchema, draftStatusSchema, formats, postContentSchema, type DraftStatus, type PostContent } from "../media";
+import { compositionFromTemplateId, visualDirections } from "../compositions";
 import { ensureMediaDatabase, getBrandById, getTemplateById, type DraftCheck } from "./media-repository";
 import { validateContentAssets } from "./asset-repository";
 
@@ -135,10 +136,22 @@ async function validateReferences(brandId: string, templateId: string, workspace
   return template;
 }
 
+function validateVisualDirections(templateId: string, slides: PostContent[]) {
+  const composition = compositionFromTemplateId(templateId);
+  if (!composition) return;
+  for (const [index, slide] of slides.entries()) {
+    if (!slide.visualDirection) continue;
+    const direction = visualDirections[slide.visualDirection];
+    if (!direction.compatibleCompositions.includes(composition)) throw new Error(`Slide ${index + 1} visual direction ${direction.id} is not compatible with composition ${composition}.`);
+    if (direction.requiresImage && !slide.image) throw new Error(`Slide ${index + 1} visual direction ${direction.id} requires a source image or screenshot.`);
+  }
+}
+
 export async function createCarousel(value: unknown, actor = "agent:mcp", workspaceId = defaultWorkspaceId()) {
   await ensureCarouselDatabase(workspaceId);
   const input = carouselCreateInputSchema.parse(value);
   const template = await validateReferences(input.brandId, input.templateId, workspaceId);
+  validateVisualDirections(input.templateId, input.slides);
   await validateContentAssets(input.slides, workspaceId);
   const id = crypto.randomUUID();
   const now = Date.now();
@@ -161,6 +174,7 @@ export async function updateCarousel(id: string, value: unknown, actor = "agent:
   if (current.archivedAt) throw new Error("Restore the carousel before editing it.");
   if (input.expectedRevision !== current.currentRevision) throw new Error(`Revision conflict: expected ${input.expectedRevision}, current revision is ${current.currentRevision}.`);
   const template = await validateReferences(input.brandId, input.templateId, workspaceId);
+  validateVisualDirections(input.templateId, input.slides);
   await validateContentAssets(input.slides, workspaceId);
   const revision = current.currentRevision + 1;
   const now = Date.now();

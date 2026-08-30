@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { compositionFromTemplateId, compositionTemplateIds, compositions, type CompositionId } from "../compositions";
+import { compositionFromTemplateId, compositionTemplateIds, compositions, visualDirections, type CompositionId } from "../compositions";
 import { brand, brandConfigSchema, draftCreateInputSchema, draftDecisionSchema, draftLayoutSchema, draftStatusSchema, draftUpdateInputSchema, formats, postPayloadSchema, posterLayoutSchema, rendererKeySchema, templateCreateSchema, templates, type BrandConfig, type DraftLayout, type DraftStatus, type PostPayload, type PosterLayout, type RendererKey, type TemplateInput } from "../media";
 import { validateContentAssets } from "./asset-repository";
 
@@ -348,6 +348,9 @@ async function validatePayloadReferences(payload: PostPayload, workspaceId: stri
   if (templateRecord.brandId !== brandRecord.id) throw new Error("The selected template does not belong to the selected brand.");
   const composition = compositionFromTemplateId(templateRecord.id);
   if (payload.compositionId && payload.compositionId !== composition) throw new Error("The composition ID does not match the selected template.");
+  const direction = payload.content.visualDirection ? visualDirections[payload.content.visualDirection] : undefined;
+  if (direction && composition && !direction.compatibleCompositions.includes(composition)) throw new Error(`Visual direction ${direction.id} is not compatible with composition ${composition}.`);
+  if (direction?.requiresImage && !payload.content.image) throw new Error(`Visual direction ${direction.id} requires a source image or screenshot.`);
   if (composition === "real_but" && !payload.content.image) throw new Error("The Real, but… composition requires a source image.");
   if (composition === "receipt" && (!payload.content.image || !payload.content.evidence)) throw new Error("The Receipt composition requires both an evidence image and source detail.");
   if (composition === "product" && !payload.content.image) throw new Error("The Product composition requires a real product screenshot.");

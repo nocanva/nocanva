@@ -96,7 +96,7 @@ npm run mcp:carousel-fixture
 ## Product contract
 
 - Agents supply verified copy and creative judgment.
-- NoCanva owns constrained brands, compositions, revisions, checks, approvals, and rendering.
+- NoCanva owns constrained brands, semantic compositions, content-aware visual-direction routing, revisions, checks, approvals, and rendering.
 - Every edit is revisioned; stale writes fail.
 - Approval pins a reviewed revision and its PNG hash.
 - Final rendering promotes those exact reviewed bytes.
@@ -107,6 +107,7 @@ The daily MCP API uses `nocanva_*`. The older `canvnah_*` namespace remains only
 ## Documentation
 
 - [MCP clients](./docs/MCP_CLIENTS.md)
+- [Creative Engine v2](./docs/CREATIVE_ENGINE_V2.md)
 - [Media workflow skill](./skills/nocanva-media/SKILL.md)
 - [Layout-authoring skill](./skills/nocanva-layout/SKILL.md)
 - [What is NoCanva?](./docs/WHAT_IS_NOCANVA.md)

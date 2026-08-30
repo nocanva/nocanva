@@ -148,6 +148,22 @@ test("carousel exports remain discoverable and force exact PNG downloads", async
   assert.match(await readFile(new URL("app/post-artwork.tsx", root), "utf8"), /--headline-fit/);
 });
 
+test("creative engine separates story compositions from visual directions", async () => {
+  const [compositions, artwork, css, server] = await Promise.all([
+    readFile(new URL("lib/compositions.ts", root), "utf8"),
+    readFile(new URL("app/post-artwork.tsx", root), "utf8"),
+    readFile(new URL("app/globals.css", root), "utf8"),
+    readFile(new URL("mcp/server.ts", root), "utf8"),
+  ]);
+  assert.match(compositions, /visualDirectionSchema/);
+  assert.match(compositions, /rankVisualDirections/);
+  assert.match(compositions, /visualFingerprint/);
+  assert.match(artwork, /direction-\$\{visualDirection\}/);
+  for (const direction of ["bulletin", "documentary", "field_notes", "monument", "interface"]) assert.match(css, new RegExp(`direction-${direction}`));
+  assert.match(server, /creativeDirection/);
+  assert.match(server, /routeCarouselSlides/);
+});
+
 test("draft and carousel galleries size artwork from the live card width", async () => {
   const [thumbnail, drafts, carousels, css] = await Promise.all([
     readFile(new URL("app/artwork-thumbnail.tsx", root), "utf8"),

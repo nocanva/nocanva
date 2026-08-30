@@ -13,8 +13,8 @@ NoCanva is a deterministic, agent-native media workspace. It does not make embed
 ## Creating media
 
 1. Read the source repository and establish an evidence ledger. Never invent product claims.
-2. For Blindspot, read the approved brand with `nocanva_get_brand`, then call `nocanva_list_compositions`. Inspect the recent 20 drafts and avoid reusing a composition from the previous three posts unless the story requires it. For other brands, reuse a listed template.
-3. Create a draft with `nocanva_create_draft`. Supply a semantic `compositionId` and content, never coordinates or Puck JSON, and retain its stable workspace URL.
+2. For Blindspot, read the approved brand with `nocanva_get_brand`, then call `nocanva_list_compositions`. Inspect the recent 20 drafts and avoid reusing a composition from the previous three posts unless the story requires it. NoCanva routes a compatible visual direction from the content and feed history.
+3. Create a draft with `nocanva_create_draft`. Supply a semantic `compositionId` and content, never coordinates or Puck JSON, and retain its stable workspace URL. Omit `visualDirection` on the first attempt; set a different compatible direction only after visual review shows a clear reason.
 4. Before updating, retrieve the draft and use its exact `currentRevision` as `expectedRevision`.
 5. Review with `nocanva_review_draft`. Treat every `contentWarnings` item as requiring revision. Inspect the returned PNG visually and answer all eight returned rubric questions in addition to checking schema, dimensions, bounds, overflow, typography, and deterministic hashes. Revise and review at most three times.
 6. Approve the exact reviewed revision with `nocanva_approve_draft`, then render it with `nocanva_render`.

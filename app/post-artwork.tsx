@@ -98,7 +98,7 @@ function BloomArtwork({ brandConfig, content }: { brandConfig: BrandConfig; cont
       </header>
       {content.image && <MediaFrame image={content.image} />}
       <div className="post-content" data-render-region="content">
-        <p className="post-eyebrow"><i className="bloom-dot" />{content.eyebrow}</p>
+        <p className="post-eyebrow" data-render-region="eyebrow"><i className="bloom-dot" />{content.eyebrow}</p>
         <h2 data-render-region="headline">{content.headline}<BloomUnderline /></h2>
         <p className="post-support" data-render-region="support">{content.support}</p>
       </div>
@@ -149,7 +149,7 @@ function TerminalArtwork({ brandConfig, content, dimensions }: { brandConfig: Br
       <div className="terminal-window" data-render-region="content">
         <div className="terminal-bar" aria-hidden><span /><span /><span /><b>~/prompt</b></div>
         <div className="terminal-body">
-          <p className="post-eyebrow"><i>$</i> {content.eyebrow}</p>
+          <p className="post-eyebrow" data-render-region="eyebrow"><i>$</i> {content.eyebrow}</p>
           <h2 data-render-region="headline">{content.headline}</h2>
           <div className="terminal-command"><i>$</i><code>promptry run rag-regression --compare prod</code></div>
           <div className="terminal-results">{rows.map((row) => { const [status, ...rest] = row.split(" "); return <div className={`terminal-result ${status.toLowerCase()}`} key={row}><b>{status}</b><span>{rest.join(" ")}</span></div>; })}</div>
@@ -170,7 +170,7 @@ function SplitArtwork({ brandConfig, content, dimensions }: { brandConfig: Brand
       <div className="split-layout" data-render-region="content">
         <aside aria-hidden><span>02</span><i /></aside>
         <section>
-          <p className="post-eyebrow">{content.eyebrow}</p>
+          <p className="post-eyebrow" data-render-region="eyebrow">{content.eyebrow}</p>
           <h2 data-render-region="headline">{content.headline}</h2>
           <div className="split-support"><span aria-hidden>→</span><p className="post-support" data-render-region="support">{content.support}</p></div>
         </section>
@@ -186,7 +186,7 @@ function LedgerArtwork({ brandConfig, content, dimensions }: { brandConfig: Bran
       <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
       {content.image && <MediaFrame image={content.image} />}
       <div className="ledger-layout" data-render-region="content">
-        <p className="post-eyebrow">{content.eyebrow}</p>
+        <p className="post-eyebrow" data-render-region="eyebrow">{content.eyebrow}</p>
         <h2 data-render-region="headline">{content.headline}</h2>
         <div className="ledger-steps" aria-hidden>
           <span><b>01</b><i /></span><span><b>02</b><i /></span><span><b>03</b><i /></span>
@@ -211,7 +211,7 @@ function LayoutArtwork({ brandConfig, content, dimensions, layout }: { brandConf
       </header>
       {content.image && layout.mediaPosition !== "none" && <MediaFrame image={content.image} />}
       <div className="post-content" data-render-region="content">
-        <p className="post-eyebrow">{content.eyebrow}</p>
+        <p className="post-eyebrow" data-render-region="eyebrow">{content.eyebrow}</p>
         {showIndex && <span className={`layout-index ${layout.indexPlacement}`} aria-hidden>{index}</span>}
         <h2 data-render-region="headline">{content.headline}</h2>
         {signature}
@@ -237,7 +237,7 @@ function ReceiptArtwork({ brandConfig, content }: { brandConfig: BrandConfig; co
 function WhatsMissingArtwork({ brandConfig, content, sequenceRole }: { brandConfig: BrandConfig; content: PostPayload["content"]; sequenceRole?: CarouselSequenceRole }) {
   const hasSource = Boolean(content.image || content.evidence || content.cta);
   const marker = sequenceRole === "hook" ? "?" : sequenceRole === "close" ? "✓" : sequenceRole === "evidence" ? "≠" : "→";
-  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className={`missing-layout${content.image ? " has-source-image" : ""}`} data-render-region="content"><span className="missing-index" aria-hidden>{marker}</span><div className="missing-question" data-layout-zone="question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer" data-layout-zone="support"><span>{sequenceRole === "close" ? "What holds" : sequenceRole === "evidence" ? "The receipt" : "Missing context"}</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div>{hasSource && <div className={`missing-source${content.image ? " has-image" : ""}`} data-layout-zone="source">{content.image ? <ArtworkImage image={content.image} role="evidence" /> : <Evidence evidence={content.evidence} />}<CTA>{content.cta}</CTA></div>}</section><LogoFooter brand={brandConfig} index={sequenceRole === "close" ? "THE TAKEAWAY" : "FIND THE GAP"} /></>;
+  return <><BrandHeader brand={brandConfig} label="What’s missing?" /><section className={`missing-layout${content.image ? " has-source-image" : ""}`} data-render-region="content"><span className="missing-index" aria-hidden>{marker}</span><div className="missing-question" data-layout-zone="question"><Eyebrow>{content.eyebrow}</Eyebrow><Headline>{content.headline}</Headline></div><div className="missing-answer" data-layout-zone="support" data-allow-overlap-with="media"><span>{sequenceRole === "close" ? "What holds" : sequenceRole === "evidence" ? "The receipt" : "Missing context"}</span><Body>{content.support}</Body><Highlight>{content.highlight}</Highlight></div>{hasSource && <div className={`missing-source${content.image ? " has-image" : ""}`} data-layout-zone="source">{content.image ? <ArtworkImage image={content.image} role="evidence" /> : <Evidence evidence={content.evidence} />}<CTA>{content.cta}</CTA></div>}</section><LogoFooter brand={brandConfig} index={sequenceRole === "close" ? "THE TAKEAWAY" : "FIND THE GAP"} /></>;
 }
 
 function ProductArtwork({ brandConfig, content }: { brandConfig: BrandConfig; content: PostPayload["content"] }) {
@@ -260,6 +260,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
 ) {
   const dimensions = formats[payload.format];
   const { content } = payload;
+  const visualDirection = content.visualDirection ?? "editorial";
   const resolvedTemplate: ArtworkTemplate = template ?? {
     id: payload.templateId,
     version: 1,
@@ -309,11 +310,12 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} background-${resolvedBackgroundStyle} draft-density-${draftLayout.density} draft-headline-${draftLayout.headlineAlignment}${content.image ? " has-media" : ""}${sequenceRole ? ` carousel-role-${sequenceRole} carousel-beat-${sequence!.index + 1}` : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} direction-${visualDirection} background-${resolvedBackgroundStyle} draft-density-${draftLayout.density} draft-headline-${draftLayout.headlineAlignment}${content.image ? " has-media" : ""}${sequenceRole ? ` carousel-role-${sequenceRole} carousel-beat-${sequence!.index + 1}` : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
       data-carousel-role={sequenceRole}
+      data-visual-direction={visualDirection}
       aria-label={`Rendered ${brandConfig.name} post`}
     >
       {resolvedTemplate.rendererKey === "layout" ? <LayoutArtwork brandConfig={brandConfig} content={content} dimensions={dimensions} layout={resolvedLayout} />
@@ -335,7 +337,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
           <StandardHeader brandConfig={brandConfig} dimensions={dimensions} />
           {content.image && <MediaFrame image={content.image} />}
           <div className="post-content" data-render-region="content">
-            <p className="post-eyebrow">{content.eyebrow}</p>
+            <p className="post-eyebrow" data-render-region="eyebrow">{content.eyebrow}</p>
             {resolvedTemplate.rendererKey === "signal" && <span className="signal-number">01</span>}
             <h2 data-render-region="headline">{content.headline}</h2>
             <div className="red-rule" />

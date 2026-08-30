@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { defaultPostPayload, draftLayoutSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
-import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, recentCompositionWarnings, visualReviewRubric } from "../lib/compositions.ts";
+import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, rankVisualDirections, recentCompositionWarnings, visualDirections, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
   assert.deepEqual(parsePostPayload(defaultPostPayload), defaultPostPayload);
@@ -42,6 +42,26 @@ test("exposes six semantic compositions and the fixed visual review rubric", () 
   assert.match(recentCompositionWarnings([{ compositionId: "claim" }], "claim")[0], /previous three/);
 });
 
+test("routes semantic content into distinct compatible visual directions", () => {
+  assert.deepEqual(Object.keys(visualDirections), ["editorial", "documentary", "bulletin", "field_notes", "monument", "interface"]);
+  assert.equal(chooseVisualDirection({ compositionId: "claim", content: { headline: "One precise claim" } }), "monument");
+  assert.equal(chooseVisualDirection({ compositionId: "real_but", content: { headline: "The image is real. The date is not.", image: {} } }), "documentary");
+  assert.equal(chooseVisualDirection({ compositionId: "product", content: { headline: "Public links open a cited report", image: {} } }), "interface");
+  const rerouted = rankVisualDirections({ compositionId: "claim", content: { headline: "One precise claim" }, recent: [
+    { visualDirection: "monument" }, { visualDirection: "bulletin" }, { visualDirection: "field_notes" },
+  ] });
+  assert.equal(rerouted[0].id, "editorial");
+  assert.doesNotThrow(() => parsePostPayload({ ...defaultPostPayload, content: { ...defaultPostPayload.content, visualDirection: "bulletin" } }));
+  assert.throws(() => parsePostPayload({ ...defaultPostPayload, content: { ...defaultPostPayload.content, visualDirection: "random" } }));
+});
+
+test("fingerprints visual silhouettes and flags exact recent repetition", () => {
+  const fingerprint = visualFingerprint("claim", { headline: "Name the exact claim", support: "Then inspect the source.", visualDirection: "bulletin" });
+  assert.match(fingerprint.key, /claim:bulletin:signal_wash:headline:left:airy:frame/);
+  assert.equal(visualSimilarityWarnings([{ visualFingerprint: fingerprint.key }], fingerprint.key).length, 1);
+  assert.deepEqual(visualSimilarityWarnings([{ visualFingerprint: "different" }], fingerprint.key), []);
+});
+
 test("flags generic creative copy and anonymous evidence", () => {
   const warnings = creativeContentWarnings({ headline: "Three checks. Better context.", support: "Read the source.", evidence: { source: "Verified source" } });
   assert.equal(warnings.length, 3);
@@ -62,11 +82,12 @@ test("creates carousel rhythm and feed diversity without new agent layout inputs
     { headline: "Keep the receipt", backgroundStyle: "ink" },
   ]).join(" "), /same surface.*same headline opening/i);
   const guidance = compositionDiversityGuidance([
-    { compositionId: "claim", backgroundStyle: "ink", headline: "Check the date" },
-    { compositionId: "receipt", backgroundStyle: "ink", headline: "Read the source" },
-    { compositionId: "claim", backgroundStyle: "paper", headline: "Name the claim" },
+    { compositionId: "claim", visualDirection: "bulletin", backgroundStyle: "ink", headline: "Check the date" },
+    { compositionId: "receipt", visualDirection: "field_notes", backgroundStyle: "ink", headline: "Read the source" },
+    { compositionId: "claim", visualDirection: "monument", backgroundStyle: "paper", headline: "Name the claim" },
   ]);
   assert.deepEqual(guidance.avoidCompositionIds, ["claim", "receipt"]);
+  assert.deepEqual(guidance.avoidVisualDirections, ["bulletin", "field_notes", "monument"]);
   assert.deepEqual(guidance.avoidBackgroundStyles, ["ink"]);
   assert.ok(guidance.underusedCompositionIds.includes("product"));
 });

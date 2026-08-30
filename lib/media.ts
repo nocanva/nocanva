@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { compositionIdSchema, compositions, type CompositionId } from "./compositions.ts";
+import { compositionIdSchema, compositions, visualDirectionSchema, type CompositionId } from "./compositions.ts";
 
 const slugSchema = z.string().trim().min(2).max(48).regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, "Use a lowercase kebab-case ID.");
 const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color.");
@@ -131,6 +131,7 @@ export const postContentSchema = z.object({
   steps: z.array(z.string().trim().min(1).max(90)).min(3).max(5).optional(),
   cta: z.string().trim().max(60).optional(),
   backgroundStyle: z.enum(["paper", "ink", "paper_grid", "signal_wash", "image_full_bleed"]).optional(),
+  visualDirection: visualDirectionSchema.optional().describe("Content-aware art direction. Omit to let NoCanva select a distinct direction from the story and recent feed."),
 });
 
 export const postPayloadSchema = z.object({

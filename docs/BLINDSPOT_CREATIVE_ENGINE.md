@@ -14,7 +14,7 @@ The canonical boundary is independent of Puck:
 
 Puck is a replaceable editing adapter. It receives one approved semantic composition, edits only its allowed fields, and converts the result back into `PostContent`. NoCanva never stores or exposes raw Puck JSON. The web editor and PNG renderer use the same `PostArtwork` React tree.
 
-Agents choose meaning rather than coordinates. The six approved families are `claim`, `real_but`, `receipt`, `whats_missing`, `product`, and `explainer`. Brand chrome, spacing, hierarchy, safe areas, and artwork geometry remain locked.
+Agents choose meaning rather than coordinates. The six approved composition families are `claim`, `real_but`, `receipt`, `whats_missing`, `product`, and `explainer`. NoCanva separately routes one of six visual directions: `editorial`, `documentary`, `bulletin`, `field_notes`, `monument`, or `interface`. Brand rules, safe areas, and output geometry remain locked while silhouettes can change substantially.
 
 `nocanva_list_compositions` considers recent drafts and carousels together and returns compact diversity guidance: recently used compositions, repeated surfaces and headline openings, plus underused options. Story purpose still wins; the guidance only breaks ties.
 
@@ -24,8 +24,8 @@ Carousel layout roles are automatic. Slide order deterministically becomes hook,
 
 1. Build an evidence ledger from source material; never invent a claim.
 2. Get the Blindspot brand and list compositions with recent usage.
-3. Avoid a composition used in the previous three posts unless the story requires it.
-4. Create the semantic draft and keep its stable workspace URL.
+3. Avoid a composition used in the previous three posts unless the story requires it. Let NoCanva choose the first visual direction from content and feed history.
+4. Create the semantic draft and keep its stable workspace URL. Override the direction only when the returned PNG gives a concrete visual reason.
 5. Review the returned PNG against all eight visual questions.
 6. Retrieve the current revision, update, and review again when needed. Stop after three agent iterations.
 7. Approve the exact reviewed revision and promote it to an immutable render.
@@ -46,7 +46,7 @@ npm run benchmark:blindspot -- outputs/blindspot-benchmark-v1/results.json
 
 `quality-reviews.json` must copy the current manifest's `generatedAt` into `manifestGeneratedAt`, include a later `reviewedAt`, and name the reviewer. A new generation deletes stale results, and finalization rejects reviews from an older run. Mechanical success is never a visual pass.
 
-The engine passes at 70% or more publishable without design edits and a median human effort below 120 seconds. Do not expand platform scope while it fails this gate.
+The release gate is at least 90% publishable without design edits and median human effort below 60 seconds. Creative Engine v2 currently records 20/20 publishable tasks, 30/30 mechanically valid PNGs, all six directions represented, and zero content-warning tasks in the versioned benchmark result.
 
 Five to ten visually approved outputs belong in `benchmarks/blindspot-references.json`. References are real immutable NoCanva renders, not generated-image style prompts.
 
