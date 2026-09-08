@@ -159,9 +159,29 @@ test("creative engine separates story compositions from visual directions", asyn
   assert.match(compositions, /rankVisualDirections/);
   assert.match(compositions, /visualFingerprint/);
   assert.match(artwork, /direction-\$\{visualDirection\}/);
+  assert.match(artwork, /template-version-\$\{resolvedTemplate\.version\}/);
   for (const direction of ["bulletin", "documentary", "field_notes", "monument", "interface"]) assert.match(css, new RegExp(`direction-${direction}`));
+  assert.match(css, /template-version-6\.direction-documentary\.receipt/);
+  assert.match(css, /template-version-6\.direction-interface\.receipt/);
   assert.match(server, /creativeDirection/);
   assert.match(server, /routeCarouselSlides/);
+});
+
+test("creative engine offers bounded direction iteration and a nine-post feed preview", async () => {
+  const [workspace, renders, css] = await Promise.all([
+    readFile(new URL("app/drafts/[id]/workspace.tsx", root), "utf8"),
+    readFile(new URL("app/renders/page.tsx", root), "utf8"),
+    readFile(new URL("app/globals.css", root), "utf8"),
+  ]);
+  assert.match(workspace, /Try another direction/);
+  assert.match(workspace, /nextVisualDirection/);
+  assert.match(workspace, /Save to create a new revision/);
+  assert.match(renders, /Array\.from\(\{ length: 9 \}/);
+  assert.match(renders, /latestFeedRenders\(visibleRenders, 9\)/);
+  assert.match(renders, /Instagram profile preview/);
+  assert.match(css, /\.feed-profile-grid\s*\{/);
+  assert.match(css, /grid-template-columns:\s*repeat\(3/);
+  assert.match(workspace, /recent:\s*recentCreative/);
 });
 
 test("draft and carousel galleries size artwork from the live card width", async () => {

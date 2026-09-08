@@ -138,6 +138,7 @@ try {
 
   const rerendered = structured(await client.callTool({ name: "canvnah_rerender", arguments: { renderId: rendered.render.id } }));
   assert.equal(rerendered.render.parentRenderId, rendered.render.id);
+  assert.equal(rerendered.render.postId, rendered.render.postId);
   assert.equal(rerendered.render.sha256, rendered.render.sha256);
 
   process.stdout.write(`${JSON.stringify({ tools: toolNames.length, handleTypography: "passed", brandId: brand.brand.id, templateId: template.template.id, layoutTemplateId: layoutTemplate.template.id, postId: created.post.id, renderId: rendered.render.id, rerenderId: rerendered.render.id }, null, 2)}\n`);

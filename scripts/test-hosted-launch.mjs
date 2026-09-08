@@ -19,7 +19,7 @@ const client = new Client({ name: "nocanva-hosted-launch-proof", version: "0.4.0
 try {
   await client.connect(new StreamableHTTPClientTransport(new URL(`${endpoint.replace(/\/$/, "")}/mcp`), { requestInit: { headers: { authorization: `Bearer ${token}` } } }));
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 33);
+  assert.equal(tools.tools.length, 36);
   structured(await client.callTool({ name: "canvnah_create_brand", arguments: { id: "nocanva", name: "NoCanva", tagline: "IDEAS IN. BRAND-READY MEDIA OUT.", website: "nocanva.com", colors: { paper: "#F2F0E9", ink: "#171714", signal: "#E24A32", muted: "#66635C", accent: "#E9B949" }, safeArea: 64 } }));
   const templates = structured(await client.callTool({ name: "nocanva_list_templates", arguments: { brandId: "nocanva" } }));
   if (!templates.templates.some((template) => template.id === "nocanva-statement")) structured(await client.callTool({ name: "canvnah_create_template", arguments: { id: "nocanva-statement", brandId: "nocanva", name: "NoCanva statement", description: "A decisive product principle with real product imagery.", rendererKey: "statement" } }));

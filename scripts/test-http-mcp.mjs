@@ -59,13 +59,13 @@ try {
   });
   await client.connect(transport);
   const tools = await client.listTools();
-  assert.equal(tools.tools.length, 33);
+  assert.equal(tools.tools.length, 36);
 
   const created = structured(await client.callTool({
     name: "nocanva_create_draft",
     arguments: {
       brandId: "blindspot",
-      templateId: "statement",
+      compositionId: "claim",
       format: "square",
       prompt: "Sprint 2 authenticated HTTP fixture.",
       content: {

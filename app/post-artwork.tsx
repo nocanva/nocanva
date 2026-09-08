@@ -310,7 +310,7 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
   return (
     <article
       ref={ref}
-      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} direction-${visualDirection} background-${resolvedBackgroundStyle} draft-density-${draftLayout.density} draft-headline-${draftLayout.headlineAlignment}${content.image ? " has-media" : ""}${sequenceRole ? ` carousel-role-${sequenceRole} carousel-beat-${sequence!.index + 1}` : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
+      className={`post-canvas ${mode} ${payload.format} ${resolvedTemplate.rendererKey} template-version-${resolvedTemplate.version} direction-${visualDirection} background-${resolvedBackgroundStyle} draft-density-${draftLayout.density} draft-headline-${draftLayout.headlineAlignment}${content.image ? " has-media" : ""}${sequenceRole ? ` carousel-role-${sequenceRole} carousel-beat-${sequence!.index + 1}` : ""}${resolvedTemplate.rendererKey === "layout" ? ` layout-renderer layout-family-${resolvedLayout.family} layout-media-${layoutMediaPosition} layout-align-${resolvedLayout.alignment} layout-density-${resolvedLayout.density} layout-focal-${resolvedLayout.focalRegion}` : ""}`}
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}

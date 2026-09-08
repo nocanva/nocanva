@@ -98,13 +98,19 @@ try {
   assert.equal(edited.draft.currentRevision, 3);
   assert.equal(edited.draft.status, "draft");
   assert.equal(edited.draft.approval, null);
+  assert.equal(edited.draft.templateVersionId, pinnedVersion);
+
+  const upgraded = await call("nocanva_update_draft", { draftId: created.draft.id, expectedRevision: 3, brandId: "sprint-one-fixture", templateId: "sprint-one-statement", format: "portrait", content: edited.draft.payload.content, layout: humanLayout, prompt: "Explicit template upgrade fixture.", upgradeTemplateVersion: true });
+  assert.equal(upgraded.draft.currentRevision, 4);
+  assert.notEqual(upgraded.draft.templateVersionId, pinnedVersion);
+  assert.ok(Number(upgraded.draft.templateVersionId.split("@").at(-1)) > Number(pinnedVersion.split("@").at(-1)));
 
   const archived = await call("nocanva_archive_draft", { draftId: created.draft.id, archived: true });
   assert.ok(archived.draft.archivedAt);
   const restored = await call("nocanva_archive_draft", { draftId: created.draft.id, archived: false });
   assert.equal(restored.draft.archivedAt, null);
 
-  process.stdout.write(`${JSON.stringify({ tools: listed.tools.length, draftId: created.draft.id, revisions: restored.draft.currentRevision, pinnedTemplateVersionId: pinnedVersion, renderId: rendered.render.id, sha256: rendered.render.sha256 }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ tools: listed.tools.length, draftId: created.draft.id, revisions: restored.draft.currentRevision, pinnedTemplateVersionId: pinnedVersion, upgradedTemplateVersionId: upgraded.draft.templateVersionId, renderId: rendered.render.id, sha256: rendered.render.sha256 }, null, 2)}\n`);
 } finally {
   await client.close();
 }

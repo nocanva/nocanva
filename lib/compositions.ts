@@ -91,7 +91,7 @@ type DirectionContent = {
   visualDirection?: VisualDirection;
 };
 
-type RecentCreative = { visualDirection?: string; compositionId?: string; backgroundStyle?: string; headline?: string; visualFingerprint?: string };
+export type RecentCreative = { visualDirection?: string; compositionId?: string; backgroundStyle?: string; headline?: string; visualFingerprint?: string };
 
 export function visualFingerprint(compositionId: CompositionId, content: DirectionContent) {
   const direction = content.visualDirection ?? "editorial";
@@ -152,6 +152,13 @@ export function rankVisualDirections({ compositionId, content, recent = [], sequ
 
 export function chooseVisualDirection(input: Parameters<typeof rankVisualDirections>[0]) {
   return rankVisualDirections(input)[0]?.id ?? "editorial";
+}
+
+export function nextVisualDirection(input: Parameters<typeof rankVisualDirections>[0], current: VisualDirection) {
+  const ranked = rankVisualDirections(input);
+  if (ranked.length < 2) return ranked[0]?.id ?? current;
+  const currentIndex = ranked.findIndex((direction) => direction.id === current);
+  return ranked[(currentIndex + 1 + ranked.length) % ranked.length].id;
 }
 
 export const visualReviewRubric = [

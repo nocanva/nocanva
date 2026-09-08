@@ -68,6 +68,7 @@ test("hosted browser rendering uses the authenticated MCP render proxy", async (
   ]);
   assert.match(client, /renderBaseUrl/);
   assert.match(worker, /isRenderProxyPath/);
+  assert.match(worker, /pathname\.startsWith\("\/api\/assets\/"\)/);
   assert.match(worker, /applicationProxyAuthorized/);
   assert.match(worker, /renderBaseUrl: url\.origin/);
 });

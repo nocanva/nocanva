@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { listRenders } from "../../lib/server/media-repository";
+import { latestFeedRenders } from "../../lib/feed-preview";
 import { requireNoCanvaViewer } from "../../lib/server/request-auth";
 import { AppShell } from "../workspace-shell";
 
@@ -14,14 +15,32 @@ export default async function RendersPage({ searchParams }: { searchParams: Prom
   const brands = Array.from(new Map(renders.map((render) => [render.payload.brandId, render.brandName])).entries());
   const selectedBrand = requestedBrand ?? (brands.some(([id]) => id === "blindspot") ? "blindspot" : "all");
   const visibleRenders = selectedBrand === "all" ? renders : renders.filter((render) => render.payload.brandId === selectedBrand);
+  const feedRenders = latestFeedRenders(visibleRenders, 9);
+  const feedDirections = new Set(feedRenders.map((render) => render.payload.content.visualDirection ?? "editorial")).size;
+  const profileName = selectedBrand === "all" ? "Workspace feed" : brands.find(([id]) => id === selectedBrand)?.[1] ?? "Brand feed";
+  const profileHandle = selectedBrand === "all" ? "nocanva.workspace" : selectedBrand.replaceAll("-", ".");
   return (
     <AppShell><section className="collection-page page-frame">
       <div className="collection-heading history-heading"><div><p className="kicker">Immutable history</p><h1>Reviewed output, by brand.</h1><p>Compare one brand at a time. Every asset keeps its exact content, template version, dimensions, and hash.</p></div><Link className="dark-link" href="/create">Create render →</Link></div>
       {brands.length > 1 && <nav className="brand-filter" aria-label="Filter renders by brand"><Link className={selectedBrand === "all" ? "active" : ""} href="/renders?brand=all">All brands</Link>{brands.map(([id, name]) => <Link className={selectedBrand === id ? "active" : ""} href={`/renders?brand=${encodeURIComponent(id)}`} key={id}>{name}</Link>)}</nav>}
-      {visibleRenders.length === 0 ? <div className="empty-history"><span>00</span><h2>No renders for this brand</h2><p>Create its first reviewed PNG and it will appear here.</p><Link href="/create">Open Studio</Link></div> : <div className="render-history-grid">{visibleRenders.map((render) => <Link className="history-card" href={`/renders/${render.id}`} key={render.id}>
+      {visibleRenders.length === 0 ? <div className="empty-history"><span>00</span><h2>No renders for this brand</h2><p>Create its first reviewed PNG and it will appear here.</p><Link href="/create">Open Studio</Link></div> : <>
+        <section className="feed-profile-preview" aria-labelledby="feed-preview-title">
+          <header className="feed-profile-header"><span className="feed-profile-avatar" aria-hidden="true">{profileName.slice(0, 1).toUpperCase()}</span><div className="feed-profile-identity"><span className="section-overline">Instagram profile preview</span><h2 id="feed-preview-title">{profileName}</h2><p>@{profileHandle}</p></div><dl><div><dt>Posts</dt><dd>{feedRenders.length}</dd></div><div><dt>Directions</dt><dd>{feedDirections}</dd></div><div><dt>Grid</dt><dd>3 × 3</dd></div></dl></header>
+          <div className="feed-profile-grid">{Array.from({ length: 9 }, (_, index) => {
+            const render = feedRenders[index];
+            return render ? <Link aria-label={`Open ${render.payload.content.headline}`} href={`/renders/${render.id}`} key={render.id}><Image src={render.assetUrl} alt={render.payload.content.headline} width={render.width} height={render.height} unoptimized /><span>{visualDirectionLabel(render.payload.content.visualDirection)}</span></Link> : <span className="feed-profile-empty" aria-label="Empty feed position" key={`empty-${index}`} />;
+          })}</div>
+          <p className="feed-profile-note">Newest approved outputs appear first. Iterations of the same post occupy one position; every tile still opens its immutable render.</p>
+        </section>
+        <div className="section-heading-row render-history-heading"><div><span className="section-overline">Asset records</span><h2>Immutable render history</h2></div><span>{visibleRenders.length} render{visibleRenders.length === 1 ? "" : "s"}</span></div>
+        <div className="render-history-grid">{visibleRenders.map((render) => <Link className="history-card" href={`/renders/${render.id}`} key={render.id}>
         <span className={`history-art ${render.payload.format}`}><Image src={render.assetUrl} alt="" width={render.width} height={render.height} unoptimized /></span>
         <span><small>{render.brandName} · {render.templateName} v{render.templateVersion}</small><strong>{render.payload.content.headline}</strong><em>{new Date(render.createdAt).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}</em></span>
-      </Link>)}</div>}
+      </Link>)}</div></>}
     </section></AppShell>
   );
+}
+
+function visualDirectionLabel(direction: string | undefined) {
+  return (direction ?? "editorial").replaceAll("_", " ");
 }

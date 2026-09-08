@@ -41,6 +41,7 @@
     "mcp:fixture": "node scripts/test-mcp-fixture.mjs",
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
     "mcp:carousel-fixture": "node scripts/test-carousel-lifecycle.mjs",
+    "mcp:receipt-fixture": "node scripts/test-receipt-layout.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
     "mcp:hosted-fixture": "node scripts/test-hosted-launch.mjs",
     "connect": "node scripts/connect-agent.mjs",

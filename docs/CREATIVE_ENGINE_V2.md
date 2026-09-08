@@ -65,7 +65,7 @@ The simple path stays simple:
 3. Review returns the rendered PNGs, direction metadata, mechanical checks, recent-feed similarity warnings, and the visual rubric.
 4. The calling multimodal agent accepts or revises. It may explicitly request a different compatible direction on a later revision.
 
-The human sees the recommended direction as compact metadata. Puck exposes bounded content, crop, emphasis, and section-order refinements. It does not become a generic canvas. A direction switcher remains a deliberately small follow-up; the default agent path requires no layout choice.
+The human sees the recommended direction as compact metadata. Puck exposes bounded content, crop, emphasis, and section-order refinements. It does not become a generic canvas. A compact “Try another direction” action cycles deterministically through compatible ranked directions; the choice remains a local preview until the human saves it as a new immutable revision. Render history also presents the latest immutable render per post or draft lineage in a nine-cover, Instagram-style profile grid. The default agent path still requires no layout choice.
 
 ## Quality gates
 

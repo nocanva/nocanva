@@ -50,6 +50,12 @@ function logicalId(workspaceId: string, storedId: unknown) {
   return value.startsWith(prefix) ? value.slice(prefix.length) : value;
 }
 
+function physicalTemplateVersionId(workspaceId: string, versionId: string) {
+  const separator = versionId.lastIndexOf("@");
+  if (separator < 1) throw new Error("The template version ID is invalid.");
+  return `${physicalId(workspaceId, versionId.slice(0, separator))}${versionId.slice(separator)}`;
+}
+
 function database(): D1Database {
   if (!env.DB) throw new Error("D1 binding DB is unavailable.");
   return env.DB;
@@ -161,6 +167,9 @@ async function seedWorkspace(workspaceId: string) {
       db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@3`, workspaceId, storedTemplateId, 3, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "object-led-beta-v3" }), createdAt + 2),
       db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@4`, workspaceId, storedTemplateId, 4, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "deterministic-surfaces-and-contrast-v4" }), createdAt + 3),
       db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@5`, workspaceId, storedTemplateId, 5, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "responsive-headline-fit-v5" }), createdAt + 4),
+      ...(compositionId === "receipt" ? [
+        db.prepare("INSERT OR IGNORE INTO template_versions (id, workspace_id, template_id, version, renderer_key, config_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(`${storedTemplateId}@6`, workspaceId, storedTemplateId, 6, compositionId, JSON.stringify({ description: definition.purpose, composition: definition, designRevision: "unobscured-evidence-v6" }), createdAt + 5),
+      ] : []),
     ];
   });
   await db.batch([
@@ -465,12 +474,15 @@ export async function updateDraft(id: string, input: { value: unknown; createdBy
   await validatePayloadReferences(parsed.payload, workspaceId);
   const template = await getTemplateById(parsed.payload.templateId, workspaceId);
   if (!template) throw new Error("The selected template does not exist.");
+  const templateVersionId = parsed.payload.templateId === current.templateId && !parsed.upgradeTemplateVersion
+    ? physicalTemplateVersionId(workspaceId, current.templateVersionId)
+    : `${physicalId(workspaceId, template.id)}@${template.version}`;
   const revision = current.currentRevision + 1;
   const now = Date.now();
   const actor = input.createdBy ?? "human:workspace";
   const db = database();
   await db.batch([
-    db.prepare("INSERT INTO draft_revisions (id, workspace_id, draft_id, revision, template_version_id, format, content_json, prompt, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(`${id}@${revision}`, workspaceId, id, revision, `${physicalId(workspaceId, template.id)}@${template.version}`, parsed.payload.format, serializeDraftSnapshot(parsed.payload), parsed.prompt?.trim() || null, actor, now),
+    db.prepare("INSERT INTO draft_revisions (id, workspace_id, draft_id, revision, template_version_id, format, content_json, prompt, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(`${id}@${revision}`, workspaceId, id, revision, templateVersionId, parsed.payload.format, serializeDraftSnapshot(parsed.payload), parsed.prompt?.trim() || null, actor, now),
     db.prepare("UPDATE drafts SET brand_id = ?, template_id = ?, current_revision = ?, status = 'draft', updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(physicalId(workspaceId, parsed.payload.brandId), physicalId(workspaceId, parsed.payload.templateId), revision, now, id, workspaceId, current.currentRevision),
   ]);
   const record = await getDraftById(id, workspaceId);
@@ -619,17 +631,17 @@ export async function createRender(input: { payload: unknown; png?: ArrayBuffer;
   const dimensions = formats[payload.format];
 
   const now = Date.now();
-  const postId = input.postId ?? crypto.randomUUID();
   const renderId = crypto.randomUUID();
   const assetKey = `workspaces/${workspaceId}/renders/${renderId}.png`;
   const db = database();
+  let postId = input.postId ?? crypto.randomUUID();
+  let createPostForRender = !input.postId;
   const currentTemplate = await getTemplateById(payload.templateId, workspaceId);
   const logicalTemplateVersionId = input.templateVersionId ?? (currentTemplate ? `${currentTemplate.id}@${currentTemplate.version}` : null);
   if (!logicalTemplateVersionId) throw new Error("The selected template version does not exist.");
   const templateVersion = await getTemplateVersionById(logicalTemplateVersionId, workspaceId);
   if (!templateVersion || templateVersion.id !== payload.templateId) throw new Error("The pinned template version does not belong to the render payload.");
-  const separator = logicalTemplateVersionId.lastIndexOf("@");
-  const templateVersionId = `${physicalId(workspaceId, logicalTemplateVersionId.slice(0, separator))}${logicalTemplateVersionId.slice(separator)}`;
+  const templateVersionId = physicalTemplateVersionId(workspaceId, logicalTemplateVersionId);
   let draftForRender: DraftRecord | null = null;
   let png = input.png;
   if (input.draftRevisionId) {
@@ -651,6 +663,13 @@ export async function createRender(input: { payload: unknown; png?: ArrayBuffer;
     png = await storedArtifact.arrayBuffer();
     validatePng(png, dimensions.width, dimensions.height);
     if (await sha256Hex(png) !== reviewArtifact.sha256) throw new Error("The approved review artifact failed its SHA-256 integrity check.");
+    if (!input.postId) {
+      const existingRender = await db.prepare("SELECT post_id FROM renders WHERE draft_revision_id = ? AND workspace_id = ? ORDER BY created_at DESC LIMIT 1").bind(input.draftRevisionId, workspaceId).first<{ post_id: string }>();
+      if (existingRender) {
+        postId = existingRender.post_id;
+        createPostForRender = false;
+      }
+    }
   }
   if (!png) throw new Error("A PNG is required when rendering without an approved draft review artifact.");
   validatePng(png, dimensions.width, dimensions.height);
@@ -670,7 +689,7 @@ export async function createRender(input: { payload: unknown; png?: ArrayBuffer;
     const statements = [
       db.prepare("INSERT INTO renders (id, workspace_id, post_id, draft_revision_id, template_version_id, parent_render_id, asset_key, asset_content_type, width, height, input_snapshot_json, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(renderId, workspaceId, postId, input.draftRevisionId ?? null, templateVersionId, input.parentRenderId ?? null, assetKey, "image/png", dimensions.width, dimensions.height, JSON.stringify(payload), sha256, now),
     ];
-    if (!input.postId) {
+    if (createPostForRender) {
       statements.unshift(db.prepare("INSERT INTO posts (id, workspace_id, brand_id, template_id, prompt, content_json, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(postId, workspaceId, physicalId(workspaceId, payload.brandId), physicalId(workspaceId, payload.templateId), null, JSON.stringify({ format: payload.format, content: payload.content, ...(payload.layout ? { layout: payload.layout } : {}) }), input.createdBy ?? "human:workspace", now));
     }
     if (draftForRender) statements.push(db.prepare("UPDATE drafts SET status = 'rendered', updated_at = ? WHERE id = ? AND workspace_id = ? AND current_revision = ?").bind(now, draftForRender.id, workspaceId, draftForRender.currentRevision));

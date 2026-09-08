@@ -18,15 +18,18 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["canvnah_list_brands", "canvnah_create_brand", "canvnah_list_templates", "canvnah_create_template", "canvnah_review_template", "canvnah_create_post", "canvnah_list_posts", "canvnah_render_post", "canvnah_list_renders", "canvnah_get_render", "canvnah_rerender"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
-  for (const tool of ["nocanva_get_brand", "nocanva_list_templates", "nocanva_list_compositions", "nocanva_list_drafts", "nocanva_get_draft", "nocanva_create_draft", "nocanva_update_draft", "nocanva_review_draft", "nocanva_approve_draft", "nocanva_archive_draft", "nocanva_render", "nocanva_get_render"]) {
+  for (const tool of ["nocanva_get_brand", "nocanva_list_templates", "nocanva_list_compositions", "nocanva_list_drafts", "nocanva_get_draft", "nocanva_create_draft", "nocanva_update_draft", "nocanva_review_draft", "nocanva_approve_draft", "nocanva_archive_draft", "nocanva_render", "nocanva_list_renders", "nocanva_get_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
   for (const tool of ["nocanva_list_carousels", "nocanva_get_carousel", "nocanva_create_carousel", "nocanva_update_carousel", "nocanva_review_carousel", "nocanva_approve_carousel", "nocanva_archive_carousel", "nocanva_render_carousel", "nocanva_get_carousel_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
-  for (const tool of ["nocanva_list_assets", "nocanva_upload_asset"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
+  for (const tool of ["nocanva_list_assets", "nocanva_get_asset", "nocanva_upload_asset"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
+  assert.match(client, /failed its SHA-256 integrity check/);
   assert.match(nodeRenderer, /chromium\.launch/);
   assert.match(client, /Repeated PNG hashes match/);
+  assert.match(client, /No image is present; image checks are not applicable/);
+  assert.match(client, /upgradeTemplateVersion/);
   assert.match(client, /Structured sections do not overlap/);
   assert.match(client, /NOCANVA_ALLOW_REMOTE_APP_URL/);
   assert.match(client, /non-loopback NoCanva application URL/);

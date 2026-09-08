@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { defaultPostPayload, draftLayoutSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema } from "../lib/media.ts";
-import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, rankVisualDirections, recentCompositionWarnings, visualDirections, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions.ts";
+import { defaultPostPayload, draftLayoutSchema, draftUpdateInputSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema, templates } from "../lib/media.ts";
+import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, nextVisualDirection, rankVisualDirections, recentCompositionWarnings, visualDirections, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
   assert.deepEqual(parsePostPayload(defaultPostPayload), defaultPostPayload);
@@ -35,6 +35,13 @@ test("accepts bounded semantic draft layout refinements and rejects freeform dri
   assert.throws(() => parsePostPayload({ ...defaultPostPayload, layout: { ...layout, x: 120 } }));
 });
 
+test("preserves template pins unless a revision explicitly upgrades", () => {
+  const base = { expectedRevision: 2, payload: defaultPostPayload };
+  assert.equal(draftUpdateInputSchema.parse(base).upgradeTemplateVersion, false);
+  assert.equal(draftUpdateInputSchema.parse({ ...base, upgradeTemplateVersion: true }).upgradeTemplateVersion, true);
+  assert.equal(templates.receipt.version, 6);
+});
+
 test("exposes six semantic compositions and the fixed visual review rubric", () => {
   assert.deepEqual(Object.keys(compositions), ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
   assert.equal(compositionFromTemplateId("real-but"), "real_but");
@@ -51,6 +58,9 @@ test("routes semantic content into distinct compatible visual directions", () =>
     { visualDirection: "monument" }, { visualDirection: "bulletin" }, { visualDirection: "field_notes" },
   ] });
   assert.equal(rerouted[0].id, "editorial");
+  assert.equal(nextVisualDirection({ compositionId: "claim", content: { headline: "One precise claim" } }, "monument"), "bulletin");
+  assert.equal(nextVisualDirection({ compositionId: "product", content: { headline: "Public links open a cited report", image: {} } }, "interface"), "documentary");
+  assert.equal(nextVisualDirection({ compositionId: "product", content: { headline: "Public links open a cited report" } }, "editorial"), "bulletin");
   assert.doesNotThrow(() => parsePostPayload({ ...defaultPostPayload, content: { ...defaultPostPayload.content, visualDirection: "bulletin" } }));
   assert.throws(() => parsePostPayload({ ...defaultPostPayload, content: { ...defaultPostPayload.content, visualDirection: "random" } }));
 });

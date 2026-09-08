@@ -157,8 +157,9 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
   });
   const mediaIssues = mediaTreatmentIssues(root);
+  const mediaPresent = Boolean(root.querySelector("[data-image-role]"));
   const collisions = countLayoutCollisions(root);
-  const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support']")).filter((region) => {
+  const lowContrastText = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support'], [data-render-region='evidence'] > span, [data-render-region='evidence'] > strong, [data-render-region='evidence'] > p")).filter((region) => {
     const rect = region.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(region).visibility === "hidden") return false;
     const foreground = parseRgb(getComputedStyle(region).color);
@@ -174,7 +175,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "structure", label: "Brand structure", passed: collapsed.length === 0, detail: collapsed.length === 0 ? "Brand header and footer remain visible." : `${collapsed.length} structural region(s) collapsed under content pressure.` },
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
     { id: "readability", label: "Phone-size readability", passed: undersizedText.length === 0, detail: undersizedText.length === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${undersizedText.length} supporting, evidence, or action text region(s) are too small at phone size.` },
-    { id: "media", label: "Image prominence", passed: mediaIssues.length === 0, detail: mediaIssues.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : mediaIssues.join(" ") },
+    { id: "media", label: "Image prominence", passed: mediaIssues.length === 0, detail: !mediaPresent ? "No image is present; image checks are not applicable." : mediaIssues.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : mediaIssues.join(" ") },
     { id: "contrast", label: "Critical text contrast", passed: lowContrastText.length === 0, detail: lowContrastText.length === 0 ? "Every headline, eyebrow, and supporting region clears the visibility threshold." : `${lowContrastText.length} critical text region(s) fall below the 3:1 visibility threshold.` },
     { id: "fonts", label: "Font readiness", passed: true, detail: "Renderer fonts are loaded." },
   ];

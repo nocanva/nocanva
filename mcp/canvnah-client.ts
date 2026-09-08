@@ -4,6 +4,7 @@ import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
 export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; layout?: PosterLayout; contentSchema: unknown; createdAt: number };
 export type AssetResult = { id: string; name: string; mimeType: "image/png" | "image/jpeg"; width: number; height: number; sha256: string; archivedAt: number | null; createdBy: string; createdAt: number; contentUrl: string };
+export type AssetInspectionResult = AssetResult & { imageBase64: string };
 export type PostResult = { id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload; createdBy: string; createdAt: number };
 export type DraftResult = {
   id: string; brandId: string; brandName: string; templateId: string; templateName: string;
@@ -61,6 +62,7 @@ export type RenderCaptureOutput = {
   typographic: number;
   undersized: number;
   media: string[];
+  mediaPresent: boolean;
   contrast: number;
   templateVersion: string | null;
 };
@@ -113,6 +115,16 @@ export class CanvnahClient {
     form.set("image", new Blob([copy.buffer], { type: mimeType }), name);
     const data = await this.request<{ asset: AssetResult }>("/api/assets", { method: "POST", body: form });
     return { ...data.asset, contentUrl: new URL(data.asset.contentUrl, `${this.baseUrl}/`).href };
+  }
+
+  async getAsset(id: string): Promise<AssetInspectionResult> {
+    const asset = (await this.listAssets()).find((item) => item.id === id);
+    if (!asset) throw new Error("Image not found.");
+    const response = await this.fetchResponse(`/api/assets/${encodeURIComponent(id)}/content`);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    if (sha256 !== asset.sha256) throw new Error("The immutable image failed its SHA-256 integrity check.");
+    return { ...asset, imageBase64: bytes.toString("base64") };
   }
 
   async getBrand(id: string): Promise<BrandResult> {
@@ -179,10 +191,10 @@ export class CanvnahClient {
     return this.presentDraft(data.draft);
   }
 
-  async updateDraft(id: string, expectedRevision: number, payloadValue: unknown, prompt?: string): Promise<DraftResult> {
+  async updateDraft(id: string, expectedRevision: number, payloadValue: unknown, prompt?: string, upgradeTemplateVersion = false): Promise<DraftResult> {
     const payload = postPayloadSchema.parse(payloadValue);
     const data = await this.request<{ draft: Omit<DraftResult, "workspaceUrl"> }>(`/api/drafts/${encodeURIComponent(id)}`, {
-      method: "PUT", headers: { "content-type": "application/json", "x-nocanva-created-by": "agent:mcp" }, body: JSON.stringify({ expectedRevision, payload, prompt }),
+      method: "PUT", headers: { "content-type": "application/json", "x-nocanva-created-by": "agent:mcp" }, body: JSON.stringify({ expectedRevision, payload, prompt, upgradeTemplateVersion }),
     });
     return this.presentDraft(data.draft);
   }
@@ -318,8 +330,7 @@ export class CanvnahClient {
 
   async rerender(renderId: string): Promise<RenderResult> {
     const parent = await this.getRender(renderId);
-    const post = await this.createPost(parent.payload, `Rerender of ${renderId}`);
-    return this.renderPayload(post.payload, post.id, parent.id, { templateVersionId: parent.templateVersionId });
+    return this.renderPayload(parent.payload, parent.postId, parent.id, { templateVersionId: parent.templateVersionId });
   }
 
   async reviewTemplate(payloadValue: unknown): Promise<ReviewResult> {
@@ -382,7 +393,7 @@ export class CanvnahClient {
       { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
       { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, token integrity, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
       { id: "readability", passed: capture.undersized === 0, detail: capture.undersized === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${capture.undersized} supporting, evidence, or action text region(s) are too small at phone size.` },
-      { id: "media", passed: capture.media.length === 0, detail: capture.media.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : capture.media.join(" ") },
+      { id: "media", passed: capture.media.length === 0, detail: !capture.mediaPresent ? "No image is present; image checks are not applicable." : capture.media.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : capture.media.join(" ") },
       { id: "contrast", passed: capture.contrast === 0, detail: capture.contrast === 0 ? "Every headline, eyebrow, and supporting region clears the visibility threshold." : `${capture.contrast} critical text region(s) fall below the 3:1 visibility threshold.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];
@@ -426,6 +437,13 @@ export class CanvnahClient {
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await this.fetchResponse(path, init);
+    const data = await response.json() as T & { error?: string };
+    if (!response.ok) throw new Error(data.error ?? `NoCanva returned HTTP ${response.status}.`);
+    return data;
+  }
+
+  private async fetchResponse(path: string, init?: RequestInit) {
     let response: Response;
     try {
       const requestHeaders = new Headers(init?.headers);
@@ -435,9 +453,11 @@ export class CanvnahClient {
     } catch (error) {
       throw new Error(`NoCanva is not reachable at ${this.baseUrl}. Start the local app before using its MCP tools.`, { cause: error });
     }
-    const data = await response.json() as T & { error?: string };
-    if (!response.ok) throw new Error(data.error ?? `NoCanva returned HTTP ${response.status}.`);
-    return data;
+    if (!response.ok) {
+      const data = await response.clone().json().catch(() => null) as { error?: string } | null;
+      throw new Error(data?.error ?? `NoCanva returned HTTP ${response.status}.`);
+    }
+    return response;
   }
 
   private trustedHeaders() {

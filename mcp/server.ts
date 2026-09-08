@@ -84,6 +84,22 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     annotations: { readOnlyHint: true },
   }, async () => result({ assets: await client.listAssets() }));
 
+  server.registerTool("nocanva_get_asset", {
+    title: "Inspect a NoCanva image",
+    description: "Read one immutable source image, verify its SHA-256, and attach the original bytes for visual comparison with a review render.",
+    inputSchema: z.object({ assetId: z.string().uuid() }),
+    annotations: { readOnlyHint: true },
+  }, async ({ assetId }) => {
+    const { imageBase64, ...asset } = await client.getAsset(assetId);
+    return {
+      content: [
+        { type: "text" as const, text: JSON.stringify({ asset }, null, 2) },
+        { type: "image" as const, data: imageBase64, mimeType: asset.mimeType },
+      ],
+      structuredContent: { asset },
+    };
+  });
+
   server.registerTool("nocanva_upload_asset", {
     title: "Upload a NoCanva image",
     description: "Upload a PNG or JPEG screenshot/photo into immutable workspace storage. Use the returned asset ID in structured content crop controls.",
@@ -145,13 +161,13 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   server.registerTool("nocanva_update_draft", {
     title: "Update NoCanva draft",
     description: "Create a new immutable draft revision. expectedRevision prevents overwriting newer human or agent edits. Retrieve the draft first and preserve its semantic layout unless intentionally changing it.",
-    inputSchema: draftPayloadInputSchema.safeExtend({ draftId: z.string().uuid(), expectedRevision: z.number().int().positive(), prompt: z.string().trim().max(500).optional() }),
+    inputSchema: draftPayloadInputSchema.safeExtend({ draftId: z.string().uuid(), expectedRevision: z.number().int().positive(), prompt: z.string().trim().max(500).optional(), upgradeTemplateVersion: z.boolean().default(false).describe("Explicitly pin this new revision to the template's latest version. Omit to preserve the current pin.") }),
     annotations: { destructiveHint: false, idempotentHint: false },
-  }, async ({ draftId, expectedRevision, prompt, ...input }) => {
+  }, async ({ draftId, expectedRevision, prompt, upgradeTemplateVersion, ...input }) => {
     const current = await client.getDraft(draftId);
     const recent = await recentCreativeWork(client, input.brandId, 20);
     const selected = input.content.visualDirection ?? current.payload.content.visualDirection ?? (input.compositionId ? chooseVisualDirection({ compositionId: input.compositionId, content: input.content, recent }) : undefined);
-    return result({ draft: await client.updateDraft(draftId, expectedRevision, resolveDraftPayload(input, selected), prompt) });
+    return result({ draft: await client.updateDraft(draftId, expectedRevision, resolveDraftPayload(input, selected), prompt, upgradeTemplateVersion) });
   });
 
   server.registerTool("nocanva_review_draft", {
@@ -195,6 +211,13 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     inputSchema: z.object({ draftId: z.string().uuid() }),
     annotations: { destructiveHint: false, idempotentHint: false },
   }, async ({ draftId }) => result({ render: await client.renderDraft(draftId) }));
+
+  server.registerTool("nocanva_list_renders", {
+    title: "List NoCanva renders",
+    description: "List recent immutable workspace renders with post, draft revision, parent render, template version, timestamps, hashes, and URLs.",
+    inputSchema: z.object({ limit: z.number().int().min(1).max(100).default(30) }),
+    annotations: { readOnlyHint: true },
+  }, async ({ limit }) => result({ renders: await client.listRenders(limit) }));
 
   server.registerTool("nocanva_get_render", {
     title: "Get NoCanva render",

@@ -38,7 +38,7 @@ export function Metric({ value, label }: { value?: string; label?: string }) {
 
 export function Evidence({ evidence }: { evidence?: PostContent["evidence"] }) {
   if (!evidence) return null;
-  return <aside className="composition-evidence" data-render-region="evidence"><span>Source</span><strong>{evidence.source}</strong><p>{evidence.detail}</p></aside>;
+  return <aside className="composition-evidence" data-layout-zone="evidence" data-render-region="evidence"><span>Source</span><strong>{evidence.source}</strong><p>{evidence.detail}</p></aside>;
 }
 
 export function ArtworkImage({ image, role = "image" }: { image: NonNullable<PostContent["image"]>; role?: "image" | "screenshot" | "evidence" }) {

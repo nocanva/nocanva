@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useRouter } from "next/navigation";
-import { Archive, Check, Download, ImagePlus, RotateCcw, Save, ScanSearch } from "lucide-react";
+import { Archive, Check, Download, ImagePlus, RefreshCw, RotateCcw, Save, ScanSearch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { draftLayoutSchema, formats, postPayloadSchema, type DraftLayout, type PostContent } from "../../../lib/media";
-import { compositionFromTemplateId } from "../../../lib/compositions";
+import { compositionFromTemplateId, nextVisualDirection, visualDirections, type RecentCreative } from "../../../lib/compositions";
 import type { BrandRecord, DraftRecord, DraftRevisionRecord, TemplateRecord } from "../../../lib/server/media-repository";
 import type { WorkspaceAsset } from "../../../lib/server/asset-repository";
 import { inspectRenderNode } from "../../../lib/render-checks";
@@ -16,7 +16,7 @@ import { AppShell } from "../../workspace-shell";
 import { WorkflowProgress } from "../../workflow-progress";
 import { PuckCompositionEditor } from "./puck-composition-editor";
 
-export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord }) {
+export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, brand, template, recentCreative }: { initialDraft: DraftRecord; initialRevisions: DraftRevisionRecord[]; initialAssets: WorkspaceAsset[]; brand: BrandRecord; template: TemplateRecord; recentCreative: RecentCreative[] }) {
   const router = useRouter();
   const [draft, setDraft] = useState(initialDraft);
   const [format, setFormat] = useState(initialDraft.payload.format);
@@ -38,6 +38,14 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
   const valid = postPayloadSchema.safeParse(payload).success;
   const savedPayload = { ...draft.payload, layout: draftLayoutSchema.parse(draft.payload.layout ?? {}) };
   const hasChanges = JSON.stringify({ payload, prompt }) !== JSON.stringify({ payload: savedPayload, prompt: draft.prompt ?? "" });
+
+  function tryAnotherDirection() {
+    if (!compositionId) return;
+    const current = content.visualDirection ?? "editorial";
+    const next = nextVisualDirection({ compositionId, content, recent: recentCreative }, current);
+    setCompositionContent({ ...content, visualDirection: next });
+    setNotice(`Previewing ${visualDirections[next].name}. Save to create a new revision.`);
+  }
 
   async function request(path: string, init: RequestInit) {
     const response = await fetch(path, init);
@@ -152,7 +160,7 @@ export function DraftWorkspace({ initialDraft, initialRevisions, initialAssets, 
       </fieldset>
       <div className="format-switch" aria-label="Draft format"><button className={format === "portrait" ? "active" : ""} onClick={() => setFormat("portrait")} type="button">4:5 portrait</button><button className={format === "square" ? "active" : ""} onClick={() => setFormat("square")} type="button">1:1 square</button></div>
       <Button className="workspace-save-button" disabled={busy || !valid || !hasChanges || Boolean(draft.archivedAt)} onClick={() => save()} size="lg" type="button"><Save />{busy ? "Working…" : hasChanges ? "Save as new revision" : "Revision saved"}</Button>
-      <dl className="draft-meta"><div><dt>Brand</dt><dd>{draft.brandName}</dd></div><div><dt>Direction</dt><dd>{(content.visualDirection ?? "editorial").replace("_", " ")}</dd></div><div><dt>Template</dt><dd>{draft.templateName} v{draft.templateVersion}</dd></div><div><dt>Created by</dt><dd>{draft.revisionCreatedBy}</dd></div><div><dt>Approval</dt><dd>{draft.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>
+      <dl className="draft-meta"><div><dt>Brand</dt><dd>{draft.brandName}</dd></div><div className="direction-meta"><dt>Direction</dt><dd>{visualDirections[content.visualDirection ?? "editorial"].name}</dd>{compositionId && <button disabled={busy || Boolean(draft.archivedAt)} onClick={tryAnotherDirection} type="button"><RefreshCw />Try another direction</button>}</div><div><dt>Template</dt><dd>{draft.templateName} v{draft.templateVersion}</dd></div><div><dt>Created by</dt><dd>{draft.revisionCreatedBy}</dd></div><div><dt>Approval</dt><dd>{draft.approvalPolicy === "human_required" ? "Human required" : "Agent allowed"}</dd></div></dl>
       <div className="revision-history"><p className="section-label">Revision history</p>{revisions.map((revision) => <div key={revision.id}><strong>v{revision.revision}</strong><span>{revision.createdBy}</span><time>{new Date(revision.createdAt).toISOString().replace("T", " ").slice(0, 16)} UTC</time></div>)}</div>
     </section><aside className="draft-preview-panel">
       <div className="canvas-stage"><PostArtwork payload={payload} brandConfig={brand.config} template={template} /></div>

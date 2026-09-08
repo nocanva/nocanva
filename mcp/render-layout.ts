@@ -80,7 +80,8 @@ export function inspectRenderLayout(root: Element) {
     const minimum = region.matches("[data-render-region='highlight'], [data-render-region='cta'], [data-render-region='evidence'] > span") ? minimumUtilitySize : minimumBodySize;
     return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
   }).length;
-  const media = Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]")).flatMap((figure) => {
+  const mediaElements = Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]"));
+  const media = mediaElements.flatMap((figure) => {
     const stage = figure.querySelector<HTMLElement>(".composition-image-stage");
     const image = figure.querySelector<HTMLImageElement>("img");
     if (!stage || !image?.naturalWidth || !image.naturalHeight) return ["An image could not be measured after loading."];
@@ -102,7 +103,7 @@ export function inspectRenderLayout(root: Element) {
     if (fit === "cover" && retained < .14 && !figure.querySelector(".asset-highlight")) issues.push(`${label} retains only ${Math.round(retained * 100)}% of the source without a highlighted focal region; reduce zoom or adjust the crop.`);
     return issues;
   });
-  const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support']")).filter((region) => {
+  const contrast = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline'], [data-render-region='eyebrow'], [data-render-region='support'], [data-render-region='evidence'] > span, [data-render-region='evidence'] > strong, [data-render-region='evidence'] > p")).filter((region) => {
     const rect = region.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0 || getComputedStyle(region).visibility === "hidden") return false;
     const foregroundValue = getComputedStyle(region).color;
@@ -136,5 +137,5 @@ export function inspectRenderLayout(root: Element) {
     const darker = Math.min(values[0], values[1]);
     return (lighter + .05) / (darker + .05) < 3;
   }).length;
-  return { outside, overflowing, collisions, collapsed, typographic, undersized, media, contrast };
+  return { outside, overflowing, collisions, collapsed, typographic, undersized, media, mediaPresent: mediaElements.length > 0, contrast };
 }

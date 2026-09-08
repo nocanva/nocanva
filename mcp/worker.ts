@@ -29,6 +29,7 @@ function applicationAuthHeaders(env: Env, init?: HeadersInit) {
 
 function isRenderProxyPath(pathname: string) {
   return pathname === "/render/preview"
+    || pathname.startsWith("/api/assets/")
     || pathname.startsWith("/assets/")
     || pathname.startsWith("/_next/")
     || pathname.startsWith("/_vinext/");
