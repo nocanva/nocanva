@@ -59,6 +59,7 @@ test("routes semantic content into distinct compatible visual directions", () =>
   ] });
   assert.equal(rerouted[0].id, "editorial");
   assert.equal(nextVisualDirection({ compositionId: "claim", content: { headline: "One precise claim" } }, "monument"), "bulletin");
+  assert.notEqual(chooseVisualDirection({ compositionId: "whats_missing", content: { headline: "The missing date", image: {} }, sequenceRole: "hook" }), "monument");
   assert.equal(nextVisualDirection({ compositionId: "product", content: { headline: "Public links open a cited report", image: {} } }, "interface"), "documentary");
   assert.equal(nextVisualDirection({ compositionId: "product", content: { headline: "Public links open a cited report" } }, "editorial"), "bulletin");
   assert.doesNotThrow(() => parsePostPayload({ ...defaultPostPayload, content: { ...defaultPostPayload.content, visualDirection: "bulletin" } }));
@@ -115,8 +116,8 @@ test("keeps the Blindspot benchmark and approved visual references measurable", 
     assert.equal(benchmarkCase.slides?.length ?? 1, task.slides ?? 1);
     assert.ok(benchmarkCase.evidence.length > 0);
   }
-  assert.equal(benchmark.success.publishableWithoutDesignEditsPercent, 70);
-  assert.equal(benchmark.success.medianHumanSecondsMaximum, 120);
+  assert.equal(benchmark.success.publishableWithoutDesignEditsPercent, 90);
+  assert.equal(benchmark.success.medianHumanSecondsMaximum, 60);
   assert.ok(references.references.length <= references.maximumApproved);
   if (references.references.length < references.minimumApproved) assert.match(references.status, /awaiting real Blindspot source material/);
   assert.equal(references.qaCandidates.length, 5);

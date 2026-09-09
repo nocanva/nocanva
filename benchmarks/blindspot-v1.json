@@ -1,6 +1,6 @@
 {
   "name": "Blindspot creative engine v1",
-  "success": { "publishableWithoutDesignEditsPercent": 70, "medianHumanSecondsMaximum": 120 },
+  "success": { "publishableWithoutDesignEditsPercent": 90, "medianHumanSecondsMaximum": 60 },
   "tasks": [
     { "id": "product-01", "category": "product", "brief": "Announce a new claim-context panel using a real product screenshot.", "composition": "product", "asset": "product screenshot", "format": "portrait" },
     { "id": "product-02", "category": "product", "brief": "Show the faster source-checking workflow with the result screen as hero.", "composition": "product", "asset": "product screenshot", "format": "square" },

@@ -12,7 +12,7 @@ export function imageFrameQuality(input: { naturalWidth: number; naturalHeight: 
   const visibleArea = Math.min(input.frameWidth, renderedWidth) * Math.min(input.frameHeight, renderedHeight);
   const coverage = visibleArea / (input.frameWidth * input.frameHeight);
   const retained = (input.frameWidth * input.frameHeight) / (renderedWidth * renderedHeight);
-  const minimumCoverage = input.role === "evidence" ? .55 : input.role === "screenshot" ? .5 : .4;
+  const minimumCoverage = input.role === "evidence" ? input.hasHighlight ? .4 : .55 : input.role === "screenshot" ? .5 : .4;
   const label = input.role === "image" ? "Image" : `${input.role} image`;
   const issues: string[] = [];
   if (input.fit === "contain" && coverage < minimumCoverage) issues.push(`${label} occupies ${Math.round(coverage * 100)}% of its frame; increase zoom or use a tighter crop.`);

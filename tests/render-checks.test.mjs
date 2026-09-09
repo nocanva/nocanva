@@ -8,6 +8,8 @@ test("flags weak evidence letterboxing and accepts a deliberate zoom", () => {
   assert.match(weak.issues[0], /occupies 31%/);
   const corrected = imageFrameQuality({ naturalWidth: 800, naturalHeight: 1600, frameWidth: 800, frameHeight: 500, zoom: 2, fit: "contain", role: "evidence", hasHighlight: false });
   assert.deepEqual(corrected.issues, []);
+  const annotated = imageFrameQuality({ naturalWidth: 800, naturalHeight: 1600, frameWidth: 800, frameHeight: 500, zoom: 1.3, fit: "contain", role: "evidence", hasHighlight: true });
+  assert.deepEqual(annotated.issues, []);
 });
 
 test("flags destructive cover crops unless a focal region is annotated", () => {

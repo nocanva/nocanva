@@ -125,6 +125,7 @@ export function rankVisualDirections({ compositionId, content, recent = [], sequ
   return visualDirectionSchema.options
     .filter((id) => visualDirections[id].compatibleCompositions.includes(compositionId))
     .filter((id) => !visualDirections[id].requiresImage || Boolean(content.image))
+    .filter((id) => !(compositionId === "whats_missing" && Boolean(content.image) && id === "monument"))
     .map((id) => {
       const reasons: string[] = [];
       const preference = preferredDirections[compositionId].indexOf(id);
