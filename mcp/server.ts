@@ -71,7 +71,7 @@ async function routeCarouselSlides(client: CanvnahClient, input: { brandId: stri
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.4.0-rc.3" },
+    { name: "nocanva", version: "0.4.0-rc.4" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -109,6 +109,21 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     inputSchema: z.object({ name: z.string().trim().min(1).max(120), mimeType: z.enum(["image/png", "image/jpeg"]), base64: z.string().min(4).max(1_000_000), expectedSha256: z.string().regex(/^[a-fA-F0-9]{64}$/).optional() }),
     annotations: { destructiveHint: false, idempotentHint: false },
   }, async ({ name, mimeType, base64, expectedSha256 }) => result({ asset: await client.uploadAsset(name, mimeType, base64, expectedSha256), integrity: exactStoredByteIntegrity }));
+
+  server.registerTool("nocanva_create_asset_upload", {
+    title: "Create a direct NoCanva image upload",
+    description: "Create a five-minute, workspace-scoped upload ticket bound to the file's exact MIME type, byte count, and SHA-256. Use the returned URL and headers with a terminal PUT so image bytes never pass through the model or MCP transport.",
+    inputSchema: z.object({
+      name: z.string().trim().min(1).max(120),
+      mimeType: z.enum(["image/png", "image/jpeg"]),
+      expectedSha256: z.string().regex(/^[a-fA-F0-9]{64}$/),
+      sizeBytes: z.number().int().min(1).max(750 * 1024),
+    }),
+    annotations: { destructiveHint: false, idempotentHint: false },
+  }, async ({ name, mimeType, expectedSha256, sizeBytes }) => result({
+    upload: await client.createAssetUploadSession(name, mimeType, expectedSha256, sizeBytes),
+    next: "From a terminal, PUT the unchanged local file with --data-binary, the returned Authorization and Content-Type headers, and the returned uploadUrl. Do not paste or base64-encode the file into the conversation.",
+  }));
 
   server.registerTool("nocanva_get_brand", {
     title: "Get NoCanva brand",

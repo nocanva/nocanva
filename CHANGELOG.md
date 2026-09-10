@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0-rc.4 — 2026-09-11
+
+- Added short-lived, workspace-scoped direct upload tickets bound to the source MIME type, byte count, and SHA-256 so repo agents can PUT local image bytes without routing them through a model or MCP payload.
+- Streamed direct upload bodies under the existing 750 KB limit and retained strict decode verification, exact-byte hashing, immutable storage, and SHA-based deduplication.
+- Documented commit-aware retries for dropped draft-review responses to avoid submitting a second review after the first call already committed.
+
 ## 0.4.0-rc.3 — 2026-09-11
 
 - Strictly decode JPEG pixels before upload so marker-valid but entropy-corrupt files fail loudly instead of rendering as distorted or blank screenshots.

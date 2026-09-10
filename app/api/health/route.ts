@@ -3,7 +3,7 @@ import { checkMediaHealth } from "@/lib/server/media-repository";
 export async function GET() {
   try {
     const dependencies = await checkMediaHealth();
-    return Response.json({ status: "ok", service: "nocanva", version: "0.4.0-rc.3", dependencies }, {
+    return Response.json({ status: "ok", service: "nocanva", version: "0.4.0-rc.4", dependencies }, {
       headers: { "cache-control": "no-store" },
     });
   } catch (error) {

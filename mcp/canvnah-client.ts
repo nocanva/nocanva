@@ -6,6 +6,10 @@ export type BrandResult = { id: string; name: string; config: BrandConfig; creat
 export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; layout?: PosterLayout; contentSchema: unknown; createdAt: number };
 export type AssetResult = { id: string; name: string; mimeType: "image/png" | "image/jpeg"; width: number; height: number; sha256: string; archivedAt: number | null; createdBy: string; createdAt: number; contentUrl: string };
 export type AssetInspectionResult = AssetResult & { imageBase64: string };
+export type AssetUploadSessionResult = {
+  uploadUrl: string; method: "PUT"; expiresAt: string; headers: { authorization: string; "content-type": "image/png" | "image/jpeg" };
+  expectedSha256: string; sizeBytes: number;
+};
 export type PostResult = { id: string; brandId: string; templateId: string; prompt: string | null; payload: PostPayload; createdBy: string; createdAt: number };
 export type DraftResult = {
   id: string; brandId: string; brandName: string; templateId: string; templateName: string;
@@ -112,7 +116,9 @@ export class CanvnahClient {
     if (!bytes.length || bytes.length > 750 * 1024) throw new Error("Decoded image must be between 1 byte and 750 KB. Compress large screenshots before upload.");
     const receivedSha256 = createHash("sha256").update(bytes).digest("hex");
     if (expectedSha256 && receivedSha256 !== expectedSha256.toLowerCase()) throw new Error(`The decoded MCP payload hash ${receivedSha256} does not match expectedSha256 ${expectedSha256.toLowerCase()}. The bytes changed before reaching NoCanva.`);
-    verifyImageDecodes(bytes, imageMetadata(bytes));
+    const metadata = imageMetadata(bytes);
+    if (metadata.mimeType !== mimeType) throw new Error(`The decoded MCP payload is ${metadata.mimeType}, not the declared ${mimeType}.`);
+    verifyImageDecodes(bytes, metadata);
     const form = new FormData();
     form.set("name", name);
     const copy = new Uint8Array(bytes.byteLength);
@@ -121,6 +127,15 @@ export class CanvnahClient {
     const data = await this.request<{ asset: AssetResult }>("/api/assets", { method: "POST", body: form });
     if (data.asset.sha256 !== receivedSha256) throw new Error("NoCanva stored bytes with a different SHA-256 than the decoded MCP payload.");
     return { ...data.asset, contentUrl: new URL(data.asset.contentUrl, `${this.baseUrl}/`).href };
+  }
+
+  async createAssetUploadSession(name: string, mimeType: "image/png" | "image/jpeg", expectedSha256: string, sizeBytes: number): Promise<AssetUploadSessionResult> {
+    const data = await this.request<{ upload: AssetUploadSessionResult }>("/api/assets/upload-session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, mimeType, expectedSha256, sizeBytes }),
+    });
+    return { ...data.upload, uploadUrl: new URL(data.upload.uploadUrl, `${this.baseUrl}/`).href };
   }
 
   async getAsset(id: string): Promise<AssetInspectionResult> {
