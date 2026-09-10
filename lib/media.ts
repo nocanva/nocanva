@@ -50,7 +50,7 @@ export const templates = {
   bloom: { id: "bloom", name: "Bloom card", description: "An illustrated card with a serif headline, leaf motifs and a channel footer.", version: 1 },
   claim: { id: "claim", name: compositions.claim.name, description: compositions.claim.purpose, version: 5 },
   "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 5 },
-  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 6 },
+  receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 7 },
   "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 5 },
   product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 6 },
   explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 5 },

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { brandConfigSchema, carouselCreateInputSchema, carouselUpdateInputSchema, formats, postPayloadSchema, renderFilename, templateCreateSchema, type BrandConfig, type PostContent, type PostPayload, type TemplateInput, type PosterLayout, type RendererKey } from "../lib/media";
+import { imageMetadata, verifyImageDecodes } from "../lib/image-metadata";
 
 export type BrandResult = { id: string; name: string; config: BrandConfig; createdAt: number };
 export type TemplateResult = { id: string; brandId: string; name: string; description: string; type: string; version: number; rendererKey: RendererKey; layout?: PosterLayout; contentSchema: unknown; createdAt: number };
@@ -106,15 +107,19 @@ export class CanvnahClient {
     return data.assets.map((asset) => ({ ...asset, contentUrl: new URL(asset.contentUrl, `${this.baseUrl}/`).href }));
   }
 
-  async uploadAsset(name: string, mimeType: "image/png" | "image/jpeg", base64: string): Promise<AssetResult> {
+  async uploadAsset(name: string, mimeType: "image/png" | "image/jpeg", base64: string, expectedSha256?: string): Promise<AssetResult> {
     const bytes = Buffer.from(base64, "base64");
     if (!bytes.length || bytes.length > 750 * 1024) throw new Error("Decoded image must be between 1 byte and 750 KB. Compress large screenshots before upload.");
+    const receivedSha256 = createHash("sha256").update(bytes).digest("hex");
+    if (expectedSha256 && receivedSha256 !== expectedSha256.toLowerCase()) throw new Error(`The decoded MCP payload hash ${receivedSha256} does not match expectedSha256 ${expectedSha256.toLowerCase()}. The bytes changed before reaching NoCanva.`);
+    verifyImageDecodes(bytes, imageMetadata(bytes));
     const form = new FormData();
     form.set("name", name);
     const copy = new Uint8Array(bytes.byteLength);
     copy.set(bytes);
     form.set("image", new Blob([copy.buffer], { type: mimeType }), name);
     const data = await this.request<{ asset: AssetResult }>("/api/assets", { method: "POST", body: form });
+    if (data.asset.sha256 !== receivedSha256) throw new Error("NoCanva stored bytes with a different SHA-256 than the decoded MCP payload.");
     return { ...data.asset, contentUrl: new URL(data.asset.contentUrl, `${this.baseUrl}/`).href };
   }
 
@@ -372,6 +377,7 @@ export class CanvnahClient {
     }
     const renderBaseUrl = this.context.renderBaseUrl?.replace(/\/$/, "") ?? this.baseUrl;
     const previewUrl = `${renderBaseUrl}/render/preview?${query.toString()}`;
+    const sourceMediaIssues = await this.sourceMediaIssues(payload);
     const capture = await this.context.render({
       previewUrl,
       width: dimensions.width,
@@ -394,7 +400,7 @@ export class CanvnahClient {
       { id: "structure", passed: capture.collapsed === 0 && capture.missing.length === 0, detail: capture.collapsed || capture.missing.length ? `${capture.collapsed} structural region(s) collapsed; missing or hidden required regions: ${capture.missing.join(", ") || "none"}.` : "Brand structure and every supplied semantic field remain visible." },
       { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, token integrity, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
       { id: "readability", passed: capture.undersized === 0, detail: capture.undersized === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${capture.undersized} supporting, evidence, or action text region(s) are too small at phone size.` },
-      { id: "media", passed: capture.media.length === 0, detail: !capture.mediaPresent ? "No image is present; image checks are not applicable." : capture.media.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : capture.media.join(" ") },
+      { id: "media", passed: sourceMediaIssues.length === 0 && capture.media.length === 0, detail: !capture.mediaPresent ? "No image is present; image checks are not applicable." : sourceMediaIssues.length === 0 && capture.media.length === 0 ? "Stored source integrity and rendered pixels pass verification; images use their frames without weak letterboxing or destructive cropping." : [...sourceMediaIssues, ...capture.media].join(" ") },
       { id: "contrast", passed: capture.contrast === 0, detail: capture.contrast === 0 ? "Every headline, eyebrow, and supporting region clears the visibility threshold." : `${capture.contrast} critical text region(s) fall below the 3:1 visibility threshold.` },
       { id: "determinism", passed: firstHash === secondHash, detail: firstHash === secondHash ? "Repeated PNG hashes match." : "Repeated PNG hashes differ." },
     ];
@@ -406,6 +412,18 @@ export class CanvnahClient {
         previewUrl,
       },
     };
+  }
+
+  private async sourceMediaIssues(payload: PostPayload) {
+    if (!payload.content.image) return [];
+    try {
+      const asset = await this.getAsset(payload.content.image.assetId);
+      const bytes = Buffer.from(asset.imageBase64, "base64");
+      verifyImageDecodes(bytes, imageMetadata(bytes));
+      return [];
+    } catch (error) {
+      return [`The immutable source image failed integrity verification: ${error instanceof Error ? error.message : "unknown image error"}`];
+    }
   }
 
   private presentRender(render: ApiRender): RenderResult {

@@ -1,3 +1,5 @@
+import { decode as decodeJpeg } from "jpeg-js";
+
 export type ImageMetadata = { mimeType: "image/png" | "image/jpeg"; width: number; height: number; extension: "png" | "jpg" };
 
 const jpegStartOfFrameMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
@@ -33,4 +35,15 @@ export function imageMetadata(bytes: Uint8Array): ImageMetadata {
     throw new Error("JPEG starts correctly but has no valid supported start-of-frame marker with dimensions.");
   }
   throw new Error("Upload bytes must be a valid PNG or JPEG (JPEG must begin with SOI and a valid marker sequence).");
+}
+
+export function verifyImageDecodes(bytes: Uint8Array, metadata = imageMetadata(bytes)) {
+  if (metadata.mimeType !== "image/jpeg") return metadata;
+  try {
+    const decoded = decodeJpeg(bytes, { useTArray: true, formatAsRGBA: false, tolerantDecoding: false, maxResolutionInMP: 12, maxMemoryUsageInMB: 64 });
+    if (decoded.width !== metadata.width || decoded.height !== metadata.height || decoded.data.length === 0) throw new Error("decoded dimensions do not match the JPEG frame");
+  } catch (error) {
+    throw new Error(`JPEG marker metadata is valid, but strict pixel decoding failed: ${error instanceof Error ? error.message : "unknown decoder error"}. Re-encode the source before upload.`);
+  }
+  return metadata;
 }

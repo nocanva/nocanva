@@ -36,6 +36,8 @@ try {
   const compactCompositionResult = structured(await client.callTool({ name: "nocanva_list_compositions", arguments: { brandId: "blindspot", candidate: "product", compact: true, recentLimit: 3 } }));
   assert.deepEqual(compactCompositionResult.compositions.map((composition) => composition.id), ["product"]);
   assert.deepEqual(compactCompositionResult.visualDirections, []);
+  const staleSchemaCompactResult = structured(await client.callTool({ name: "nocanva_list_compositions", arguments: { brandId: "blindspot", candidate: "product", compact: "true", recentLimit: 3 } }));
+  assert.deepEqual(staleSchemaCompactResult.compositions.map((composition) => composition.id), ["product"]);
   const renderListing = structured(await client.callTool({ name: "nocanva_list_renders", arguments: { limit: 3, brandId: "blindspot" } }));
   assert.equal(renderListing.feedPreview.grid, "3x3");
   assert.equal(renderListing.feedPreview.tiles.length, 9);

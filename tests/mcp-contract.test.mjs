@@ -42,7 +42,10 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(server, /Blindspot beta work requires a semantic compositionId/);
   assert.match(server, /Never use coordinates/);
   assert.match(server, /maxAgentIterations: 3/);
-  assert.match(server, /compact: z\.boolean/);
+  assert.match(server, /compact: z\.preprocess/);
+  assert.match(server, /expectedSha256/);
+  assert.match(server, /strict JPEG pixel decoding/);
+  assert.match(server, /exact_received_and_stored_bytes/);
   assert.match(server, /feedPreview/);
   assert.match(fixture, /Create a Sprout post from a verified product repository/);
   assert.match(draftFixture, /stale\.isError/);

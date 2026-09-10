@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/client";
@@ -22,8 +23,16 @@ try {
   const templates = structured(await client.callTool({ name: "nocanva_list_templates", arguments: { brandId: "blindspot" } }));
   assert.ok(templates.templates.some((template) => template.id === "product" && template.version === 6));
 
+  const validJpeg = await readFile(new URL("../benchmarks/assets/blindspot-DaSSoEnyxws-frame.jpg", import.meta.url));
+  const truncatedJpeg = validJpeg.subarray(0, Math.floor(validJpeg.length * .65));
+  const rejected = await client.callTool({ name: "nocanva_upload_asset", arguments: { name: "Corrupt JPEG rejection fixture", mimeType: "image/jpeg", base64: truncatedJpeg.toString("base64") } });
+  assert.equal(rejected.isError, true);
+  assert.match(rejected.content.find((item) => item.type === "text")?.text ?? "", /strict pixel decoding failed/);
+
   const bytes = await readFile(new URL("../benchmarks/assets/blindspot-home-product.png", import.meta.url));
-  const uploaded = structured(await client.callTool({ name: "nocanva_upload_asset", arguments: { name: "Product v6 screenshot fixture", mimeType: "image/png", base64: bytes.toString("base64") } }));
+  const expectedSha256 = createHash("sha256").update(bytes).digest("hex");
+  const uploaded = structured(await client.callTool({ name: "nocanva_upload_asset", arguments: { name: "Product v6 screenshot fixture", mimeType: "image/png", base64: bytes.toString("base64"), expectedSha256 } }));
+  assert.equal(uploaded.asset.sha256, expectedSha256);
   const created = structured(await client.callTool({ name: "nocanva_create_draft", arguments: {
     brandId: "blindspot", compositionId: "product", format: "portrait", prompt: "Verify transform-free screenshot rendering and a visible CTA.",
     content: {
