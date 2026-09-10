@@ -21,8 +21,8 @@
 - [x] Choose the public support/feedback channel and response owner.
 - [ ] Run a production dogfood pass with two unrelated Google accounts.
 - [x] Verify backups and complete one restore drill.
-- [ ] Make the GitHub repository public, enable private vulnerability reporting, and protect `main` with required CI.
-- [ ] Create the release tag and GitHub release notes after the final smoke test.
+- [x] Make the GitHub repository public, enable private vulnerability reporting, and protect `main` with required CI.
+- [x] Create the release tag and GitHub release notes after the final smoke test.
 
 A custom domain is intentionally not a beta blocker. Replace the two `workers.dev` origins together when a domain is ready; OAuth issuer, resource metadata, Google callback, and client documentation must stay consistent.
 
