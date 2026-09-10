@@ -107,13 +107,17 @@ function countLayoutCollisions(root: HTMLElement) {
 }
 
 function mediaTreatmentIssues(root: HTMLElement) {
+  const transformFree = root.dataset.transformFreeMedia === "true";
   return Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]")).flatMap((figure) => {
     const stage = figure.querySelector<HTMLElement>(".composition-image-stage");
     const image = figure.querySelector<HTMLImageElement>("img");
     if (!stage || !image?.naturalWidth || !image.naturalHeight) return ["An image could not be measured after loading."];
-    const frame = { width: stage.clientWidth, height: stage.clientHeight };
-    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
+    const stageTransform = getComputedStyle(stage).transform;
+    const imageTransform = getComputedStyle(image).transform;
+    if (transformFree && (stageTransform !== "none" || imageTransform !== "none")) return ["Screenshot pixels use a transform that can introduce raster distortion."];
     const zoom = Number(figure.dataset.imageZoom ?? 1);
+    const frame = { width: stage.clientWidth / (transformFree ? zoom : 1), height: stage.clientHeight / (transformFree ? zoom : 1) };
+    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
     const fit = figure.dataset.imageFit;
     const role = figure.dataset.imageRole ?? "image";
     return imageFrameQuality({ naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, frameWidth: frame.width, frameHeight: frame.height, zoom, fit: fit === "contain" ? "contain" : "cover", role, hasHighlight: Boolean(figure.querySelector(".asset-highlight")) }).issues;
@@ -139,6 +143,15 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     const rect = region.getBoundingClientRect();
     const role = region.getAttribute("data-render-region");
     return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
+  });
+  const requiredRegions = (root.dataset.requiredRegions ?? "").split(",").filter(Boolean);
+  const missingRegions = requiredRegions.filter((role) => {
+    const matches = Array.from(root.querySelectorAll<HTMLElement>(`[data-render-region='${role}']`));
+    return matches.length === 0 || matches.every((region) => {
+      const rect = region.getBoundingClientRect();
+      const style = getComputedStyle(region);
+      return rect.width <= 0 || rect.height <= 0 || style.display === "none" || style.visibility === "hidden" || Number.parseFloat(style.opacity) === 0;
+    });
   });
   const typographic = Array.from(root.querySelectorAll<HTMLElement>("[data-render-region='headline']")).filter((headline) => headlineTypographyFailure(headline, root));
   const minimumBodySize = rootRect.width * (21 / 1080);
@@ -172,7 +185,7 @@ export async function inspectRenderNode(root: HTMLElement): Promise<RenderCheck[
     { id: "bounds", label: "Safe canvas bounds", passed: outside.length === 0, detail: outside.length === 0 ? "Every region stays inside the canvas." : `${outside.length} region(s) leave the canvas.` },
     { id: "overflow", label: "Text overflow", passed: overflowing.length === 0, detail: overflowing.length === 0 ? "No text is clipped." : `${overflowing.length} region(s) are clipped.` },
     { id: "collision", label: "Section separation", passed: collisions === 0, detail: collisions === 0 ? "Structured sections do not overlap." : `${collisions} section pair(s) overlap.` },
-    { id: "structure", label: "Brand structure", passed: collapsed.length === 0, detail: collapsed.length === 0 ? "Brand header and footer remain visible." : `${collapsed.length} structural region(s) collapsed under content pressure.` },
+    { id: "structure", label: "Required structure", passed: collapsed.length === 0 && missingRegions.length === 0, detail: collapsed.length || missingRegions.length ? `${collapsed.length} structural region(s) collapsed; missing or hidden required regions: ${missingRegions.join(", ") || "none"}.` : "Brand structure and every supplied semantic field remain visible." },
     { id: "typography", label: "Headline composition", passed: typographic.length === 0, detail: typographic.length === 0 ? "Headline measure, line count, tokens, and final-line balance remain readable." : `${typographic.length} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
     { id: "readability", label: "Phone-size readability", passed: undersizedText.length === 0, detail: undersizedText.length === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${undersizedText.length} supporting, evidence, or action text region(s) are too small at phone size.` },
     { id: "media", label: "Image prominence", passed: mediaIssues.length === 0, detail: !mediaPresent ? "No image is present; image checks are not applicable." : mediaIssues.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : mediaIssues.join(" ") },

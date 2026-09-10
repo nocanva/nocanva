@@ -59,6 +59,7 @@ export type RenderCaptureOutput = {
   overflowing: number;
   collisions: number;
   collapsed: number;
+  missing: string[];
   typographic: number;
   undersized: number;
   media: string[];
@@ -390,7 +391,7 @@ export class CanvnahClient {
       { id: "bounds", passed: capture.outside === 0, detail: capture.outside === 0 ? "Every region stays inside the canvas." : `${capture.outside} region(s) leave the canvas.` },
       { id: "overflow", passed: capture.overflowing === 0, detail: capture.overflowing === 0 ? "No text is clipped." : `${capture.overflowing} region(s) are clipped.` },
       { id: "collision", passed: capture.collisions === 0, detail: capture.collisions === 0 ? "Structured sections do not overlap." : `${capture.collisions} section pair(s) overlap.` },
-      { id: "structure", passed: capture.collapsed === 0, detail: capture.collapsed === 0 ? "Brand header and footer remain visible." : `${capture.collapsed} structural region(s) collapsed under content pressure.` },
+      { id: "structure", passed: capture.collapsed === 0 && capture.missing.length === 0, detail: capture.collapsed || capture.missing.length ? `${capture.collapsed} structural region(s) collapsed; missing or hidden required regions: ${capture.missing.join(", ") || "none"}.` : "Brand structure and every supplied semantic field remain visible." },
       { id: "typography", passed: capture.typographic === 0, detail: capture.typographic === 0 ? "Headline width, line count, token integrity, and final-line balance are readable." : `${capture.typographic} headline(s) have a narrow measure, excessive lines, a split token, or an orphaned final fragment.` },
       { id: "readability", passed: capture.undersized === 0, detail: capture.undersized === 0 ? "Supporting, evidence, and action text clears the phone-size floor." : `${capture.undersized} supporting, evidence, or action text region(s) are too small at phone size.` },
       { id: "media", passed: capture.media.length === 0, detail: !capture.mediaPresent ? "No image is present; image checks are not applicable." : capture.media.length === 0 ? "Images use their frames without weak letterboxing or destructive cropping." : capture.media.join(" ") },

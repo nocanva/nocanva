@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.4.0-rc.2 — 2026-09-10
 
 - Added open Google authentication with one isolated personal workspace per user.
 - Added standards-based remote MCP OAuth with PKCE, dynamic client registration, consent, refresh-token rotation, and audience-bound access tokens.
 - Verified hosted OAuth end to end with Codex and Claude Code.
 - Added Google-authenticated UI routes, human-only hosted approval, privacy, terms, and developer connection guidance.
 - Reworked the hosted workspace, dark mode, and Blindspot composition system for beta-quality review and editing.
+- Added product@6 with transform-free screenshot zooming and a visible CTA while preserving product@5 render hashes.
+- Made review fail when supplied semantic blocks are missing or hidden, and when product screenshots regain transform-based raster distortion.
+- Accepted valid JPEG marker sequences including SOI + COM and returned precise invalid-marker errors.
+- Added compact composition responses and a nine-position newest-per-lineage feed preview to the MCP surface.
 
 ## 0.4.0-rc.1 — 2026-08-20
 

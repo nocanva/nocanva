@@ -288,6 +288,15 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
   const safeArea = mode === "export" ? `${brandConfig.safeArea}px` : `${brandConfig.safeArea / 10.8}%`;
   const contentOffset = draftLayout.compositionPosition === "raised" ? (mode === "export" ? -36 : -14) : draftLayout.compositionPosition === "lowered" ? (mode === "export" ? 36 : 14) : 0;
   const supportOffset = draftLayout.supportPosition === "raised" ? (mode === "export" ? -36 : -14) : draftLayout.supportPosition === "lowered" ? (mode === "export" ? 36 : 14) : 0;
+  const requiredRegions = [
+    "brand-header", "brand-footer", "headline", "eyebrow", "support",
+    ...(content.cta ? ["cta"] : []),
+    ...(content.highlight ? ["highlight"] : []),
+    ...(content.metric ? ["metric"] : []),
+    ...(content.evidence ? ["evidence"] : []),
+    ...(content.image ? ["media"] : []),
+    ...(content.steps?.length ? ["step"] : []),
+  ];
   const style = {
     ...resolvedSurface,
     padding: safeArea,
@@ -314,6 +323,8 @@ export const PostArtwork = forwardRef<HTMLElement, PostArtworkProps>(function Po
       style={style}
       data-render-root
       data-template-version={`${resolvedTemplate.id}@${resolvedTemplate.version}`}
+      data-required-regions={requiredRegions.join(",")}
+      data-transform-free-media={resolvedTemplate.rendererKey === "product" && resolvedTemplate.version >= 6 ? "true" : undefined}
       data-carousel-role={sequenceRole}
       data-visual-direction={visualDirection}
       aria-label={`Rendered ${brandConfig.name} post`}

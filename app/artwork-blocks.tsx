@@ -46,7 +46,13 @@ export function ArtworkImage({ image, role = "image" }: { image: NonNullable<Pos
     objectFit: image.fit,
     objectPosition: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
   } as CSSProperties;
-  const stageStyle = { transform: `scale(${image.zoom})`, transformOrigin: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%` } as CSSProperties;
+  const stageStyle = {
+    transform: `scale(${image.zoom})`,
+    transformOrigin: `${image.focalPoint.x * 100}% ${image.focalPoint.y * 100}%`,
+    "--image-stage-size": `${image.zoom * 100}%`,
+    "--image-stage-left": `${(1 - image.zoom) * image.focalPoint.x * 100}%`,
+    "--image-stage-top": `${(1 - image.zoom) * image.focalPoint.y * 100}%`,
+  } as CSSProperties;
   const frame = image.frame ?? (role === "screenshot" ? "browser" : "none");
   return <figure className={`composition-image ${role} frame-${frame}`} data-image-fit={image.fit} data-image-role={role} data-image-zoom={image.zoom} data-layout-zone="media" data-render-region="media">
     {frame === "browser" && <div className="browser-bar" aria-hidden><i /><i /><i /><span>verified source</span></div>}

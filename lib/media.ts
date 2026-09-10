@@ -52,7 +52,7 @@ export const templates = {
   "real-but": { id: "real-but", name: compositions.real_but.name, description: compositions.real_but.purpose, version: 5 },
   receipt: { id: "receipt", name: compositions.receipt.name, description: compositions.receipt.purpose, version: 6 },
   "whats-missing": { id: "whats-missing", name: compositions.whats_missing.name, description: compositions.whats_missing.purpose, version: 5 },
-  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 5 },
+  product: { id: "product", name: compositions.product.name, description: compositions.product.purpose, version: 6 },
   explainer: { id: "explainer", name: compositions.explainer.name, description: compositions.explainer.purpose, version: 5 },
 } as const;
 

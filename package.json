@@ -1,6 +1,6 @@
 {
   "name": "nocanva",
-  "version": "0.4.0-rc.1",
+  "version": "0.4.0-rc.2",
   "description": "Deterministic, agent-native workspace for brand-ready media.",
   "private": true,
   "license": "MIT",
@@ -42,6 +42,7 @@
     "mcp:draft-fixture": "node scripts/test-draft-lifecycle.mjs",
     "mcp:carousel-fixture": "node scripts/test-carousel-lifecycle.mjs",
     "mcp:receipt-fixture": "node scripts/test-receipt-layout.mjs",
+    "mcp:product-fixture": "node scripts/test-product-layout.mjs",
     "mcp:http-fixture": "node scripts/test-http-mcp.mjs",
     "mcp:hosted-fixture": "node scripts/test-hosted-launch.mjs",
     "connect": "node scripts/connect-agent.mjs",
