@@ -56,6 +56,11 @@ The client refreshes credentials automatically. Signing in again is normally req
 
 The Google identity determines both `user_id` and the user's personal `workspace_id`. MCP tools and the UI therefore read and update the same workspace. Hosted final approval remains human-only.
 
+For repeat checks, call `nocanva_list_compositions` with `compact: true` and a
+`candidate` to get live diversity guidance without retransmitting the full
+catalog. `nocanva_list_renders` also returns `feedPreview.tiles`: exactly nine
+newest-per-lineage grid positions, with `null` for empty positions.
+
 ## CI and headless clients
 
 OAuth is preferred for interactive clients. For CI:

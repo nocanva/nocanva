@@ -17,6 +17,15 @@ export function inspectRenderLayout(root: Element) {
     const role = region.getAttribute("data-render-region");
     return (role === "brand-header" || role === "brand-footer") && rect.height < rootRect.height * 0.01;
   }).length;
+  const requiredRegions = ((root as HTMLElement).dataset.requiredRegions ?? "").split(",").filter(Boolean);
+  const missing = requiredRegions.filter((role) => {
+    const matches = Array.from(root.querySelectorAll<HTMLElement>(`[data-render-region='${role}']`));
+    return matches.length === 0 || matches.every((region) => {
+      const rect = region.getBoundingClientRect();
+      const style = getComputedStyle(region);
+      return rect.width <= 0 || rect.height <= 0 || style.display === "none" || style.visibility === "hidden" || Number.parseFloat(style.opacity) === 0;
+    });
+  });
   const zones = Array.from(root.querySelectorAll<HTMLElement>("[data-layout-zone]")).filter((zone) => !zone.querySelector("[data-layout-zone]"));
   let collisions = 0;
   for (let index = 0; index < zones.length; index += 1) {
@@ -81,13 +90,17 @@ export function inspectRenderLayout(root: Element) {
     return Number.parseFloat(getComputedStyle(region).fontSize) < minimum - .1;
   }).length;
   const mediaElements = Array.from(root.querySelectorAll<HTMLElement>("[data-image-role]"));
+  const transformFree = (root as HTMLElement).dataset.transformFreeMedia === "true";
   const media = mediaElements.flatMap((figure) => {
     const stage = figure.querySelector<HTMLElement>(".composition-image-stage");
     const image = figure.querySelector<HTMLImageElement>("img");
     if (!stage || !image?.naturalWidth || !image.naturalHeight) return ["An image could not be measured after loading."];
-    const frame = { width: stage.clientWidth, height: stage.clientHeight };
-    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
+    const stageTransform = getComputedStyle(stage).transform;
+    const imageTransform = getComputedStyle(image).transform;
+    if (transformFree && (stageTransform !== "none" || imageTransform !== "none")) return ["Screenshot pixels use a transform that can introduce raster distortion."];
     const zoom = Number(figure.dataset.imageZoom ?? 1);
+    const frame = { width: stage.clientWidth / (transformFree ? zoom : 1), height: stage.clientHeight / (transformFree ? zoom : 1) };
+    if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];
     const fit = figure.dataset.imageFit;
     const role = figure.dataset.imageRole ?? "image";
     const baseScale = fit === "contain" ? Math.min(frame.width / image.naturalWidth, frame.height / image.naturalHeight) : Math.max(frame.width / image.naturalWidth, frame.height / image.naturalHeight);
@@ -137,5 +150,5 @@ export function inspectRenderLayout(root: Element) {
     const darker = Math.min(values[0], values[1]);
     return (lighter + .05) / (darker + .05) < 3;
   }).length;
-  return { outside, overflowing, collisions, collapsed, typographic, undersized, media, mediaPresent: mediaElements.length > 0, contrast };
+  return { outside, overflowing, collisions, collapsed, missing, typographic, undersized, media, mediaPresent: mediaElements.length > 0, contrast };
 }

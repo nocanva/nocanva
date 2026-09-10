@@ -3,6 +3,7 @@ import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
 import { brandConfigSchema, draftLayoutSchema, postContentSchema, templateInputSchema } from "../lib/media";
 import { carouselSequenceRole, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, rankVisualDirections, recentCompositionWarnings, visualDirections, visualDirectionSchema, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions";
+import { latestFeedRenders } from "../lib/feed-preview";
 
 const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
 const draftPayloadInputSchema = z.object({
@@ -68,7 +69,7 @@ async function routeCarouselSlides(client: CanvnahClient, input: { brandId: stri
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.4.0-rc.1" },
+    { name: "nocanva", version: "0.4.0-rc.2" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -124,11 +125,11 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   server.registerTool("nocanva_list_compositions", {
     title: "List approved NoCanva compositions",
     description: "List Blindspot's six semantic composition families plus one compact diversity recommendation based on recent drafts and carousels. Choose by story purpose, not coordinates.",
-    inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), candidateDirection: visualDirectionSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20) }),
+    inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), candidateDirection: visualDirectionSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20), compact: z.boolean().default(false).describe("Return dynamic guidance plus only the selected catalog entries, reducing repeated tool output.") }),
     annotations: { readOnlyHint: true },
-  }, async ({ brandId, candidate, candidateDirection, recentLimit }) => {
+  }, async ({ brandId, candidate, candidateDirection, recentLimit, compact }) => {
     const recent = await recentCreativeWork(client, brandId, recentLimit);
-    return result({ brandId, compositions: Object.values(compositions), visualDirections: Object.values(visualDirections), recent, diversity: compositionDiversityGuidance(recent), warnings: recentCompositionWarnings(recent, candidate, candidateDirection) });
+    return result({ brandId, compositions: compact ? candidate ? [compositions[candidate]] : [] : Object.values(compositions), visualDirections: compact ? candidateDirection ? [visualDirections[candidateDirection]] : [] : Object.values(visualDirections), recent, diversity: compositionDiversityGuidance(recent), warnings: recentCompositionWarnings(recent, candidate, candidateDirection), compact });
   });
 
   server.registerTool("nocanva_list_drafts", {
@@ -215,9 +216,14 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   server.registerTool("nocanva_list_renders", {
     title: "List NoCanva renders",
     description: "List recent immutable workspace renders with post, draft revision, parent render, template version, timestamps, hashes, and URLs.",
-    inputSchema: z.object({ limit: z.number().int().min(1).max(100).default(30) }),
+    inputSchema: z.object({ limit: z.number().int().min(1).max(100).default(30), brandId: z.string().optional() }),
     annotations: { readOnlyHint: true },
-  }, async ({ limit }) => result({ renders: await client.listRenders(limit) }));
+  }, async ({ limit, brandId }) => {
+    const all = await client.listRenders(100);
+    const visible = brandId ? all.filter((render) => render.payload.brandId === brandId) : all;
+    const feed = latestFeedRenders(visible, 9).map((render) => ({ id: render.id, postId: render.postId, draftRevisionId: render.draftRevisionId, parentRenderId: render.parentRenderId, headline: render.payload.content.headline, visualDirection: render.payload.content.visualDirection ?? "editorial", assetUrl: render.assetUrl, workspaceUrl: render.workspaceUrl, createdAt: render.createdAt }));
+    return result({ renders: visible.slice(0, limit), feedPreview: { grid: "3x3", tiles: Array.from({ length: 9 }, (_, index) => feed[index] ?? null), populated: feed.length } });
+  });
 
   server.registerTool("nocanva_get_render", {
     title: "Get NoCanva render",

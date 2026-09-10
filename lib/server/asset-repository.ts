@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import type { PostContent } from "../media";
+import { imageMetadata } from "../image-metadata";
 import { ensureMediaDatabase } from "./media-repository";
 
 type D1Row = Record<string, unknown>;
@@ -34,29 +35,6 @@ function mapAsset(row: D1Row): WorkspaceAsset {
     createdAt: Number(row.created_at),
     contentUrl: `/api/assets/${id}/content`,
   };
-}
-
-function imageMetadata(bytes: Uint8Array): { mimeType: "image/png" | "image/jpeg"; width: number; height: number; extension: "png" | "jpg" } {
-  if (bytes.length >= 24 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    return { mimeType: "image/png", width: view.getUint32(16), height: view.getUint32(20), extension: "png" };
-  }
-  if (bytes.length >= 4 && bytes[0] === 0xff && bytes[1] === 0xd8) {
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    let offset = 2;
-    while (offset + 9 < bytes.length) {
-      if (bytes[offset] !== 0xff) { offset += 1; continue; }
-      const marker = bytes[offset + 1];
-      if (marker === 0xd8 || marker === 0xd9) { offset += 2; continue; }
-      const length = view.getUint16(offset + 2);
-      if (length < 2 || offset + 2 + length > bytes.length) break;
-      if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker)) {
-        return { mimeType: "image/jpeg", height: view.getUint16(offset + 5), width: view.getUint16(offset + 7), extension: "jpg" };
-      }
-      offset += 2 + length;
-    }
-  }
-  throw new Error("Upload a valid PNG or JPEG image.");
 }
 
 function validateDimensions(width: number, height: number) {
