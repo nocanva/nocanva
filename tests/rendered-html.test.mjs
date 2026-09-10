@@ -163,6 +163,7 @@ test("creative engine separates story compositions from visual directions", asyn
   for (const direction of ["bulletin", "documentary", "field_notes", "monument", "interface"]) assert.match(css, new RegExp(`direction-${direction}`));
   assert.match(css, /template-version-6\.direction-documentary\.receipt/);
   assert.match(css, /template-version-6\.direction-interface\.receipt/);
+  assert.match(css, /template-version-7\.direction-interface\.receipt/);
   assert.match(css, /template-version-6\.direction-interface\.product/);
   assert.match(css, /template-version-6\.product \.composition-image-stage/);
   assert.match(server, /creativeDirection/);

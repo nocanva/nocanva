@@ -296,7 +296,7 @@
         "highlight": "WORDS SET THE BOUNDARY",
         "evidence": { "source": "Ministry of Cooperation annexure · Mar 2025", "detail": "The page says CSM ethanol plants are 'not able to operate them at full capacity round the year.'" },
         "backgroundStyle": "paper_grid",
-        "image": { "alt": "Official document sentence about cooperative ethanol plants not operating at full capacity year-round", "fit": "contain", "focalPoint": { "x": 0.5, "y": 0.28 }, "zoom": 3, "frame": "browser", "highlightRegions": [{ "x": 0.08, "y": 0.12, "width": 0.84, "height": 0.36, "label": "Decisive sentence" }] }
+        "image": { "alt": "Official document sentence about cooperative ethanol plants not operating at full capacity year-round", "fit": "cover", "focalPoint": { "x": 0.5, "y": 0.28 }, "zoom": 3, "frame": "browser", "highlightRegions": [{ "x": 0.08, "y": 0.12, "width": 0.84, "height": 0.36, "label": "Decisive sentence" }] }
       }
     },
     {

@@ -98,6 +98,27 @@ export function inspectRenderLayout(root: Element) {
     const stageTransform = getComputedStyle(stage).transform;
     const imageTransform = getComputedStyle(image).transform;
     if (transformFree && (stageTransform !== "none" || imageTransform !== "none")) return ["Screenshot pixels use a transform that can introduce raster distortion."];
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 32;
+      canvas.height = 32;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return ["Image pixels could not be inspected."];
+      context.drawImage(image, 0, 0, 32, 32);
+      const pixels = context.getImageData(0, 0, 32, 32).data;
+      const buckets = new Map<number, number>();
+      let visible = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index + 3] < 16) continue;
+        visible += 1;
+        const bucket = (pixels[index] >> 4) << 8 | (pixels[index + 1] >> 4) << 4 | (pixels[index + 2] >> 4);
+        buckets.set(bucket, (buckets.get(bucket) ?? 0) + 1);
+      }
+      const dominant = Math.max(0, ...buckets.values()) / Math.max(visible, 1);
+      if (visible < 900 || dominant > .88) return ["Image decoding produced blank or nearly uniform pixels."];
+    } catch {
+      return ["Image pixels could not be inspected after decoding."];
+    }
     const zoom = Number(figure.dataset.imageZoom ?? 1);
     const frame = { width: stage.clientWidth / (transformFree ? zoom : 1), height: stage.clientHeight / (transformFree ? zoom : 1) };
     if (!frame.width || !frame.height) return ["An image frame collapsed under layout pressure."];

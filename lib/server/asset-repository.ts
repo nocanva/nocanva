@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import type { PostContent } from "../media";
-import { imageMetadata } from "../image-metadata";
+import { imageMetadata, verifyImageDecodes } from "../image-metadata";
 import { ensureMediaDatabase } from "./media-repository";
 
 type D1Row = Record<string, unknown>;
@@ -40,6 +40,7 @@ function mapAsset(row: D1Row): WorkspaceAsset {
 function validateDimensions(width: number, height: number) {
   if (width < 320 || height < 320) throw new Error("Images must be at least 320 × 320 pixels.");
   if (width > 8000 || height > 8000) throw new Error("Images cannot exceed 8000 × 8000 pixels.");
+  if (width * height > 12_000_000) throw new Error("Images cannot exceed 12 megapixels during beta.");
 }
 
 export async function listWorkspaceAssets(workspaceId: string, includeArchived = false): Promise<WorkspaceAsset[]> {
@@ -67,6 +68,7 @@ export async function createWorkspaceAsset(input: { name: string; bytes: ArrayBu
   const bytes = new Uint8Array(input.bytes);
   const metadata = imageMetadata(bytes);
   validateDimensions(metadata.width, metadata.height);
+  verifyImageDecodes(bytes, metadata);
   const sha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", input.bytes))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   const existing = await database().prepare("SELECT * FROM workspace_assets WHERE workspace_id = ? AND sha256 = ? LIMIT 1").bind(workspaceId, sha256).first<D1Row>();
   if (existing) return mapAsset(existing);

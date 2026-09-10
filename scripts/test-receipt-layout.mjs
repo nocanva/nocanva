@@ -7,7 +7,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const tsx = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url));
 const baseUrl = process.env.NOCANVA_BASE_URL ?? "http://localhost:3000";
-const output = process.env.NOCANVA_RECEIPT_FIXTURE_IMAGE ?? "/tmp/nocanva-receipt-v6.png";
+const output = process.env.NOCANVA_RECEIPT_FIXTURE_IMAGE ?? "/tmp/nocanva-receipt-v7.png";
 const transport = new StdioClientTransport({ command: process.execPath, args: [tsx, "mcp/stdio.ts"], cwd: root, env: { ...process.env, CANVNAH_BASE_URL: baseUrl }, stderr: "inherit" });
 const client = new Client({ name: "nocanva-receipt-layout-fixture", version: "0.4.0" });
 
@@ -20,27 +20,28 @@ function structured(result) {
 try {
   await client.connect(transport);
   const templates = structured(await client.callTool({ name: "nocanva_list_templates", arguments: { brandId: "blindspot" } }));
-  assert.ok(templates.templates.some((template) => template.id === "receipt" && template.version === 6));
+  assert.ok(templates.templates.some((template) => template.id === "receipt" && template.version === 7));
 
   const source = new URL("../benchmarks/assets/blindspot-home-product.png", import.meta.url);
   const bytes = await readFile(source);
-  const uploaded = structured(await client.callTool({ name: "nocanva_upload_asset", arguments: { name: "Receipt v6 layout fixture", mimeType: "image/png", base64: bytes.toString("base64") } }));
+  const uploaded = structured(await client.callTool({ name: "nocanva_upload_asset", arguments: { name: "Receipt v7 layout fixture", mimeType: "image/png", base64: bytes.toString("base64") } }));
   const inspectedAssetResult = await client.callTool({ name: "nocanva_get_asset", arguments: { assetId: uploaded.asset.id } });
   const inspectedAsset = structured(inspectedAssetResult);
   assert.equal(inspectedAsset.asset.sha256, uploaded.asset.sha256);
   assert.ok(inspectedAssetResult.content.some((item) => item.type === "image" && item.data === bytes.toString("base64")));
   const created = structured(await client.callTool({ name: "nocanva_create_draft", arguments: {
-    brandId: "blindspot", compositionId: "receipt", format: "portrait", prompt: "Verify the unobscured Receipt v6 evidence layout.",
+    brandId: "blindspot", compositionId: "receipt", format: "portrait", prompt: "Verify the unobscured Receipt v7 evidence layout and visible semantic conclusion.",
     content: {
       eyebrow: "SOURCE CHECK",
       headline: "The source stays whole and the annotation stays outside it.",
       support: "The evidence remains readable before any human approval.",
-      visualDirection: "documentary",
-      image: { assetId: uploaded.asset.id, alt: "Blindspot product evidence", fit: "contain", focalPoint: { x: .5, y: .5 }, zoom: 1, frame: "browser" },
+      highlight: "Conclusion",
+      visualDirection: "interface",
+      image: { assetId: uploaded.asset.id, alt: "Blindspot product evidence", fit: "cover", focalPoint: { x: .5, y: .5 }, zoom: 1.08, frame: "browser" },
       evidence: { source: "Blindspot product workspace", detail: "A real repository screenshot used only to exercise the deterministic evidence frame." },
     },
   } }));
-  assert.equal(created.draft.templateVersionId, "receipt@6");
+  assert.equal(created.draft.templateVersionId, "receipt@7");
 
   const reviewResult = await client.callTool({ name: "nocanva_review_draft", arguments: { draftId: created.draft.id, notes: "Fixture review only; do not approve or publish." } });
   const reviewed = structured(reviewResult);

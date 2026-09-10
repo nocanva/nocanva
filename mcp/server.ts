@@ -26,6 +26,8 @@ function result(value: Record<string, unknown>) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }], structuredContent: value };
 }
 
+const exactStoredByteIntegrity = { sha256Scope: "exact_received_and_stored_bytes", normalized: false } as const;
+
 async function recentCreativeWork(client: CanvnahClient, brandId: string, recentLimit = 20) {
   const [drafts, carousels] = await Promise.all([client.listDrafts(recentLimit, false), client.listCarousels(recentLimit, false)]);
   const recentDrafts = drafts.filter((draft) => draft.brandId === brandId).map((draft) => ({
@@ -69,7 +71,7 @@ async function routeCarouselSlides(client: CanvnahClient, input: { brandId: stri
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.4.0-rc.2" },
+    { name: "nocanva", version: "0.4.0-rc.3" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -87,26 +89,26 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_get_asset", {
     title: "Inspect a NoCanva image",
-    description: "Read one immutable source image, verify its SHA-256, and attach the original bytes for visual comparison with a review render.",
+    description: "Read one immutable source image, verify the SHA-256 of its exact stored bytes, and attach those unmodified bytes for visual comparison with a review render.",
     inputSchema: z.object({ assetId: z.string().uuid() }),
     annotations: { readOnlyHint: true },
   }, async ({ assetId }) => {
     const { imageBase64, ...asset } = await client.getAsset(assetId);
     return {
       content: [
-        { type: "text" as const, text: JSON.stringify({ asset }, null, 2) },
+        { type: "text" as const, text: JSON.stringify({ asset, integrity: exactStoredByteIntegrity }, null, 2) },
         { type: "image" as const, data: imageBase64, mimeType: asset.mimeType },
       ],
-      structuredContent: { asset },
+      structuredContent: { asset, integrity: exactStoredByteIntegrity },
     };
   });
 
   server.registerTool("nocanva_upload_asset", {
     title: "Upload a NoCanva image",
-    description: "Upload a PNG or JPEG screenshot/photo into immutable workspace storage. Use the returned asset ID in structured content crop controls.",
-    inputSchema: z.object({ name: z.string().trim().min(1).max(120), mimeType: z.enum(["image/png", "image/jpeg"]), base64: z.string().min(4).max(1_000_000) }),
+    description: "Upload exact PNG or JPEG bytes into immutable workspace storage after format verification and strict JPEG pixel decoding. Supply expectedSha256 when the source hash is known to detect any upstream re-encoding before NoCanva.",
+    inputSchema: z.object({ name: z.string().trim().min(1).max(120), mimeType: z.enum(["image/png", "image/jpeg"]), base64: z.string().min(4).max(1_000_000), expectedSha256: z.string().regex(/^[a-fA-F0-9]{64}$/).optional() }),
     annotations: { destructiveHint: false, idempotentHint: false },
-  }, async ({ name, mimeType, base64 }) => result({ asset: await client.uploadAsset(name, mimeType, base64) }));
+  }, async ({ name, mimeType, base64, expectedSha256 }) => result({ asset: await client.uploadAsset(name, mimeType, base64, expectedSha256), integrity: exactStoredByteIntegrity }));
 
   server.registerTool("nocanva_get_brand", {
     title: "Get NoCanva brand",
@@ -125,7 +127,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
   server.registerTool("nocanva_list_compositions", {
     title: "List approved NoCanva compositions",
     description: "List Blindspot's six semantic composition families plus one compact diversity recommendation based on recent drafts and carousels. Choose by story purpose, not coordinates.",
-    inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), candidateDirection: visualDirectionSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20), compact: z.boolean().default(false).describe("Return dynamic guidance plus only the selected catalog entries, reducing repeated tool output.") }),
+    inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), candidateDirection: visualDirectionSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20), compact: z.preprocess((value) => value === "true" ? true : value === "false" ? false : value, z.boolean()).default(false).describe("Return dynamic guidance plus only the selected catalog entries, reducing repeated tool output.") }),
     annotations: { readOnlyHint: true },
   }, async ({ brandId, candidate, candidateDirection, recentLimit, compact }) => {
     const recent = await recentCreativeWork(client, brandId, recentLimit);

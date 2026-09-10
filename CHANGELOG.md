@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0-rc.3 — 2026-09-11
+
+- Strictly decode JPEG pixels before upload so marker-valid but entropy-corrupt files fail loudly instead of rendering as distorted or blank screenshots.
+- Added an optional `expectedSha256` upload handshake and documented that NoCanva stores the exact received bytes without normalization.
+- Made draft review re-verify immutable source images and reject blank or nearly uniform decoded screenshot regions.
+- Added receipt@7 so the interface direction keeps supplied support and highlight conclusions visible while preserving receipt@6 render behavior.
+- Accepted string-serialized booleans for compact composition responses so clients with a cached pre-deploy schema can interoperate.
+- Patched Next.js to 16.3.4 and constrained vulnerable transitive dependencies to compatible fixed releases.
+
 ## 0.4.0-rc.2 — 2026-09-10
 
 - Added open Google authentication with one isolated personal workspace per user.

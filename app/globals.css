@@ -581,6 +581,11 @@ button { color: inherit; }
 .post-canvas.template-version-6.direction-documentary.receipt .receipt-proof .composition-evidence { bottom: auto; display: grid; gap: 2% 4%; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); left: auto; max-width: none; padding: 3% 4%; position: static; }
 .post-canvas.template-version-6.direction-documentary.receipt .receipt-proof .composition-evidence > span { grid-column: 1 / -1; }
 .post-canvas.template-version-6.direction-documentary.receipt .receipt-proof .composition-evidence p { color: color-mix(in srgb,var(--brand-paper) 84%,transparent); margin: 0; }
+.post-canvas.template-version-7.direction-documentary.receipt .receipt-proof { align-content: stretch; gap: 3%; grid-template-rows: minmax(0,1fr) auto; }
+.post-canvas.template-version-7.direction-documentary.receipt .receipt-proof .composition-image { align-self: stretch; height: 100%; min-height: 0; width: 100%; }
+.post-canvas.template-version-7.direction-documentary.receipt .receipt-proof .composition-evidence { bottom: auto; display: grid; gap: 2% 4%; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); left: auto; max-width: none; padding: 3% 4%; position: static; }
+.post-canvas.template-version-7.direction-documentary.receipt .receipt-proof .composition-evidence > span { grid-column: 1 / -1; }
+.post-canvas.template-version-7.direction-documentary.receipt .receipt-proof .composition-evidence p { color: color-mix(in srgb,var(--brand-paper) 84%,transparent); margin: 0; }
 .post-canvas.direction-documentary .missing-layout.has-source-image { grid-template-rows: auto minmax(0,1fr) auto; }
 .post-canvas.direction-documentary .missing-source.has-image { grid-row: 2; margin: 0; }
 .post-canvas.direction-documentary .missing-answer { grid-row: 3; margin: -12% 0 0 18%; z-index: 3; }
@@ -646,6 +651,14 @@ button { color: inherit; }
 .post-canvas.template-version-6.direction-interface.receipt .receipt-proof .composition-evidence { bottom: auto; display: grid; gap: 2% 4%; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); max-width: none; padding: 3% 4%; position: static; right: auto; }
 .post-canvas.template-version-6.direction-interface.receipt .receipt-proof .composition-evidence > span { grid-column: 1 / -1; }
 .post-canvas.template-version-6.direction-interface.receipt .receipt-proof .composition-evidence p { color: var(--brand-muted); margin: 0; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-layout { gap: 3%; grid-template-rows: auto minmax(0,1fr) auto; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-proof { align-content: stretch; gap: 3%; grid-template-columns: 1fr; grid-template-rows: minmax(0,1fr) auto; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-proof .composition-image { align-self: stretch; height: 100%; min-height: 0; width: 100%; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-proof .composition-evidence { bottom: auto; display: grid; gap: 2% 4%; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); max-width: none; padding: 3% 4%; position: static; right: auto; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-proof .composition-evidence > span { grid-column: 1 / -1; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-proof .composition-evidence p { color: var(--brand-muted); margin: 0; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-conclusion { display: grid; }
+.post-canvas.template-version-7.direction-interface.receipt .receipt-conclusion .composition-body { color: color-mix(in srgb,var(--brand-paper) 82%,transparent); }
 .post-canvas.template-version-6.product .composition-image-stage { height: var(--image-stage-size) !important; left: var(--image-stage-left) !important; top: var(--image-stage-top) !important; transform: none !important; width: var(--image-stage-size) !important; }
 .post-canvas.template-version-6.direction-interface.product .product-copy { grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); }
 .post-canvas.template-version-6.direction-interface.product .product-detail { align-content: end; gap: 10%; grid-template-columns: 1fr; min-width: 0; }

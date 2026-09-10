@@ -39,7 +39,7 @@ test("preserves template pins unless a revision explicitly upgrades", () => {
   const base = { expectedRevision: 2, payload: defaultPostPayload };
   assert.equal(draftUpdateInputSchema.parse(base).upgradeTemplateVersion, false);
   assert.equal(draftUpdateInputSchema.parse({ ...base, upgradeTemplateVersion: true }).upgradeTemplateVersion, true);
-  assert.equal(templates.receipt.version, 6);
+  assert.equal(templates.receipt.version, 7);
   assert.equal(templates.product.version, 6);
 });
 

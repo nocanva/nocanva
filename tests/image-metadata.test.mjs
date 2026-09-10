@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { imageMetadata } from "../lib/image-metadata.ts";
+import { imageMetadata, verifyImageDecodes } from "../lib/image-metadata.ts";
 
 function jpegWithLeadingMarker(marker) {
   return Uint8Array.from([
@@ -18,4 +19,22 @@ test("accepts baseline JPEG dimensions after JFIF or comment markers", () => {
 
 test("reports a precise JPEG marker error", () => {
   assert.throws(() => imageMetadata(Uint8Array.from([0xff, 0xd8, 0xff, 0xd9])), /no valid supported start-of-frame marker/);
+});
+
+test("strictly decodes valid JFIF and SOI plus comment JPEGs", async () => {
+  const jfif = new Uint8Array(await readFile(new URL("../benchmarks/assets/blindspot-DaSSoEnyxws-frame.jpg", import.meta.url)));
+  assert.deepEqual(verifyImageDecodes(jfif), imageMetadata(jfif));
+
+  const comment = jfif.slice();
+  assert.equal(comment[2], 0xff);
+  assert.equal(comment[3], 0xe0);
+  comment[3] = 0xfe;
+  assert.deepEqual(verifyImageDecodes(comment), imageMetadata(comment));
+});
+
+test("rejects a marker-valid JPEG whose pixel stream is truncated", async () => {
+  const valid = new Uint8Array(await readFile(new URL("../benchmarks/assets/blindspot-DaSSoEnyxws-frame.jpg", import.meta.url)));
+  const truncated = valid.slice(0, Math.floor(valid.length * .65));
+  assert.equal(imageMetadata(truncated).mimeType, "image/jpeg");
+  assert.throws(() => verifyImageDecodes(truncated), /strict pixel decoding failed/);
 });
