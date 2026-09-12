@@ -64,12 +64,17 @@ test("every media API route and private workspace page enforce the application b
     "carousels/[id]/render/route.ts", "carousels/reviews/[reviewId]/assets/[slideIndex]/route.ts",
     "carousel-renders/[id]/route.ts", "carousel-renders/[id]/assets/[slideIndex]/route.ts", "carousel-renders/[id]/zip/route.ts",
     "activation/route.ts", "mcp-tokens/route.ts", "mcp-tokens/[id]/route.ts", "internal/mcp/auth/route.ts",
-    "assets/route.ts", "assets/[id]/route.ts", "assets/[id]/content/route.ts",
+    "assets/route.ts", "assets/[id]/route.ts", "assets/[id]/content/route.ts", "assets/upload-session/route.ts",
   ];
   for (const route of routes) {
     const source = await readFile(new URL(`../app/api/${route}`, import.meta.url), "utf8");
     assert.match(source, /authorizeApi/, `${route} must authorize requests`);
   }
+  const directUpload = await readFile(new URL("../app/api/assets/direct-upload/route.ts", import.meta.url), "utf8");
+  assert.match(directUpload, /verifyAssetUploadTicket/, "direct upload must verify its scoped bearer ticket");
+  assert.match(directUpload, /readExactBody/, "direct upload must bound the streamed request body");
+  assert.match(directUpload, /ticket\.expectedSha256/, "direct upload must enforce the signed source hash");
+  assert.match(directUpload, /detectedMimeType !== ticket\.mimeType/, "direct upload must enforce the signed source MIME type");
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const home = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const create = await readFile(new URL("../app/create/page.tsx", import.meta.url), "utf8");

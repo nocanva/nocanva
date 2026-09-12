@@ -61,6 +61,39 @@ For repeat checks, call `nocanva_list_compositions` with `compact: true` and a
 catalog. `nocanva_list_renders` also returns `feedPreview.tiles`: exactly nine
 newest-per-lineage grid positions, with `null` for empty positions.
 
+## Upload a repository image without sending bytes through the model
+
+Use `nocanva_create_asset_upload` when the source PNG or JPEG is already on the
+agent's filesystem. Compute the exact file size and SHA-256 locally, then pass
+only the name, MIME type, size, and hash to the tool. It returns a five-minute
+upload URL plus a workspace-scoped bearer ticket bound to those exact values.
+
+From the repository terminal, upload the unchanged file directly:
+
+```bash
+curl --fail-with-body --request PUT \
+  --header "Authorization: Bearer <returned ticket>" \
+  --header "Content-Type: image/jpeg" \
+  --data-binary @./path/to/screenshot.jpg \
+  "<returned uploadUrl>"
+```
+
+The response contains the new asset ID and its SHA-256. NoCanva rejects an
+expired ticket, a different MIME type, byte count, or hash, and any image that
+does not decode. The source bytes go from the terminal to NoCanva rather than
+through the MCP/model payload. Keep the short-lived ticket out of committed
+files and logs. The original base64 upload tool remains available for clients
+that can carry binary data without altering it.
+
+## Safely retry a draft review
+
+`nocanva_review_draft` records a review and is not read-only. If the transport
+drops after sending the call, first use `nocanva_get_draft`. When the current
+revision already has the expected latest `review` (compare its status, SHA-256,
+reviewer, and creation time), treat the original call as committed instead of
+submitting the same review again. Retry only when the current revision has no
+matching review.
+
 ## CI and headless clients
 
 OAuth is preferred for interactive clients. For CI:

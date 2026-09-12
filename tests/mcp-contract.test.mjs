@@ -24,7 +24,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   for (const tool of ["nocanva_list_carousels", "nocanva_get_carousel", "nocanva_create_carousel", "nocanva_update_carousel", "nocanva_review_carousel", "nocanva_approve_carousel", "nocanva_archive_carousel", "nocanva_render_carousel", "nocanva_get_carousel_render"]) {
     assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   }
-  for (const tool of ["nocanva_list_assets", "nocanva_get_asset", "nocanva_upload_asset"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
+  for (const tool of ["nocanva_list_assets", "nocanva_get_asset", "nocanva_upload_asset", "nocanva_create_asset_upload"]) assert.match(server, new RegExp(`registerTool\\(\\"${tool}\\"`));
   assert.match(client, /failed its SHA-256 integrity check/);
   assert.match(nodeRenderer, /chromium\.launch/);
   assert.match(client, /Repeated PNG hashes match/);
@@ -46,6 +46,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(server, /expectedSha256/);
   assert.match(server, /strict JPEG pixel decoding/);
   assert.match(server, /exact_received_and_stored_bytes/);
+  assert.match(server, /image bytes never pass through the model or MCP transport/);
   assert.match(server, /feedPreview/);
   assert.match(fixture, /Create a Sprout post from a verified product repository/);
   assert.match(draftFixture, /stale\.isError/);
@@ -54,6 +55,8 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(agentInstructions, /codex mcp login nocanva/);
   assert.match(agentInstructions, /claude mcp add --transport http nocanva/);
   assert.match(agentInstructions, /claude mcp login nocanva/);
+  assert.match(agentInstructions, /curl --fail-with-body --request PUT/);
+  assert.match(agentInstructions, /Safely retry a draft review/);
   assert.match(packageJson, /"mcp:fixture"/);
   assert.match(packageJson, /"mcp:draft-fixture"/);
   assert.match(packageJson, /"mcp:carousel-fixture"/);

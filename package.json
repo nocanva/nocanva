@@ -1,6 +1,6 @@
 {
   "name": "nocanva",
-  "version": "0.4.0-rc.3",
+  "version": "0.4.0-rc.4",
   "description": "Deterministic, agent-native workspace for brand-ready media.",
   "private": true,
   "license": "MIT",
