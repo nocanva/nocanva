@@ -969,10 +969,11 @@ button { color: inherit; }
 .draft-card-preview.square { aspect-ratio: 1/1; }
 .draft-card-preview .post-canvas.export { position: absolute; inset: 0; width: 1080px; transform: scale(var(--draft-preview-scale, .4)); transform-origin: top left; }
 .draft-card-copy { display: block; padding: 18px; }
-.draft-card-copy small, .draft-card-copy strong, .draft-card-copy em { display: block; }
+.draft-card-copy small, .draft-card-copy strong, .draft-card-copy em, .draft-card-copy time { display: block; }
 .draft-card-copy small { color: var(--green); font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .draft-card-copy strong { margin: 10px 0 18px; font: 600 23px/1.05 var(--font-serif), serif; }
 .draft-card-copy em { color: var(--text-muted); font-size: 8px; font-style: normal; }
+.draft-card-copy time { color: var(--text-muted); font-size: 8px; margin-top: 6px; }
 .carousel-card .slide-count { position: absolute; right: 12px; bottom: 12px; z-index: 1; padding: 7px 9px; color: #fff; background: rgba(24,24,20,.88); font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
 .draft-workspace { max-width: 1240px; margin: 0 auto; padding: 52px 42px 100px; }
 .draft-workspace-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 30px; }

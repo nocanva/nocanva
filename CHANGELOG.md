@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0-rc.5 — 2026-09-12
+
+- Added the durable last-modified date and time to every card in the drafts gallery.
+
 ## 0.4.0-rc.4 — 2026-09-11
 
 - Added short-lived, workspace-scoped direct upload tickets bound to the source MIME type, byte count, and SHA-256 so repo agents can PUT local image bytes without routing them through a model or MCP payload.
