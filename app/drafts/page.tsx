@@ -21,7 +21,12 @@ export default async function DraftsPage() {
       if (!brand || !template) return null;
       return <Link className="draft-card" href={`/drafts/${draft.id}`} key={draft.id}>
         <ArtworkThumbnail payload={draft.payload} brandConfig={brand.config} template={template} />
-        <span className="draft-card-copy"><small>{draft.status.replace("_", " ")} · revision {draft.currentRevision}</small><strong>{draft.payload.content.headline}</strong><em>{draft.brandName} · {draft.templateName} v{draft.templateVersion}</em></span>
+        <span className="draft-card-copy">
+          <small>{draft.status.replace("_", " ")} · revision {draft.currentRevision}</small>
+          <strong>{draft.payload.content.headline}</strong>
+          <em>{draft.brandName} · {draft.templateName} v{draft.templateVersion}</em>
+          <time dateTime={new Date(draft.updatedAt).toISOString()}>Last modified {new Date(draft.updatedAt).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}</time>
+        </span>
       </Link>;
     })}</div>}
   </section></AppShell>;

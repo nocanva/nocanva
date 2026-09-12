@@ -198,7 +198,11 @@ test("draft and carousel galleries size artwork from the live card width", async
   assert.match(thumbnail, /ResizeObserver/);
   assert.match(thumbnail, /payload\.format === "square"/);
   assert.match(drafts, /<ArtworkThumbnail/);
+  assert.match(drafts, /Last modified/);
+  assert.match(drafts, /draft\.updatedAt/);
+  assert.match(drafts, /dateTime=/);
   assert.match(carousels, /<ArtworkThumbnail/);
+  assert.match(css, /\.draft-card-copy time\s*\{/);
   assert.match(css, /\.draft-card-preview\.square\s*\{\s*aspect-ratio:\s*1\/1/);
 });
 
