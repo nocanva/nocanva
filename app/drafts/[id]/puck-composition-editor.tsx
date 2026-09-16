@@ -166,7 +166,7 @@ export function PuckCompositionEditor({ content, layout = defaultLayout, composi
       dnd={{ behavior: "static" }}
       headerTitle={`Edit ${compositions[compositionId].name}`}
       headerPath="Blindspot · guided layout"
-      height="700px"
+      height="620px"
       iframe={{ enabled: false }}
       onChange={update}
       onPublish={(next) => {

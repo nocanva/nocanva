@@ -47,11 +47,9 @@ export default async function RenderDetailPage({ params }: { params: Promise<{ i
           <div className="detail-actions"><a className="dark-link" href={render.assetUrl} download>Download PNG ↓</a>{render.draftRevisionId ? <Link className="light-link" href={`/drafts/${render.draftRevisionId.split("@")[0]}`}>Open draft →</Link> : <Link className="light-link" href={`/?rerender=${render.id}`}>Rerender →</Link>}</div>
           <dl className="record-list">
             <div><dt>Brand</dt><dd>{render.brandName}</dd></div><div><dt>Template</dt><dd>{render.templateName} · v{render.templateVersion}</dd></div>
-            <div><dt>Template version ID</dt><dd className="mono-value">{render.templateVersionId}</dd></div><div><dt>Draft revision</dt><dd className="mono-value">{render.draftRevisionId ?? "Legacy post"}</dd></div>
             <div><dt>Dimensions</dt><dd>{render.width} × {render.height}</dd></div><div><dt>Created</dt><dd>{new Date(render.createdAt).toLocaleString("en", { dateStyle: "medium", timeStyle: "short" })}</dd></div>
-            <div><dt>Render ID</dt><dd className="mono-value">{render.id}</dd></div><div><dt>SHA-256</dt><dd className="mono-value">{render.sha256}</dd></div>
           </dl>
-          <section className="snapshot-panel"><span>Input snapshot</span><pre>{JSON.stringify(render.payload, null, 2)}</pre></section>
+          <details className="technical-disclosure"><summary>Technical provenance</summary><div><dl className="record-list technical-records"><div><dt>Template version ID</dt><dd className="mono-value">{render.templateVersionId}</dd></div><div><dt>Draft revision</dt><dd className="mono-value">{render.draftRevisionId ?? "Legacy post"}</dd></div><div><dt>Render ID</dt><dd className="mono-value">{render.id}</dd></div><div><dt>SHA-256</dt><dd className="mono-value">{render.sha256}</dd></div></dl><section className="snapshot-panel"><span>Input snapshot</span><pre>{JSON.stringify(render.payload, null, 2)}</pre></section></div></details>
           {render.parentRenderId && <p className="iteration-link">Iteration of <Link href={`/renders/${render.parentRenderId}`}>{render.parentRenderId.slice(0, 8)}…</Link></p>}
         </aside>
       </div>
