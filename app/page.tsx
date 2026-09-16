@@ -23,14 +23,14 @@ export default async function HomePage() {
     <AppShell>
       <section className="dashboard-page page-frame">
         <div className="dashboard-intro">
-          <div><Badge variant="outline" className="workspace-badge"><span /> Human + agent workspace</Badge><h1>Your work, in one calm place.</h1><p>Pick up a draft, review a story, or start something new. Every decision stays attached to the exact revision.</p></div>
+          <div><Badge variant="outline" className="workspace-badge"><span /> Human + agent workspace</Badge><h1>Create. Review. Export.</h1><p>Everything in progress, ready for a decision, or approved for use—without losing the revision history.</p></div>
           <div className="dashboard-actions"><Button nativeButton={false} variant="outline" render={<Link href="/connections" />}>Connect agent <Bot /></Button><Button nativeButton={false} render={<Link href="/create" />}>New design <Plus /></Button></div>
         </div>
 
         <div className="workspace-stats" aria-label="Workspace overview">
-          <Card size="sm"><CardContent><span>In progress</span><strong>{activeDrafts.length + carousels.filter((item) => item.status !== "rendered").length}</strong><small>drafts and stories</small></CardContent></Card>
-          <Card size="sm"><CardContent><span>Ready to use</span><strong>{renders.length}</strong><small>recent exports</small></CardContent></Card>
-          <Card size="sm"><CardContent><span>Brand systems</span><strong>{brands.length}</strong><small>pinned workspaces</small></CardContent></Card>
+          <Card size="sm"><CardContent><strong>{activeDrafts.length + carousels.filter((item) => item.status !== "rendered").length}</strong><span>In progress</span><small>Drafts and stories</small></CardContent></Card>
+          <Card size="sm"><CardContent><strong>{renders.length}</strong><span>Exports</span><small>Ready to use</small></CardContent></Card>
+          <Card size="sm"><CardContent><strong>{brands.length}</strong><span>Brand kits</span><small>Active systems</small></CardContent></Card>
         </div>
 
         <div className="dashboard-grid">

@@ -71,7 +71,7 @@ async function routeCarouselSlides(client: CanvnahClient, input: { brandId: stri
 
 export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}) {
   const server = new McpServer(
-    { name: "nocanva", version: "0.4.0-rc.5" },
+    { name: "nocanva", version: "0.4.0-rc.6" },
     {
       capabilities: { tools: {} },
       instructions:

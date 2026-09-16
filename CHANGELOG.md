@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0-rc.6 — 2026-09-17
+
+- Simplified the home dashboard and drafts gallery with calmer hierarchy, denser summaries, and less repeated copy.
+- Kept the draft's next human decision above the editor and made primary action labels reliably visible in dark mode.
+- Collapsed source media controls, crop settings, revision history, and export provenance behind clear progressive disclosure.
+- Reduced guided-editor and export-detail density while preserving exact artwork, revision, approval, and immutable render behavior.
+
 ## 0.4.0-rc.5 — 2026-09-12
 
 - Added the durable last-modified date and time to every card in the drafts gallery.

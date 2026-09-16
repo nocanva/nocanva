@@ -16,7 +16,7 @@ export default async function DraftsPage() {
     template: await getTemplateVersionById(draft.templateVersionId, principal.workspaceId),
   })));
   return <AppShell><section className="collection-page page-frame">
-    <div className="collection-heading"><p className="kicker">Shared drafts</p><h1>Agents create. Everyone can inspect.</h1><p>Every edit becomes a revision under one stable workspace URL.</p></div>
+    <div className="collection-heading"><p className="kicker">Workspace</p><h1>Drafts</h1><p>Review work in progress, pick up an edit, and make the final call.</p></div>
     {cards.length === 0 ? <div className="empty-history"><span>00</span><h2>No drafts yet.</h2><p>Create the first draft through the NoCanva MCP workflow.</p></div> : <div className="draft-grid">{cards.map(({ draft, brand, template }) => {
       if (!brand || !template) return null;
       return <Link className="draft-card" href={`/drafts/${draft.id}`} key={draft.id}>
