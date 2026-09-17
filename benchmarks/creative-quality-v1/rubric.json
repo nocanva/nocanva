@@ -1,0 +1,41 @@
+{
+  "name": "NoCanva creative quality benchmark v1",
+  "scale": {
+    "minimum": 1,
+    "maximum": 5,
+    "anchors": {
+      "1": "Unusable or fundamentally incorrect",
+      "2": "Major design repair required",
+      "3": "Usable after substantial editing",
+      "4": "Publishable with no or minor editing",
+      "5": "Distinctive, polished, and benchmark-leading"
+    }
+  },
+  "dimensions": [
+    { "id": "visual_idea", "label": "Strength of visual idea", "weight": 1.25 },
+    { "id": "composition", "label": "Composition and hierarchy", "weight": 1.0 },
+    { "id": "typography", "label": "Typography", "weight": 1.0 },
+    { "id": "product_fidelity", "label": "Product or screenshot fidelity", "weight": 1.25, "hardGate": true },
+    { "id": "brand_fidelity", "label": "Brand fidelity", "weight": 1.0 },
+    { "id": "asset_integration", "label": "Supporting-asset integration", "weight": 1.0 },
+    { "id": "claim_accuracy", "label": "Claim accuracy and provenance", "weight": 1.25, "hardGate": true },
+    { "id": "mobile_readability", "label": "Mobile readability", "weight": 0.75 },
+    { "id": "candidate_distinctness", "label": "Distinctness from adjacent candidates", "weight": 0.75 },
+    { "id": "repair_required", "label": "Low human repair requirement", "weight": 0.75 }
+  ],
+  "verdicts": {
+    "publishable": "No design repair required",
+    "minor_edit": "Can be finished in under two minutes without changing the visual idea",
+    "major_edit": "Requires substantial layout, asset, typography, or concept repair",
+    "reject": "Contains a fidelity, provenance, or creative failure"
+  },
+  "releaseGate": {
+    "publishableOrMinorEditMinimum": 12,
+    "candidateCount": 15,
+    "medianWeightedScoreMinimum": 4.0,
+    "productFidelityPassesRequired": 15,
+    "claimAccuracyPassesRequired": 15,
+    "publishableConceptsPerProductMinimum": 2,
+    "medianHumanFinishingSecondsMaximum": 120
+  }
+}

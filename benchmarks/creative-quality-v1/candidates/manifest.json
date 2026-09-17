@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "candidates": [
+    { "id": "NC-01", "product": "nocanva", "concept": "Exact pixels, approved once", "status": "asset-blocked" },
+    { "id": "NC-02", "product": "nocanva", "concept": "Your agent creates; you make the call", "status": "asset-blocked" },
+    { "id": "NC-03", "product": "nocanva", "concept": "One revision, shared", "status": "asset-blocked" },
+    { "id": "BS-01", "product": "blindspot", "concept": "Product proof", "status": "story-blocked" },
+    { "id": "BS-02", "product": "blindspot", "concept": "The missing context", "status": "story-blocked" },
+    { "id": "BS-03", "product": "blindspot", "concept": "Receipt versus claim", "status": "story-blocked" },
+    { "id": "CF-01", "product": "cloudflare-agents-sdk", "concept": "Every agent gets a durable identity", "status": "ready-for-review" },
+    { "id": "CF-02", "product": "cloudflare-agents-sdk", "concept": "One agent, many channels", "status": "asset-blocked" },
+    { "id": "CF-03", "product": "cloudflare-agents-sdk", "concept": "State survives the conversation", "status": "asset-blocked" },
+    { "id": "FW-01", "product": "framework-laptop-13", "concept": "This laptop stays yours", "status": "permission-blocked" },
+    { "id": "FW-02", "product": "framework-laptop-13", "concept": "Choose your ports", "status": "permission-blocked" },
+    { "id": "FW-03", "product": "framework-laptop-13", "concept": "One tool. Every part.", "status": "permission-blocked" },
+    { "id": "OL-01", "product": "olipop-classic-grape", "concept": "Grape, grown up", "status": "permission-blocked" },
+    { "id": "OL-02", "product": "olipop-classic-grape", "concept": "Read the can", "status": "permission-blocked" },
+    { "id": "OL-03", "product": "olipop-classic-grape", "concept": "Concord grape, kissed with lime", "status": "permission-blocked" }
+  ]
+}

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title description">
+  <title id="title">Every agent gets a durable identity.</title>
+  <desc id="description">Cloudflare Agents SDK campaign study with an abstract persistent identity core and a verified state-management code excerpt.</desc>
+  <defs>
+    <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#090a0c" stop-opacity="0.22"/>
+      <stop offset="0.46" stop-color="#090a0c" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#090a0c" stop-opacity="0.52"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b1d20" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#101114" stop-opacity="0.86"/>
+    </linearGradient>
+    <filter id="panelShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <image x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice" xlink:href="background-v1.png"/>
+  <rect width="1080" height="1350" fill="url(#veil)"/>
+
+  <g fill="#f7f7f2" font-family="Arial, Helvetica, sans-serif">
+    <text x="72" y="74" font-size="18" font-weight="700" letter-spacing="2.8">CLOUDFLARE / AGENTS SDK</text>
+    <circle cx="1011" cy="68" r="7" fill="#f48120"/>
+
+    <text x="68" y="184" font-size="84" font-weight="760" letter-spacing="-3.8">Every agent</text>
+    <text x="68" y="267" font-size="84" font-weight="760" letter-spacing="-3.8">gets a durable</text>
+    <text x="68" y="350" font-size="84" font-weight="760" letter-spacing="-3.8" fill="#f48120">identity.</text>
+
+    <text x="73" y="444" font-size="24" font-weight="450" fill="#d7d8d5">State, connections, scheduling, and recovery</text>
+    <text x="73" y="478" font-size="24" font-weight="450" fill="#d7d8d5">inside one addressable agent.</text>
+  </g>
+
+  <g stroke="#f48120" stroke-width="2" fill="none" opacity="0.9">
+    <path d="M 666 672 L 622 672 L 600 695"/>
+    <circle cx="675" cy="672" r="8" fill="#f48120" stroke="none"/>
+  </g>
+  <g fill="#f7f7f2" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1.8">
+    <text x="492" y="652">ONE NAMED INSTANCE</text>
+    <text x="724" y="1168" fill="#d0d0cc">STATE PERSISTS</text>
+  </g>
+
+  <g filter="url(#panelShadow)">
+    <rect x="64" y="826" width="548" height="348" rx="22" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.15"/>
+  </g>
+  <g font-family="SFMono-Regular, SF Mono, Menlo, Consolas, monospace">
+    <text x="94" y="870" fill="#9b9d99" font-size="14" font-weight="700" letter-spacing="1.7">STATE / SERVER.TS</text>
+    <text x="94" y="922" fill="#f7f7f2" font-size="18"><tspan fill="#c9a7ff">export class</tspan><tspan> CounterAgent</tspan></text>
+    <text x="94" y="952" fill="#f7f7f2" font-size="18"><tspan fill="#c9a7ff">extends</tspan><tspan> Agent {</tspan></text>
+    <text x="94" y="998" fill="#f7f7f2" font-size="18"><tspan fill="#9fe4c4">  initialState</tspan><tspan> = { count: </tspan><tspan fill="#f6b56c">0</tspan><tspan> };</tspan></text>
+    <text x="94" y="1044" fill="#f7f7f2" font-size="18"><tspan fill="#c9a7ff">  increment</tspan><tspan>() {</tspan></text>
+    <text x="94" y="1074" fill="#f7f7f2" font-size="18"><tspan>    this.</tspan><tspan fill="#f6b56c">setState</tspan><tspan>({</tspan></text>
+    <text x="94" y="1104" fill="#f7f7f2" font-size="18"><tspan>      count: this.state.count + </tspan><tspan fill="#f6b56c">1</tspan></text>
+    <text x="94" y="1134" fill="#f7f7f2" font-size="18">    });</text>
+    <text x="94" y="1164" fill="#f7f7f2" font-size="18">  }</text>
+  </g>
+
+  <line x1="66" y1="1264" x2="1014" y2="1264" stroke="#ffffff" stroke-opacity="0.22"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#d7d8d5">
+    <text x="68" y="1304" font-weight="700" letter-spacing="1.8">BUILD AND HOST AGENTS</text>
+    <text x="1012" y="1304" text-anchor="end">developers.cloudflare.com/agents →</text>
+  </g>
+</svg>
