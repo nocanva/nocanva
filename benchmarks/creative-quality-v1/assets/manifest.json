@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "statusValues": [
+    "ready",
+    "capture-required",
+    "permission-review",
+    "story-selection-required",
+    "ready-for-private-benchmark",
+    "not-required",
+    "blocked"
+  ],
+  "products": {
+    "nocanva": {
+      "status": "capture-required",
+      "items": [
+        {
+          "id": "dashboard",
+          "description": "Current dashboard capture with personal data removed",
+          "status": "capture-required"
+        },
+        {
+          "id": "review",
+          "description": "Current draft review capture with readable artwork and state",
+          "status": "capture-required"
+        },
+        {
+          "id": "immutable-render",
+          "description": "Exact immutable render corresponding to the review capture",
+          "status": "capture-required"
+        },
+        {
+          "id": "revision-history",
+          "description": "One real multi-revision draft with stable URL and safe identifiers",
+          "status": "capture-required"
+        }
+      ]
+    },
+    "blindspot": {
+      "status": "story-selection-required",
+      "items": [
+        {
+          "id": "benchmark-story",
+          "description": "One approved story with claim, verdict, omission, date, and named primary source",
+          "status": "story-selection-required"
+        },
+        {
+          "id": "product-screenshot",
+          "description": "Current product screenshot for the selected story",
+          "status": "story-selection-required"
+        },
+        {
+          "id": "primary-record",
+          "description": "Source capture with sufficient context and locator",
+          "status": "story-selection-required"
+        },
+        {
+          "id": "brand-assets",
+          "description": "Approved mark, colors, and type tokens from the NoCanva workspace",
+          "status": "capture-required"
+        }
+      ]
+    },
+    "cloudflare-agents-sdk": {
+      "status": "ready-for-private-benchmark",
+      "items": [
+        {
+          "id": "code-excerpts",
+          "description": "Current official Agent class and durable-state examples with citations",
+          "status": "ready"
+        },
+        {
+          "id": "official-mark",
+          "description": "Official mark; omitted from CF-01 so it is not required for the private benchmark draft",
+          "status": "not-required"
+        },
+        {
+          "id": "docs-capture",
+          "description": "Current official documentation capture supporting the selected concepts",
+          "status": "ready"
+        }
+      ]
+    },
+    "framework-laptop-13": {
+      "status": "permission-review",
+      "items": [
+        {
+          "id": "hero-packshot",
+          "description": "Official current-generation Laptop 13 hero image",
+          "status": "permission-review"
+        },
+        {
+          "id": "expansion-cards",
+          "description": "Official Expansion Card images for the exact cards shown",
+          "status": "permission-review"
+        },
+        {
+          "id": "internal-view",
+          "description": "Official internal image paired with its exact repair guide",
+          "status": "permission-review"
+        }
+      ]
+    },
+    "olipop-classic-grape": {
+      "status": "permission-review",
+      "items": [
+        {
+          "id": "current-packshot",
+          "description": "Official current Classic Grape can with readable label",
+          "status": "permission-review"
+        },
+        {
+          "id": "nutrition-panel",
+          "description": "Official current nutrition panel for the same package version",
+          "status": "permission-review"
+        },
+        {
+          "id": "lifestyle",
+          "description": "Optional official gallery image suitable for internal benchmark use",
+          "status": "permission-review"
+        }
+      ]
+    }
+  }
+}

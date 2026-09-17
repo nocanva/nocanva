@@ -1,0 +1,52 @@
+{
+  "candidateId": "CF-01",
+  "concept": "Every agent gets a durable identity",
+  "status": "ready-for-review",
+  "dimensions": {
+    "width": 1080,
+    "height": 1350
+  },
+  "files": {
+    "source": "poster-v1.svg",
+    "background": "background-v1.png",
+    "render": "poster-v1.png"
+  },
+  "sources": [
+    {
+      "url": "https://developers.cloudflare.com/agents/getting-started/quick-start/",
+      "accessedAt": "2026-09-17",
+      "supports": [
+        "Agents maintain state across requests",
+        "Each unique name gets its own agent",
+        "CounterAgent code excerpt and setState usage"
+      ]
+    },
+    {
+      "url": "https://developers.cloudflare.com/agents/",
+      "accessedAt": "2026-09-17",
+      "supports": [
+        "Identity, state, connections, scheduling, and recovery"
+      ]
+    }
+  ],
+  "generation": {
+    "tool": "built-in image generation",
+    "generatedRegions": [
+      "abstract graphite environment",
+      "orange identity core",
+      "translucent state rings",
+      "connection paths"
+    ],
+    "deterministicRegions": [
+      "all typography",
+      "all code",
+      "all capability claims",
+      "all source and CTA text"
+    ]
+  },
+  "reviewNotes": [
+    "Private benchmark candidate only; external publication would require a separate trademark and permission review.",
+    "The official logo is intentionally omitted. Brand fidelity relies on name, product terminology, and orange accent.",
+    "Blind reviewers must not see this manifest until scoring is complete."
+  ]
+}
