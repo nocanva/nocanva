@@ -1,0 +1,27 @@
+{
+  "candidateId": "CF-03",
+  "concept": "State survives the conversation",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": {
+    "source": "poster-v1.svg",
+    "background": "background-v1.png",
+    "render": "poster-v1.png"
+  },
+  "sources": [
+    {
+      "url": "https://developers.cloudflare.com/agents/getting-started/quick-start/",
+      "accessedAt": "2026-09-17",
+      "supports": ["Persistent state survives restarts, deploys, and hibernation", "CounterAgent initialState and setState code"]
+    }
+  ],
+  "generation": {
+    "tool": "built-in image generation",
+    "generatedRegions": ["transient abstract fragments", "stable abstract state substrate", "studio environment"],
+    "deterministicRegions": ["all typography", "all code", "all capability claims", "all source and CTA text"]
+  },
+  "reviewNotes": [
+    "Private benchmark candidate only; external publication would require separate trademark and permission review.",
+    "The substrate is explanatory artwork, not a product UI or database screenshot."
+  ]
+}

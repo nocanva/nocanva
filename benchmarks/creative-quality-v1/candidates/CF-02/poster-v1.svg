@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title description">
+  <title id="title">One agent. Many ways in.</title>
+  <desc id="description">Cloudflare Agents SDK campaign study with one runtime connected to five documented communication surfaces.</desc>
+  <defs>
+    <linearGradient id="veil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#07080a" stop-opacity="0.2"/>
+      <stop offset="0.45" stop-color="#07080a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#07080a" stop-opacity="0.46"/>
+    </linearGradient>
+  </defs>
+  <image x="0" y="0" width="1080" height="1350" preserveAspectRatio="xMidYMid slice" xlink:href="background-v1.png"/>
+  <rect width="1080" height="1350" fill="url(#veil)"/>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="70" y="72" fill="#f7f7f2" font-size="18" font-weight="700" letter-spacing="2.8">CLOUDFLARE / AGENTS SDK</text>
+    <circle cx="1010" cy="68" r="7" fill="#f48120"/>
+    <text x="68" y="182" fill="#f7f7f2" font-size="86" font-weight="760" letter-spacing="-4">One agent.</text>
+    <text x="68" y="266" fill="#f48120" font-size="86" font-weight="760" letter-spacing="-4">Many ways in.</text>
+    <text x="73" y="334" fill="#d7d8d5" font-size="23">Chat, email, voice, Slack, and webhooks</text>
+    <text x="73" y="367" fill="#d7d8d5" font-size="23">around one durable runtime.</text>
+  </g>
+
+  <g font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="1.8" text-anchor="middle">
+    <g><rect x="77" y="565" width="116" height="38" rx="19" fill="#111316" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.2"/><text x="135" y="590" fill="#f7f7f2">CHAT</text></g>
+    <g><rect x="615" y="387" width="126" height="38" rx="19" fill="#111316" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.2"/><text x="678" y="412" fill="#f7f7f2">EMAIL</text></g>
+    <g><rect x="886" y="584" width="122" height="38" rx="19" fill="#111316" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.2"/><text x="947" y="609" fill="#f7f7f2">VOICE</text></g>
+    <g><rect x="150" y="1069" width="126" height="38" rx="19" fill="#111316" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.2"/><text x="213" y="1094" fill="#f7f7f2">SLACK</text></g>
+    <g><rect x="817" y="962" width="160" height="38" rx="19" fill="#111316" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.2"/><text x="897" y="987" fill="#f7f7f2">WEBHOOKS</text></g>
+    <text x="556" y="805" fill="#ffffff" font-size="15">ONE DURABLE AGENT</text>
+  </g>
+
+  <line x1="66" y1="1264" x2="1014" y2="1264" stroke="#ffffff" stroke-opacity="0.22"/>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#d7d8d5">
+    <text x="68" y="1304" font-weight="700" letter-spacing="1.8">ONE RUNTIME / DOCUMENTED CHANNELS</text>
+    <text x="1012" y="1304" text-anchor="end">developers.cloudflare.com/agents →</text>
+  </g>
+</svg>

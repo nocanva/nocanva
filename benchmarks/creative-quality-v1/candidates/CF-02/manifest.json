@@ -1,0 +1,27 @@
+{
+  "candidateId": "CF-02",
+  "concept": "One agent, many channels",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": {
+    "source": "poster-v1.svg",
+    "background": "background-v1.png",
+    "render": "poster-v1.png"
+  },
+  "sources": [
+    {
+      "url": "https://developers.cloudflare.com/agents/getting-started/",
+      "accessedAt": "2026-09-17",
+      "supports": ["Chat, email, voice, Slack, and webhooks are documented communication surfaces"]
+    }
+  ],
+  "generation": {
+    "tool": "built-in image generation",
+    "generatedRegions": ["abstract runtime core", "five unlabeled portals", "connection paths", "studio environment"],
+    "deterministicRegions": ["all typography", "all channel labels", "all claims", "all source and CTA text"]
+  },
+  "reviewNotes": [
+    "Private benchmark candidate only; external publication would require separate trademark and permission review.",
+    "Channel names are deterministic labels and do not use third-party marks."
+  ]
+}
