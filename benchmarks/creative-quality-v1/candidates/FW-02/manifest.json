@@ -1,0 +1,15 @@
+{
+  "candidateId": "FW-02",
+  "concept": "Choose your ports",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "f4da05cb34e8846e5b10c22b1b36893ce7a329b7592991fabe735e198332542c" },
+  "sources": [
+    { "path": "../../assets/framework/laptop-13-expansion-card-guide.jpg", "sha256": "83de579a73e0bd5549ec5c90bbcdcd1b8d67afe1dc7e343d37ae9ddc3aaed6a3", "role": "Official Framework guide photograph of Expansion Card removal" },
+    { "url": "https://frame.work/laptop13", "role": "Official Expansion Card product facts" },
+    { "url": "https://guides.frame.work/Guide/Mainboard+Replacement+for+Framework+Laptop+13/79", "role": "Exact service-action lineage" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all source pixels", "all callouts"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "No impossible port, card, or bay is depicted."]
+}

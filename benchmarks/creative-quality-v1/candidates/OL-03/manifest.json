@@ -1,0 +1,14 @@
+{
+  "candidateId": "OL-03",
+  "concept": "Concord grape, kissed with lime",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "bdf45b9f9f7291a5e7528e9db64efadeacb837a6df3ced54545789b5c85552cd" },
+  "sources": [
+    { "path": "../../assets/olipop/classic-grape-lifestyle.jpg", "sha256": "78273654f43704ef4b296d8a9e2c637cebca563f4f8e9bfd9ee19ab15108edf9", "role": "Official Classic Grape lifestyle gallery image" },
+    { "url": "https://drinkolipop.com/products/classic-grape", "role": "Official flavor description and gallery source" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all source pixels", "all overlays"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "The campaign image is an official gallery photograph, not generated product imagery."]
+}

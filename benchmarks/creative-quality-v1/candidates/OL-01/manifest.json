@@ -1,0 +1,14 @@
+{
+  "candidateId": "OL-01",
+  "concept": "Grape, grown up",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "2abf1c941ff9c7ef2b9bf326643ae7048312c1a1b441047095ed270a322d8c1d" },
+  "sources": [
+    { "path": "../../assets/olipop/classic-grape-can.png", "sha256": "998a224fdef8024dee8dcfaffb8768b95a4d723d1bb18fd4d4677e5288304926", "role": "Official current Classic Grape packshot" },
+    { "url": "https://drinkolipop.com/products/classic-grape", "role": "Official flavor description and refrigeration instruction" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all illustration", "all product pixels", "all shadows"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "The can label and geometry are unaltered official pixels."]
+}
