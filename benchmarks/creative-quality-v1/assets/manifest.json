@@ -36,27 +36,27 @@
       ]
     },
     "blindspot": {
-      "status": "story-selection-required",
+      "status": "ready-for-private-benchmark",
       "items": [
         {
           "id": "benchmark-story",
           "description": "One approved story with claim, verdict, omission, date, and named primary source",
-          "status": "story-selection-required"
+          "status": "ready"
         },
         {
           "id": "product-screenshot",
           "description": "Current product screenshot for the selected story",
-          "status": "story-selection-required"
+          "status": "ready"
         },
         {
           "id": "primary-record",
           "description": "Source capture with sufficient context and locator",
-          "status": "story-selection-required"
+          "status": "ready"
         },
         {
           "id": "brand-assets",
           "description": "Approved mark, colors, and type tokens from the NoCanva workspace",
-          "status": "capture-required"
+          "status": "ready"
         }
       ]
     },

@@ -1,0 +1,21 @@
+{
+  "candidateId": "BS-01",
+  "concept": "Product proof",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png" },
+  "sources": [
+    {
+      "path": "benchmarks/assets/blindspot-report-product.png",
+      "sha256": "1c7e56fa2e331e09aff2a8118475b39de2056c7e31ea37ac13c2ebad4ab2992f",
+      "role": "Real Blindspot report interface"
+    },
+    {
+      "path": "benchmarks/blindspot-v1-cases.json",
+      "role": "Approved ethanol-report evidence ledger"
+    }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all source pixels", "all provenance labels"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "The product screenshot remains upright and untransformed."]
+}

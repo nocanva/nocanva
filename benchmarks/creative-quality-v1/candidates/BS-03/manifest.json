@@ -1,0 +1,26 @@
+{
+  "candidateId": "BS-03",
+  "concept": "Receipt versus claim",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png" },
+  "sources": [
+    {
+      "path": "benchmarks/assets/blindspot-ethanol-frame.jpg",
+      "sha256": "35764be8b0b7fb73f5348a1eea84112605cf997ab40962eb09e47dec0fb7291a",
+      "role": "Frame from the checked viral reel"
+    },
+    {
+      "path": "benchmarks/assets/pib-multifeed-ethanol.png",
+      "sha256": "810fb36a30195a592e1a2bc61f5614a60918f6c190dfa79fb52cc9b3527ba27f",
+      "role": "Official Ministry of Cooperation annexure excerpt"
+    },
+    {
+      "path": "benchmarks/blindspot-v1-cases.json",
+      "role": "Approved claim and source evidence ledger"
+    }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "split composition", "document highlight", "all source pixels"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "The poster distinguishes unsupported viral wording from the official record without inferring motive."]
+}
