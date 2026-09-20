@@ -1,0 +1,14 @@
+{
+  "candidateId": "NC-02",
+  "concept": "Your agent creates; you make the call",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "dae2c881161153b3db978017fe8bbe1df8d370deb0266ed4ab65ae5e34e0f4dc" },
+  "sources": [
+    { "path": "../../assets/nocanva/blindspot-approved-draft.png", "sha256": "8b62f34dbedebff7f894e7c77e6ca5ae2789380593f1ea4bb54a05d4b4cddc6e", "role": "Current first-party workflow showing edit, review, human approval, and export states" },
+    { "path": "../../../../docs/WHAT_IS_NOCANVA.md", "role": "Human-only approval product contract" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "workflow rail", "all first-party UI pixels", "approval emphasis"],
+  "reviewNotes": ["Private benchmark candidate; no publication authorized.", "The poster explicitly keeps final approval with a human and makes no autonomous-publication claim."]
+}

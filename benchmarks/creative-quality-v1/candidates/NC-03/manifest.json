@@ -1,0 +1,14 @@
+{
+  "candidateId": "NC-03",
+  "concept": "One revision, shared",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "8d0f0e98ed0515ff76b4c24a99ec15c696ea9b2efe74afc04b874c4a4c3472d5" },
+  "sources": [
+    { "path": "../../assets/nocanva/draft.png", "sha256": "66f7cc3bff9c55a052375b59bee3c6ed087c65cad41c1daeb21f49bac6af551c", "role": "Current first-party fixture draft at genuine revision 4" },
+    { "path": "../../../../scripts/test-draft-lifecycle.mjs", "role": "Exact revision sequence and stale-write behavior" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "revision cards", "all first-party UI pixels", "stable-URL spine"],
+  "reviewNotes": ["Private benchmark candidate; no publication authorized.", "The draft identifier is truncated; the source workspace contains fixture data only."]
+}

@@ -1,9 +1,9 @@
 {
   "version": 1,
   "candidates": [
-    { "id": "NC-01", "product": "nocanva", "concept": "Exact pixels, approved once", "status": "asset-blocked" },
-    { "id": "NC-02", "product": "nocanva", "concept": "Your agent creates; you make the call", "status": "asset-blocked" },
-    { "id": "NC-03", "product": "nocanva", "concept": "One revision, shared", "status": "asset-blocked" },
+    { "id": "NC-01", "product": "nocanva", "concept": "Exact pixels, approved once", "status": "ready-for-review" },
+    { "id": "NC-02", "product": "nocanva", "concept": "Your agent creates; you make the call", "status": "ready-for-review" },
+    { "id": "NC-03", "product": "nocanva", "concept": "One revision, shared", "status": "ready-for-review" },
     { "id": "BS-01", "product": "blindspot", "concept": "Product proof", "status": "ready-for-review" },
     { "id": "BS-02", "product": "blindspot", "concept": "The missing context", "status": "ready-for-review" },
     { "id": "BS-03", "product": "blindspot", "concept": "Receipt versus claim", "status": "ready-for-review" },
