@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nocanva.dev/schemas/outcome-first-launch-run-v1.json",
+  "title": "NoCanva outcome-first launch run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "runId", "product", "status", "plan", "evidence", "lifecycle", "process", "review", "delivery"],
+  "properties": {
+    "version": { "const": 1 },
+    "runId": { "type": "string", "pattern": "^[A-Z]{2,4}-LAUNCH-01$" },
+    "product": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["planned", "source-blocked", "drafted", "reviewed", "approved", "rendered", "rejected"]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "audience", "verifiedEvent", "strongestClaim", "proof", "hook", "storyIntent", "compositionId", "visualAnchor", "supportingDetail", "intendedReaction", "format", "formatReason", "caption", "exclusions"],
+      "properties": {
+        "objective": { "type": "string", "minLength": 1 },
+        "audience": { "type": "string", "minLength": 1 },
+        "verifiedEvent": { "type": "string", "minLength": 1 },
+        "strongestClaim": { "type": "string", "minLength": 1 },
+        "proof": { "type": "string", "minLength": 1 },
+        "hook": { "type": "string", "minLength": 1 },
+        "storyIntent": { "enum": ["announcement", "contradiction", "evidence", "omitted_context", "product_demonstration", "feature_education"] },
+        "compositionId": { "enum": ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"] },
+        "visualAnchor": { "type": "string", "minLength": 1 },
+        "supportingDetail": { "type": "string", "minLength": 1 },
+        "intendedReaction": { "type": "string", "minLength": 1 },
+        "format": { "enum": ["portrait", "square", "carousel"] },
+        "formatReason": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string", "minLength": 1 },
+        "exclusions": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "source", "status"],
+        "properties": {
+          "claim": { "type": "string", "minLength": 1 },
+          "source": { "type": "string", "minLength": 1 },
+          "status": { "const": "verified" }
+        }
+      }
+    },
+    "payload": {
+      "type": ["object", "null"],
+      "description": "The exact structured NoCanva draft or carousel payload. Null until drafting begins."
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "draftId", "carouselId", "revision", "reviewId", "renderId"],
+      "properties": {
+        "kind": { "enum": ["draft", "carousel"] },
+        "draftId": { "type": ["string", "null"] },
+        "carouselId": { "type": ["string", "null"] },
+        "revision": { "type": ["integer", "null"], "minimum": 1 },
+        "reviewId": { "type": ["string", "null"] },
+        "renderId": { "type": ["string", "null"] }
+      }
+    },
+    "process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "firstReviewedAt", "firstPublishableAt", "agentReviewIterations", "humanFinishingSeconds", "humanInterventions", "blockers"],
+      "properties": {
+        "startedAt": { "type": ["string", "null"], "format": "date-time" },
+        "firstReviewedAt": { "type": ["string", "null"], "format": "date-time" },
+        "firstPublishableAt": { "type": ["string", "null"], "format": "date-time" },
+        "agentReviewIterations": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "humanFinishingSeconds": { "type": ["integer", "null"], "minimum": 0 },
+        "humanInterventions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "blockers": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "contentWarnings", "visualAnswers", "claimAccuracy", "assetFidelity", "notes"],
+      "properties": {
+        "verdict": { "enum": ["pending", "publishable", "minor-edit", "major-edit", "reject"] },
+        "contentWarnings": { "type": "array", "items": { "type": "string" } },
+        "visualAnswers": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["question", "answer", "notes"],
+            "properties": {
+              "question": { "type": "string", "minLength": 1 },
+              "answer": { "enum": ["yes", "no", "not-applicable"] },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "claimAccuracy": { "enum": ["pending", "pass", "fail"] },
+        "assetFidelity": { "enum": ["pending", "pass", "fail"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caption", "altText", "workspaceUrl", "renderUrl", "assetUrls", "dimensions", "templateVersionId", "sha256", "zipUrl"],
+      "properties": {
+        "caption": { "type": "string" },
+        "altText": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "workspaceUrl": { "type": ["string", "null"] },
+        "renderUrl": { "type": ["string", "null"] },
+        "assetUrls": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "dimensions": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "integer", "minimum": 1 },
+            "height": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "templateVersionId": { "type": ["string", "null"] },
+        "sha256": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        },
+        "zipUrl": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

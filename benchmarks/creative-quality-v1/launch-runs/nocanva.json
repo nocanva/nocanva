@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "runId": "NC-LAUNCH-01",
+  "product": "nocanva",
+  "status": "source-blocked",
+  "plan": {
+    "objective": "Show that approval applies to the exact pixels exported by NoCanva.",
+    "audience": "Developer and startup teams using coding agents to create governed launch media.",
+    "verifiedEvent": "NoCanva's current release candidate promotes the reviewed PNG bytes into the immutable final render.",
+    "strongestClaim": "Final rendering promotes the exact reviewed bytes.",
+    "proof": "README.md, docs/WHAT_IS_NOCANVA.md, and lib/server/media-repository.ts describe and enforce exact-byte promotion.",
+    "hook": "Exact pixels, approved once.",
+    "storyIntent": "product_demonstration",
+    "compositionId": "product",
+    "visualAnchor": "A current review workspace beside its byte-identical immutable render and verified hash.",
+    "supportingDetail": "Approval pins the reviewed revision and PNG hash.",
+    "intendedReaction": "Trust that agent-created media cannot silently change after approval.",
+    "format": "portrait",
+    "formatReason": "A single continuity proof is stronger than a multi-slide explanation.",
+    "caption": "Exact pixels, approved once. NoCanva promotes the reviewed PNG into the immutable final render instead of capturing a different version after approval.",
+    "exclusions": ["No time, cost, conversion, customer-count, or category-leadership claim.", "No implication that NoCanva publishes externally."]
+  },
+  "evidence": [
+    { "claim": "Final rendering promotes exact reviewed bytes.", "source": "docs/WHAT_IS_NOCANVA.md:125", "status": "verified" },
+    { "claim": "The repository verifies the approved review artifact hash before render storage.", "source": "lib/server/media-repository.ts:650", "status": "verified" }
+  ],
+  "payload": null,
+  "lifecycle": { "kind": "draft", "draftId": null, "carouselId": null, "revision": null, "reviewId": null, "renderId": null },
+  "process": {
+    "startedAt": null,
+    "firstReviewedAt": null,
+    "firstPublishableAt": null,
+    "agentReviewIterations": 0,
+    "humanFinishingSeconds": null,
+    "humanInterventions": [],
+    "blockers": ["The benchmark requires a current review-workspace capture and its matching immutable render; the retained benchmark assets do not contain this verified pair.", "No approved NoCanva brand/template record exists in the current seeded media workspace."]
+  },
+  "review": { "verdict": "pending", "contentWarnings": [], "visualAnswers": [], "claimAccuracy": "pass", "assetFidelity": "pending", "notes": ["Blocked before drafting; do not substitute the beta GIF or an unrelated render for the required exact pair."] },
+  "delivery": { "caption": "Exact pixels, approved once. NoCanva promotes the reviewed PNG into the immutable final render instead of capturing a different version after approval.", "altText": [], "workspaceUrl": null, "renderUrl": null, "assetUrls": [], "dimensions": null, "templateVersionId": null, "sha256": [], "zipUrl": null }
+}

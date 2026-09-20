@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { CanvnahClient, type CanvnahClientContext } from "./canvnah-client";
 import { brandConfigSchema, draftLayoutSchema, postContentSchema, templateInputSchema } from "../lib/media";
-import { carouselSequenceRole, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, rankVisualDirections, recentCompositionWarnings, visualDirections, visualDirectionSchema, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions";
+import { carouselSequenceRole, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositionFromTemplateId, compositionIdSchema, compositions, compositionTemplateIds, creativeContentWarnings, rankVisualDirections, recentCompositionWarnings, storyIntents, visualDirections, visualDirectionSchema, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions";
 import { latestFeedRenders } from "../lib/feed-preview";
 
 const contentSchema = postContentSchema.describe("Semantic content and asset treatments. No coordinates or Puck-specific data.");
@@ -141,12 +141,12 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
 
   server.registerTool("nocanva_list_compositions", {
     title: "List approved NoCanva compositions",
-    description: "List Blindspot's six semantic composition families plus one compact diversity recommendation based on recent drafts and carousels. Choose by story purpose, not coordinates.",
+    description: "List six launch story intents, their semantic composition families, and compact diversity guidance based on recent work. Choose the story from evidence before using history to avoid repetition.",
     inputSchema: z.object({ brandId: z.string().default("blindspot"), candidate: compositionIdSchema.optional(), candidateDirection: visualDirectionSchema.optional(), recentLimit: z.number().int().min(3).max(20).default(20), compact: z.preprocess((value) => value === "true" ? true : value === "false" ? false : value, z.boolean()).default(false).describe("Return dynamic guidance plus only the selected catalog entries, reducing repeated tool output.") }),
     annotations: { readOnlyHint: true },
   }, async ({ brandId, candidate, candidateDirection, recentLimit, compact }) => {
     const recent = await recentCreativeWork(client, brandId, recentLimit);
-    return result({ brandId, compositions: compact ? candidate ? [compositions[candidate]] : [] : Object.values(compositions), visualDirections: compact ? candidateDirection ? [visualDirections[candidateDirection]] : [] : Object.values(visualDirections), recent, diversity: compositionDiversityGuidance(recent), warnings: recentCompositionWarnings(recent, candidate, candidateDirection), compact });
+    return result({ brandId, storyIntents: Object.values(storyIntents), compositions: compact ? candidate ? [compositions[candidate]] : [] : Object.values(compositions), visualDirections: compact ? candidateDirection ? [visualDirections[candidateDirection]] : [] : Object.values(visualDirections), recent, diversity: compositionDiversityGuidance(recent), warnings: recentCompositionWarnings(recent, candidate, candidateDirection), compact });
   });
 
   server.registerTool("nocanva_list_drafts", {
@@ -199,7 +199,7 @@ export function buildServer(baseUrl?: string, context: CanvnahClientContext = {}
     const compositionId = reviewed.draft.payload.compositionId;
     const fingerprint = compositionId ? visualFingerprint(compositionId, reviewed.draft.payload.content) : null;
     const recent = (await recentCreativeWork(client, reviewed.draft.brandId, 20)).filter((item) => item.kind !== "draft" || item.draftId !== reviewed.draft.id);
-    const directionWarnings = fingerprint ? [...recentCompositionWarnings(recent, compositionId, reviewed.draft.payload.content.visualDirection), ...visualSimilarityWarnings(recent, fingerprint.key)] : [];
+    const directionWarnings = fingerprint ? [...recentCompositionWarnings(recent, compositionId, reviewed.draft.payload.content.visualDirection, reviewed.draft.payload.content.backgroundStyle), ...visualSimilarityWarnings(recent, fingerprint.key)] : [];
     return {
       content: [
         { type: "text" as const, text: JSON.stringify({ draft: reviewed.draft, review, contentWarnings: creativeContentWarnings(reviewed.draft.payload.content), creativeReview: { visualDirection: reviewed.draft.payload.content.visualDirection ?? "editorial", fingerprint, warnings: directionWarnings }, visualReviewRubric, maxAgentIterations: 3 }, null, 2) },

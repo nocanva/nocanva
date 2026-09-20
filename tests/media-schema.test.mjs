@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { defaultPostPayload, draftLayoutSchema, draftUpdateInputSchema, formats, parsePostPayload, posterLayoutSchema, renderFilename, templateCreateSchema, templates } from "../lib/media.ts";
-import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositions, compositionFromTemplateId, creativeContentWarnings, nextVisualDirection, rankVisualDirections, recentCompositionWarnings, visualDirections, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions.ts";
+import { carouselSequenceRole, carouselSequenceSurface, carouselStoryWarnings, chooseVisualDirection, compositionDiversityGuidance, compositionForStoryIntent, compositions, compositionFromTemplateId, creativeContentWarnings, nextVisualDirection, rankVisualDirections, recentCompositionWarnings, storyIntentForComposition, storyIntents, visualDirections, visualFingerprint, visualReviewRubric, visualSimilarityWarnings } from "../lib/compositions.ts";
 
 test("accepts the default structured payload", () => {
   assert.deepEqual(parsePostPayload(defaultPostPayload), defaultPostPayload);
@@ -47,7 +47,23 @@ test("exposes six semantic compositions and the fixed visual review rubric", () 
   assert.deepEqual(Object.keys(compositions), ["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
   assert.equal(compositionFromTemplateId("real-but"), "real_but");
   assert.equal(visualReviewRubric.length, 8);
+  assert.match(visualReviewRubric[0], /subject and hook.*under one second/i);
+  assert.match(visualReviewRubric[5], /story intent and approved brand/i);
+  assert.match(visualReviewRubric[7], /brand continuity/i);
   assert.match(recentCompositionWarnings([{ compositionId: "claim" }], "claim")[0], /previous three/);
+  const repeatedSurface = [{ backgroundStyle: "signal_wash" }, { backgroundStyle: "signal_wash" }];
+  assert.match(recentCompositionWarnings(repeatedSurface, undefined, undefined, "signal_wash")[0], /change the background/);
+  assert.deepEqual(recentCompositionWarnings(repeatedSurface, undefined, undefined, "ink"), []);
+});
+
+test("maps outcome-first story intents onto existing semantic compositions without changing payloads", () => {
+  assert.deepEqual(Object.keys(storyIntents), ["announcement", "contradiction", "evidence", "omitted_context", "product_demonstration", "feature_education"]);
+  assert.equal(compositionForStoryIntent("announcement"), "claim");
+  assert.equal(compositionForStoryIntent("product_demonstration"), "product");
+  assert.equal(storyIntentForComposition("receipt"), "evidence");
+  assert.equal(storyIntentForComposition("explainer"), "feature_education");
+  assert.ok(Object.values(storyIntents).every((intent) => intent.requiredProof.length > 10));
+  assert.equal("storyIntent" in parsePostPayload({ ...defaultPostPayload, storyIntent: "announcement" }), false);
 });
 
 test("routes semantic content into distinct compatible visual directions", () => {
@@ -124,6 +140,47 @@ test("keeps the Blindspot benchmark and approved visual references measurable", 
   assert.equal(references.qaCandidates.length, 5);
   assert.ok([...references.references, ...references.qaCandidates].every((reference) => reference.width === 1080 && reference.height === 1350 && /^[a-f0-9]{64}$/.test(reference.sha256)));
   assert.ok(references.qaCandidates.every((reference) => reference.templateVersionId.endsWith("@2")));
+});
+
+test("defines five outcome-first launch runs and a complete reproducibility contract", async () => {
+  const schema = JSON.parse(await readFile(new URL("../benchmarks/creative-quality-v1/launch-runs/schema.json", import.meta.url), "utf8"));
+  const index = JSON.parse(await readFile(new URL("../benchmarks/creative-quality-v1/launch-runs/index.json", import.meta.url), "utf8"));
+  assert.equal(schema.properties.version.const, 1);
+  assert.deepEqual(schema.properties.plan.properties.storyIntent.enum, Object.keys(storyIntents));
+  assert.deepEqual(schema.properties.plan.properties.compositionId.enum, Object.keys(compositions));
+  assert.ok(schema.required.includes("evidence"));
+  assert.ok(schema.required.includes("review"));
+  assert.ok(schema.required.includes("delivery"));
+  assert.ok(schema.required.includes("lifecycle"));
+  assert.equal(index.runs.length, 5);
+  assert.deepEqual(index.runs.map((run) => run.product), ["nocanva", "blindspot", "cloudflare-agents-sdk", "framework-laptop-13", "olipop-classic-grape"]);
+  const allowedStatuses = schema.properties.status.enum;
+  assert.ok(index.runs.every((run) => allowedStatuses.includes(run.status)));
+  assert.equal(index.runs.filter((run) => run.status === "source-blocked").length, 4);
+  assert.ok(index.runs.every((run) => run.record.endsWith(".json")));
+  for (const entry of index.runs) {
+    const record = JSON.parse(await readFile(new URL(`../benchmarks/creative-quality-v1/launch-runs/${entry.record}`, import.meta.url), "utf8"));
+    assert.equal(record.version, 1);
+    assert.equal(record.runId, entry.runId);
+    assert.equal(record.product, entry.product);
+    assert.equal(record.status, entry.status);
+    assert.equal(compositionForStoryIntent(record.plan.storyIntent), record.plan.compositionId);
+    assert.ok(record.evidence.length > 0);
+    assert.ok(record.evidence.every((item) => item.status === "verified"));
+    if (record.status === "source-blocked") {
+      assert.equal(record.lifecycle.renderId, null);
+      assert.ok(record.process.blockers.length > 0);
+    }
+    if (record.status === "rendered") {
+      assert.ok(record.lifecycle.draftId || record.lifecycle.carouselId);
+      assert.ok(record.lifecycle.reviewId);
+      assert.ok(record.lifecycle.renderId);
+      assert.equal(record.review.visualAnswers.length, 8);
+      assert.ok(record.review.visualAnswers.every((answer) => answer.answer === "yes"));
+      assert.equal(record.review.verdict, "publishable");
+      assert.ok(record.delivery.sha256.every((hash) => /^[a-f0-9]{64}$/.test(hash)));
+    }
+  }
 });
 
 test("accepts bounded HTML/CSS layout templates and rejects incomplete generic layouts", () => {

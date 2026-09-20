@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "runId": "BS-LAUNCH-01",
+  "product": "blindspot",
+  "status": "rendered",
+  "plan": {
+    "objective": "Demonstrate Blindspot's public-link-to-cited-report workflow with the real product interface as proof.",
+    "audience": "People evaluating an online post or video through Blindspot.",
+    "verifiedEvent": "Blindspot accepts a public post or video link and returns a cited report with the short answer first and sources underneath.",
+    "strongestClaim": "One public link becomes a cited, claim-by-claim report.",
+    "proof": "The approved Blindspot homepage capture and https://blindspot.buzz/.",
+    "hook": "Paste a post. Get the receipts.",
+    "storyIntent": "product_demonstration",
+    "compositionId": "product",
+    "visualAnchor": "The approved Blindspot public-link checker and cited-report preview.",
+    "supportingDetail": "The short answer appears before the cited claim rows.",
+    "intendedReaction": "Understand the product in one glance and want to inspect a report.",
+    "format": "portrait",
+    "formatReason": "One real interface proves the workflow without requiring a carousel.",
+    "caption": "Paste a public post or video link. Blindspot returns the short answer first, then keeps the checked claims and cited sources underneath.",
+    "exclusions": [
+      "No accuracy, speed, reach, customer, or performance claim.",
+      "No invented product state or interface element."
+    ]
+  },
+  "evidence": [
+    {
+      "claim": "Blindspot accepts a public post or video link, checks claims and missing context, and returns a cited report.",
+      "source": "https://blindspot.buzz/",
+      "status": "verified"
+    }
+  ],
+  "payload": {
+    "brandId": "blindspot",
+    "templateId": "product",
+    "compositionId": "product",
+    "format": "portrait",
+    "content": {
+      "eyebrow": "BLINDSPOT / PRODUCT",
+      "headline": "Paste a post. Get the receipts.",
+      "support": "Blindspot returns the short answer first, then keeps the checked claims and cited sources underneath.",
+      "image": {
+        "assetId": "9517ceb3-5f02-4bbb-b8a1-39b8558e37fb",
+        "alt": "Blindspot homepage with its public-link checker and cited-report preview",
+        "fit": "cover",
+        "focalPoint": {
+          "x": 0.5,
+          "y": 0.38
+        },
+        "zoom": 1.05,
+        "frame": "browser"
+      },
+      "cta": "Paste a public post",
+      "backgroundStyle": "ink",
+      "visualDirection": "interface"
+    }
+  },
+  "lifecycle": {
+    "kind": "draft",
+    "draftId": "0b316f44-b59c-4e7b-b7b1-5b6bb40f592d",
+    "carouselId": null,
+    "revision": 1,
+    "reviewId": "037dfa69-5a3b-4f25-ad86-beb2d7bb9b87",
+    "renderId": "7bb490ef-a620-4a65-94e6-8c858715062e"
+  },
+  "process": {
+    "startedAt": "2026-09-18T16:30:31.961Z",
+    "firstReviewedAt": "2026-09-18T16:30:32.527Z",
+    "firstPublishableAt": "2026-09-18T16:30:47.628Z",
+    "agentReviewIterations": 1,
+    "humanFinishingSeconds": 0,
+    "humanInterventions": [],
+    "blockers": []
+  },
+  "review": {
+    "verdict": "publishable",
+    "contentWarnings": [],
+    "visualAnswers": [
+      {
+        "question": "Are the subject and hook understandable in under one second?",
+        "answer": "yes",
+        "notes": "The imperative headline names the action and payoff immediately."
+      },
+      {
+        "question": "Does one idea clearly dominate the visual hierarchy?",
+        "answer": "yes",
+        "notes": "The launch hook leads, and the single product screenshot demonstrates that same workflow."
+      },
+      {
+        "question": "Is every important word readable at phone-feed size?",
+        "answer": "yes",
+        "notes": "Headline, product behavior, CTA, brand, and footer remain legible; tiny interface detail is supporting source texture rather than required copy."
+      },
+      {
+        "question": "Does the supporting copy earn its space without repeating or competing with the headline?",
+        "answer": "yes",
+        "notes": "The support explains short-answer and cited-source behavior that the hook does not state."
+      },
+      {
+        "question": "Is source imagery prominent, correctly cropped, and factually faithful?",
+        "answer": "yes",
+        "notes": "The approved homepage capture owns most of the lower canvas, remains upright, and preserves the checker and report preview."
+      },
+      {
+        "question": "Do the composition and visual direction fit the story intent and approved brand?",
+        "answer": "yes",
+        "notes": "The product composition and interface direction make the verified UI the proof while retaining Blindspot's ink, paper, and signal palette."
+      },
+      {
+        "question": "Does the result feel deliberately art-directed and ready to publish?",
+        "answer": "yes",
+        "notes": "Scale, split hierarchy, screenshot stage, red edge, and utility footer form a coherent launch poster."
+      },
+      {
+        "question": "Is it meaningfully distinct from recent work without breaking brand continuity?",
+        "answer": "yes",
+        "notes": "The interface-led product stage differs from recent surfaces, and the review returned no repetition or similarity warnings."
+      }
+    ],
+    "claimAccuracy": "pass",
+    "assetFidelity": "pass",
+    "notes": [
+      "Visual review PNG: benchmarks/creative-quality-v1/launch-runs/artifacts/blindspot-review.png"
+    ]
+  },
+  "delivery": {
+    "caption": "Paste a public post or video link. Blindspot returns the short answer first, then keeps the checked claims and cited sources underneath.",
+    "altText": [
+      "Blindspot homepage with its public-link checker and cited-report preview."
+    ],
+    "workspaceUrl": "http://localhost:3000/drafts/0b316f44-b59c-4e7b-b7b1-5b6bb40f592d",
+    "renderUrl": "http://localhost:3000/renders/7bb490ef-a620-4a65-94e6-8c858715062e",
+    "assetUrls": [
+      "http://localhost:3000/api/renders/7bb490ef-a620-4a65-94e6-8c858715062e/asset"
+    ],
+    "dimensions": {
+      "width": 1080,
+      "height": 1350
+    },
+    "templateVersionId": "product@6",
+    "sha256": [
+      "b8151c804a950568c39e577d0b3699c725c217d4e7dfdb862a2e601305003e3a"
+    ],
+    "zipUrl": null
+  }
+}
