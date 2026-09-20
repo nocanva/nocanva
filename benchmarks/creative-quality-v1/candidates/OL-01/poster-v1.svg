@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1350" viewBox="0 0 1080 1350" role="img" aria-labelledby="title desc">
+  <title id="title">Grape, grown up.</title><desc id="desc">OLIPOP Classic Grape hero using the official current can packshot.</desc>
+  <defs><radialGradient id="bg"><stop stop-color="#9d55be"/><stop offset="1" stop-color="#3c0d55"/></radialGradient><linearGradient id="deck" x2="0" y2="1"><stop stop-color="#ca8be0"/><stop offset="1" stop-color="#7b3296"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="34" stdDeviation="25" flood-color="#180423" flood-opacity=".62"/></filter></defs>
+  <rect width="1080" height="1350" fill="url(#bg)"/><circle cx="900" cy="240" r="280" fill="#e0ff55" opacity=".13"/><circle cx="120" cy="520" r="240" fill="#ffcf39" opacity=".12"/>
+  <text x="64" y="78" font-family="Arial,sans-serif" font-size="16" font-weight="800" letter-spacing="2.8" fill="#e0ff55">CLASSIC GRAPE · OLIPOP</text>
+  <text x="58" y="234" font-family="Georgia,serif" font-size="108" font-weight="700" letter-spacing="-5" fill="#fff7e8">Grape,</text><text x="58" y="334" font-family="Georgia,serif" font-size="108" font-style="italic" font-weight="700" letter-spacing="-5" fill="#e0ff55">grown up.</text>
+  <text x="64" y="410" font-family="Arial,sans-serif" font-size="25" fill="#f0dff6">Sweet-tart concord grape juice, kissed with lime.</text>
+  <ellipse cx="540" cy="1210" rx="500" ry="175" fill="url(#deck)"/><ellipse cx="540" cy="1120" rx="300" ry="72" fill="#250333" opacity=".45"/>
+  <g filter="url(#shadow)"><image x="265" y="405" width="550" height="724" preserveAspectRatio="xMidYMid meet" xlink:href="../../assets/olipop/classic-grape-can.png"/></g>
+  <circle cx="150" cy="880" r="86" fill="#e0ff55"/><path d="M122 846c30-32 72-8 58 29-12 31-58 49-78 24-15-18-1-39 20-53z" fill="#4d7c2b"/><circle cx="910" cy="940" r="104" fill="#6e2689" stroke="#b96bd1" stroke-width="18"/><circle cx="852" cy="882" r="42" fill="#7f3b9c"/><circle cx="960" cy="860" r="38" fill="#7f3b9c"/>
+  <text x="64" y="1290" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="1.5" fill="#fff7e8">KEEP REFRIGERATED</text><text x="1016" y="1290" text-anchor="end" font-family="Arial,sans-serif" font-size="15" fill="#ead9ef">12 FL OZ / 355 mL</text>
+</svg>

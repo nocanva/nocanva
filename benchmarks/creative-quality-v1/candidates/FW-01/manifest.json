@@ -1,0 +1,15 @@
+{
+  "candidateId": "FW-01",
+  "concept": "This laptop stays yours",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "ef7f9d4156e68651c268f5890561e81313f5b1a369df9b4fc802b2042662076d" },
+  "sources": [
+    { "path": "../../assets/framework/laptop-13-guide-hero.jpg", "sha256": "c56c7f41244915131c44812f1c828c15c2abcfa41bfb9ca2e4023aa801e2f104", "role": "Official Framework Laptop 13 service-guide internal photograph" },
+    { "url": "https://frame.work/laptop13", "role": "Official product facts and copy" },
+    { "url": "https://guides.frame.work/Guide/Mainboard+Replacement+for+Framework+Laptop+13/79", "role": "Exact repair-guide lineage" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all product pixels", "all provenance labels"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "Source photograph remains upright and untransformed."]
+}

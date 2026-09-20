@@ -1,0 +1,15 @@
+{
+  "candidateId": "OL-02",
+  "concept": "Read the can",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "8cda10b2c757119a2db60dea099d2c32d2bc284a795f6372da6da6b8a39dac66" },
+  "sources": [
+    { "path": "../../assets/olipop/classic-grape-can.png", "sha256": "998a224fdef8024dee8dcfaffb8768b95a4d723d1bb18fd4d4677e5288304926", "role": "Official current Classic Grape packshot" },
+    { "path": "../../assets/olipop/classic-grape-nutrition-panel.png", "sha256": "9eecf7d573df4c44044f5f8768ea0f90e29d639bb030e0b30bfdc23861ecf864", "role": "Official current nutrition and ingredient panel" },
+    { "url": "https://drinkolipop.com/products/classic-grape", "role": "Official serving basis and current gallery source" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all product pixels", "all nutrition transcription"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "Values match one 355 mL can: 50 calories, 9g fiber, 5g total sugars, and 1g added sugar."]
+}

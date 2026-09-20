@@ -12,7 +12,7 @@ It evaluates whether NoCanva can support market-competitive, art-directed poster
 - Quality rubric: initialized.
 - Reference library: initial taxonomy established; collection continues.
 - Concept briefs: 15 production briefs drafted across five products.
-- Candidate production: 6 of 15 ready for blind review; remaining products are blocked on source-asset clearance or capture.
+- Candidate production: 12 of 15 ready for blind review; only the three first-party NoCanva candidates remain capture-dependent.
 - Scene graph v0: not started.
 - Product code changes: none.
 

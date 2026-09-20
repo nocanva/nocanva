@@ -81,42 +81,54 @@
       ]
     },
     "framework-laptop-13": {
-      "status": "permission-review",
+      "status": "ready-for-private-benchmark",
       "items": [
         {
           "id": "hero-packshot",
-          "description": "Official current-generation Laptop 13 hero image",
-          "status": "permission-review"
+          "description": "Official Laptop 13 service-guide internal system image used as the ownership hero",
+          "path": "framework/laptop-13-guide-hero.jpg",
+          "sha256": "c56c7f41244915131c44812f1c828c15c2abcfa41bfb9ca2e4023aa801e2f104",
+          "status": "ready"
         },
         {
           "id": "expansion-cards",
-          "description": "Official Expansion Card images for the exact cards shown",
-          "status": "permission-review"
+          "description": "Official Laptop 13 service-guide photograph of a real Expansion Card action",
+          "path": "framework/laptop-13-expansion-card-guide.jpg",
+          "sha256": "83de579a73e0bd5549ec5c90bbcdcd1b8d67afe1dc7e343d37ae9ddc3aaed6a3",
+          "status": "ready"
         },
         {
           "id": "internal-view",
-          "description": "Official internal image paired with its exact repair guide",
-          "status": "permission-review"
+          "description": "Official bottom-cover service photograph paired with Mainboard Replacement Guide Step 4",
+          "path": "framework/laptop-13-screwdriver-guide.jpg",
+          "sha256": "b4dddbc63e3b6c3baa61de3f453f82f53b5bb81203365d834eddfb1496fdbc38",
+          "status": "ready"
         }
       ]
     },
     "olipop-classic-grape": {
-      "status": "permission-review",
+      "status": "ready-for-private-benchmark",
       "items": [
         {
           "id": "current-packshot",
           "description": "Official current Classic Grape can with readable label",
-          "status": "permission-review"
+          "path": "olipop/classic-grape-can.png",
+          "sha256": "998a224fdef8024dee8dcfaffb8768b95a4d723d1bb18fd4d4677e5288304926",
+          "status": "ready"
         },
         {
           "id": "nutrition-panel",
           "description": "Official current nutrition panel for the same package version",
-          "status": "permission-review"
+          "path": "olipop/classic-grape-nutrition-panel.png",
+          "sha256": "9eecf7d573df4c44044f5f8768ea0f90e29d639bb030e0b30bfdc23861ecf864",
+          "status": "ready"
         },
         {
           "id": "lifestyle",
           "description": "Optional official gallery image suitable for internal benchmark use",
-          "status": "permission-review"
+          "path": "olipop/classic-grape-lifestyle.jpg",
+          "sha256": "78273654f43704ef4b296d8a9e2c637cebca563f4f8e9bfd9ee19ab15108edf9",
+          "status": "ready"
         }
       ]
     }
