@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "schema": "schema.json",
+  "runs": [
+    {
+      "runId": "NC-LAUNCH-01",
+      "product": "nocanva",
+      "record": "nocanva.json",
+      "status": "source-blocked"
+    },
+    {
+      "runId": "BS-LAUNCH-01",
+      "product": "blindspot",
+      "record": "blindspot.json",
+      "status": "rendered"
+    },
+    {
+      "runId": "CF-LAUNCH-01",
+      "product": "cloudflare-agents-sdk",
+      "record": "cloudflare-agents-sdk.json",
+      "status": "source-blocked"
+    },
+    {
+      "runId": "FW-LAUNCH-01",
+      "product": "framework-laptop-13",
+      "record": "framework-laptop-13.json",
+      "status": "source-blocked"
+    },
+    {
+      "runId": "OL-LAUNCH-01",
+      "product": "olipop-classic-grape",
+      "record": "olipop-classic-grape.json",
+      "status": "source-blocked"
+    }
+  ]
+}

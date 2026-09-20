@@ -116,6 +116,8 @@ The daily MCP API uses `nocanva_*`. The older `canvnah_*` namespace remains only
 
 - [MCP clients](./docs/MCP_CLIENTS.md)
 - [Creative Engine v2](./docs/CREATIVE_ENGINE_V2.md)
+- [Outcome-first launch sprint](./docs/OUTCOME_FIRST_LAUNCH_SPRINT.md)
+- [Outcome-first launch sprint result](./docs/OUTCOME_FIRST_LAUNCH_SPRINT_RESULT.md)
 - [Blindspot validation prompt](./docs/BLINDSPOT_VALIDATION.md)
 - [Media workflow skill](./skills/nocanva-media/SKILL.md)
 - [Layout-authoring skill](./skills/nocanva-layout/SKILL.md)

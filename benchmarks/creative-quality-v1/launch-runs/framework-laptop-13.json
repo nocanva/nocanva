@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "runId": "FW-LAUNCH-01",
+  "product": "framework-laptop-13",
+  "status": "source-blocked",
+  "plan": {
+    "objective": "Make repairability and long-term ownership tangible through real product imagery.",
+    "audience": "Laptop buyers who value customization, repairability, and upgrades.",
+    "verifiedEvent": "Framework Laptop 13 is designed to be customizable, upgradeable, and repairable.",
+    "strongestClaim": "This laptop stays yours.",
+    "proof": "The official Laptop 13 overview, upgrade materials, guides, and an exact current-model packshot/service view.",
+    "hook": "This laptop stays yours.",
+    "storyIntent": "product_demonstration",
+    "compositionId": "product",
+    "visualAnchor": "An official current-model packshot paired with an official open or service view.",
+    "supportingDetail": "Replaceable and upgradeable parts are documented in official guides.",
+    "intendedReaction": "Associate ownership with visible, credible repair and upgrade access.",
+    "format": "portrait",
+    "formatReason": "A premium hero poster can make one product and one modular detail dominant.",
+    "caption": "Framework Laptop 13 is designed to be customizable, upgradeable, and repairable. The ownership story becomes credible when the real product and documented service access stay in view.",
+    "exclusions": ["No current price, stock, shipping, battery, performance, or environmental-superiority claim.", "No mixed generations, fabricated ports, internals, or exploded views."]
+  },
+  "evidence": [
+    { "claim": "Framework Laptop 13 is a 13.5-inch notebook designed to be customizable, upgradeable, and repairable.", "source": "https://frame.work/laptop13", "status": "verified" },
+    { "claim": "The product supports replaceable and upgradeable parts.", "source": "https://frame.work/laptop13?tab=upgrades", "status": "verified" }
+  ],
+  "payload": null,
+  "lifecycle": { "kind": "draft", "draftId": null, "carouselId": null, "revision": null, "reviewId": null, "renderId": null },
+  "process": { "startedAt": null, "firstReviewedAt": null, "firstPublishableAt": null, "agentReviewIterations": 0, "humanFinishingSeconds": null, "humanInterventions": [], "blockers": ["Official current-model packshots and service imagery are not retained in the benchmark workspace.", "Image-license or owner-permission review is incomplete.", "No approved Framework brand/template exists in the current NoCanva workspace."] },
+  "review": { "verdict": "pending", "contentWarnings": [], "visualAnswers": [], "claimAccuracy": "pass", "assetFidelity": "pending", "notes": ["Do not replace the missing product assets with generated hardware."] },
+  "delivery": { "caption": "Framework Laptop 13 is designed to be customizable, upgradeable, and repairable. The ownership story becomes credible when the real product and documented service access stay in view.", "altText": [], "workspaceUrl": null, "renderUrl": null, "assetUrls": [], "dimensions": null, "templateVersionId": null, "sha256": [], "zipUrl": null }
+}

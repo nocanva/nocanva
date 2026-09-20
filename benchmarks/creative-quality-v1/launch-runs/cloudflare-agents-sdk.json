@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "runId": "CF-LAUNCH-01",
+  "product": "cloudflare-agents-sdk",
+  "status": "source-blocked",
+  "plan": {
+    "objective": "Explain durable agent identity and state as a concrete developer capability.",
+    "audience": "Developers building stateful agents and technical decision-makers evaluating the runtime.",
+    "verifiedEvent": "Cloudflare's Agents SDK provides durable identity, state, connections, scheduling, and recovery.",
+    "strongestClaim": "Every agent gets a durable identity.",
+    "proof": "Current official Agents documentation and its Agent class/state examples.",
+    "hook": "Every agent gets a durable identity.",
+    "storyIntent": "feature_education",
+    "compositionId": "explainer",
+    "visualAnchor": "A verbatim official Agent code excerpt connected to one persistent identity object.",
+    "supportingDetail": "State and connections remain attached to the same named agent.",
+    "intendedReaction": "See durable identity as the architectural difference rather than generic AI imagery.",
+    "format": "carousel",
+    "formatReason": "Identity, state, and connections need a short verified sequence to remain legible.",
+    "caption": "An agent is more useful when it has a durable identity. Cloudflare's Agents SDK brings state, connections, scheduling, and recovery together around the same agent.",
+    "exclusions": ["No unqualified cost, performance, latency, scale, or maturity comparison.", "No generated Cloudflare UI, code, terminal output, or customer logos."]
+  },
+  "evidence": [
+    { "claim": "The Agents SDK is used to build and host agents on Cloudflare.", "source": "https://developers.cloudflare.com/agents/", "status": "verified" },
+    { "claim": "The runtime provides identity, state, connections, scheduling, and recovery.", "source": "benchmarks/creative-quality-v1/products/cloudflare-agents-sdk.md", "status": "verified" }
+  ],
+  "payload": null,
+  "lifecycle": { "kind": "carousel", "draftId": null, "carouselId": null, "revision": null, "reviewId": null, "renderId": null },
+  "process": { "startedAt": null, "firstReviewedAt": null, "firstPublishableAt": null, "agentReviewIterations": 0, "humanFinishingSeconds": null, "humanInterventions": [], "blockers": ["No approved Cloudflare brand/template exists in the current NoCanva workspace.", "The retained benchmark set has composed candidate art but not a cleared official code or documentation crop prepared as a NoCanva source asset."] },
+  "review": { "verdict": "pending", "contentWarnings": [], "visualAnswers": [], "claimAccuracy": "pass", "assetFidelity": "pending", "notes": ["The plan is complete; rendering would require approved brand configuration and official source assets."] },
+  "delivery": { "caption": "An agent is more useful when it has a durable identity. Cloudflare's Agents SDK brings state, connections, scheduling, and recovery together around the same agent.", "altText": [], "workspaceUrl": null, "renderUrl": null, "assetUrls": [], "dimensions": null, "templateVersionId": null, "sha256": [], "zipUrl": null }
+}

@@ -37,6 +37,7 @@ test("local MCP exposes the agent-native NoCanva workflow", async () => {
   assert.match(worker, /createCloudflareRenderer/);
   assert.match(server, /Primary workflow/);
   assert.match(server, /visualReviewRubric/);
+  assert.match(server, /storyIntents: Object\.values\(storyIntents\)/);
   assert.match(server, /contentWarnings: creativeContentWarnings/);
   assert.match(server, /requiredVisualAnswers/);
   assert.match(server, /Blindspot beta work requires a semantic compositionId/);

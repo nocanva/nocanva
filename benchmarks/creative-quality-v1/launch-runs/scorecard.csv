@@ -1,0 +1,6 @@
+run_id,product,status,story_intent,composition_id,verdict,first_glance_pass,claim_accuracy,asset_fidelity,agent_review_iterations,human_finishing_seconds,blocker_count
+NC-LAUNCH-01,nocanva,source-blocked,product_demonstration,product,pending,,pass,pending,0,,2
+BS-LAUNCH-01,blindspot,rendered,product_demonstration,product,publishable,yes,pass,pass,1,0,0
+CF-LAUNCH-01,cloudflare-agents-sdk,source-blocked,feature_education,explainer,pending,,pass,pending,0,,2
+FW-LAUNCH-01,framework-laptop-13,source-blocked,product_demonstration,product,pending,,pass,pending,0,,3
+OL-LAUNCH-01,olipop-classic-grape,source-blocked,evidence,receipt,pending,,pass,pending,0,,3

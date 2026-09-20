@@ -33,6 +33,8 @@
     "render:beta-samples": "node scripts/generate-beta-samples.mjs",
     "benchmark:blindspot": "node scripts/evaluate-blindspot-benchmark.mjs",
     "benchmark:blindspot:run": "node scripts/run-blindspot-benchmark.mjs",
+    "benchmark:launch": "node scripts/run-outcome-first-launch-benchmark.mjs",
+    "benchmark:launch:finalize": "node scripts/run-outcome-first-launch-benchmark.mjs --finalize",
     "mcp:dev": "tsx mcp/stdio.ts",
     "mcp:http": "tsx mcp/http-server.ts",
     "mcp:worker:dev": "wrangler dev --remote --config wrangler.mcp.jsonc",

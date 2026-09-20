@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "runId": "OL-LAUNCH-01",
+  "product": "olipop-classic-grape",
+  "status": "source-blocked",
+  "plan": {
+    "objective": "Use the current nutrition facts as a polished product story without implying an unsupported health comparison.",
+    "audience": "Adults considering a nostalgic grape soda alternative.",
+    "verifiedEvent": "The current Classic Grape product page lists 50 calories, 9g fiber, 5g total sugars, and 1g added sugar per 355mL can.",
+    "strongestClaim": "Read the can.",
+    "proof": "The current official Classic Grape product page, packshot, and nutrition panel.",
+    "hook": "Read the can.",
+    "storyIntent": "evidence",
+    "compositionId": "receipt",
+    "visualAnchor": "The real current Classic Grape can beside a readable official nutrition-panel crop.",
+    "supportingDetail": "All values retain the per-355mL serving basis.",
+    "intendedReaction": "Inspect the sourced product facts without reading an implied health promise.",
+    "format": "portrait",
+    "formatReason": "One evidence-led poster can hold the product and four sourced values without fragmenting the story.",
+    "caption": "Read the can: the current Classic Grape page lists 50 calories, 9g fiber, 5g total sugars, and 1g added sugar per 355mL can.",
+    "exclusions": ["No price, stock, disease, digestive-health, weight-loss, or comparative claim.", "No redrawn packaging, altered label text, or invented certification."]
+  },
+  "evidence": [
+    { "claim": "The current 9g Fiber product page lists 50 calories per 355mL can.", "source": "https://drinkolipop.com/products/classic-grape", "status": "verified" },
+    { "claim": "The nutrition panel lists 9g dietary fiber, 5g total sugars, and 1g added sugar per can.", "source": "https://drinkolipop.com/products/classic-grape", "status": "verified" }
+  ],
+  "payload": null,
+  "lifecycle": { "kind": "draft", "draftId": null, "carouselId": null, "revision": null, "reviewId": null, "renderId": null },
+  "process": { "startedAt": null, "firstReviewedAt": null, "firstPublishableAt": null, "agentReviewIterations": 0, "humanFinishingSeconds": null, "humanInterventions": [], "blockers": ["The official current packshot and nutrition-panel pixels are not retained in the benchmark workspace.", "Permission review is incomplete.", "No approved OLIPOP brand/template exists in the current NoCanva workspace."] },
+  "review": { "verdict": "pending", "contentWarnings": [], "visualAnswers": [], "claimAccuracy": "pass", "assetFidelity": "pending", "notes": ["Do not redraw the can or nutrition panel to unblock the run."] },
+  "delivery": { "caption": "Read the can: the current Classic Grape page lists 50 calories, 9g fiber, 5g total sugars, and 1g added sugar per 355mL can.", "altText": [], "workspaceUrl": null, "renderUrl": null, "assetUrls": [], "dimensions": null, "templateVersionId": null, "sha256": [], "zipUrl": null }
+}

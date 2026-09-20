@@ -63,7 +63,14 @@ benchmarks/creative-quality-v1/
 ├── concepts/       # one concept sheet per product
 ├── candidates/     # final benchmark images and manifests
 ├── reviews/        # blind scores and qualitative notes
+├── launch-runs/    # outcome-first plans, evidence, process, review, and delivery records
 └── scene-graph/    # v0 specification after editing-needs analysis
 ```
 
 Evidence, reference taxonomy, and concept briefs are initialized. Candidate media begins only after the asset checklist in every concept sheet is satisfied.
+
+## Outcome-first launch run records
+
+`launch-runs/schema.json` is the canonical contract for the five execution runs in `docs/OUTCOME_FIRST_LAUNCH_SPRINT.md`. Each product gets one JSON record containing its creative plan, evidence mapping, exact payload, timing and intervention data, all eight visual-review answers, canonical caption, alt text, workspace and immutable asset URLs, pinned template version, and hashes.
+
+Use `launch-runs/index.json` to track run status. Never mark a run `rendered` until the delivery fields come from `nocanva_get_render` or `nocanva_get_carousel_render`. A source blocker remains a recorded result; do not replace unavailable product evidence or imagery with invented material.

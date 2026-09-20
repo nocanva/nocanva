@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const compositionIdSchema = z.enum(["claim", "real_but", "receipt", "whats_missing", "product", "explainer"]);
 export type CompositionId = z.infer<typeof compositionIdSchema>;
+export const storyIntentSchema = z.enum(["announcement", "contradiction", "evidence", "omitted_context", "product_demonstration", "feature_education"]);
+export type StoryIntent = z.infer<typeof storyIntentSchema>;
 export type CarouselSequenceRole = "hook" | "context" | "evidence" | "close";
 export const visualDirectionSchema = z.enum(["editorial", "documentary", "bulletin", "field_notes", "monument", "interface"]);
 export type VisualDirection = z.infer<typeof visualDirectionSchema>;
@@ -21,6 +23,31 @@ export type CompositionDefinition = {
   constraints: string[];
   defaults: { backgroundStyle: string; visualDensity: "low" | "medium" | "high"; imagePlacement: string };
 };
+
+export type StoryIntentDefinition = {
+  id: StoryIntent;
+  name: string;
+  purpose: string;
+  compositionId: CompositionId;
+  requiredProof: string;
+};
+
+export const storyIntents: Record<StoryIntent, StoryIntentDefinition> = {
+  announcement: { id: "announcement", name: "Announcement", purpose: "Make a verified event, release, capability, or behavior the story.", compositionId: "claim", requiredProof: "A named event, capability, release, or behavior." },
+  contradiction: { id: "contradiction", name: "Contradiction", purpose: "Show that a supported truth conflicts with the common framing.", compositionId: "real_but", requiredProof: "Explicit support for both the real element and the incorrect context." },
+  evidence: { id: "evidence", name: "Evidence", purpose: "Let a source artifact, quote, date, number, or receipt carry the story.", compositionId: "receipt", requiredProof: "Visible, attributable evidence." },
+  omitted_context: { id: "omitted_context", name: "Omitted context", purpose: "Show how one specific missing fact changes interpretation.", compositionId: "whats_missing", requiredProof: "A named omitted date, place, source, statement, or context." },
+  product_demonstration: { id: "product_demonstration", name: "Product demonstration", purpose: "Use the real interface or product behavior as proof.", compositionId: "product", requiredProof: "A real product screenshot or verified product asset." },
+  feature_education: { id: "feature_education", name: "Feature education", purpose: "Teach a verified workflow or product behavior.", compositionId: "explainer", requiredProof: "Verified steps, behavior, or documented workflow." },
+};
+
+export function compositionForStoryIntent(storyIntent: StoryIntent) {
+  return storyIntents[storyIntent].compositionId;
+}
+
+export function storyIntentForComposition(compositionId: CompositionId) {
+  return storyIntentSchema.options.find((id) => storyIntents[id].compositionId === compositionId);
+}
 
 export const compositions: Record<CompositionId, CompositionDefinition> = {
   claim: {
@@ -163,14 +190,14 @@ export function nextVisualDirection(input: Parameters<typeof rankVisualDirection
 }
 
 export const visualReviewRubric = [
-  "Is the hook understandable in under one second?",
-  "Is there one clear visual hierarchy?",
-  "Is all important text readable on a phone?",
-  "Is there too much text?",
-  "Is the image crop and focal point correct?",
-  "Does it unmistakably feel like Blindspot?",
-  "Does it look professionally designed?",
-  "Is it too similar to recent posts?",
+  "Are the subject and hook understandable in under one second?",
+  "Does one idea clearly dominate the visual hierarchy?",
+  "Is every important word readable at phone-feed size?",
+  "Does the supporting copy earn its space without repeating or competing with the headline?",
+  "Is source imagery prominent, correctly cropped, and factually faithful?",
+  "Do the composition and visual direction fit the story intent and approved brand?",
+  "Does the result feel deliberately art-directed and ready to publish?",
+  "Is it meaningfully distinct from recent work without breaking brand continuity?",
 ] as const;
 
 export function carouselSequenceRole(index: number, total: number): CarouselSequenceRole {
@@ -232,13 +259,13 @@ export function compositionFromTemplateId(templateId: string): CompositionId | u
   return (Object.entries(compositionTemplateIds) as Array<[CompositionId, string]>).find(([, id]) => id === templateId)?.[0];
 }
 
-export function recentCompositionWarnings(recent: RecentCreative[], candidate?: CompositionId, visualDirection?: VisualDirection) {
+export function recentCompositionWarnings(recent: RecentCreative[], candidate?: CompositionId, visualDirection?: VisualDirection, backgroundStyle?: string) {
   const previousThree = recent.slice(0, 3);
   const warnings: string[] = [];
   if (candidate && previousThree.some((item) => item.compositionId === candidate)) warnings.push(`Composition ${candidate} appears in the previous three posts; choose another unless the story strongly requires it.`);
   if (visualDirection && previousThree.some((item) => item.visualDirection === visualDirection)) warnings.push(`Visual direction ${visualDirection} appears in the previous three outputs; use another compatible direction unless the story requires it.`);
   const latestBackground = recent[0]?.backgroundStyle;
-  if (latestBackground && recent.slice(0, 2).every((item) => item.backgroundStyle === latestBackground)) warnings.push(`The last two posts use ${latestBackground}; change the background treatment.`);
+  if (latestBackground && recent.slice(0, 2).every((item) => item.backgroundStyle === latestBackground) && (!backgroundStyle || backgroundStyle === latestBackground)) warnings.push(`The last two posts use ${latestBackground}; change the background treatment.`);
   const latestHeadline = recent[0]?.headline?.trim().toLowerCase();
   if (latestHeadline && recent.slice(1, 4).some((item) => item.headline?.trim().toLowerCase() === latestHeadline)) warnings.push("A recent post uses the same headline structure or exact headline; reframe the hook.");
   return warnings;
