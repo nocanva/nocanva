@@ -1,0 +1,21 @@
+{
+  "candidateId": "BS-02",
+  "concept": "The missing context",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png" },
+  "sources": [
+    {
+      "path": "benchmarks/assets/pib-multifeed-ethanol.png",
+      "sha256": "810fb36a30195a592e1a2bc61f5614a60918f6c190dfa79fb52cc9b3527ba27f",
+      "role": "Official Ministry of Cooperation annexure excerpt"
+    },
+    {
+      "path": "benchmarks/blindspot-v1-cases.json",
+      "role": "Approved primary-source evidence ledger"
+    }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "document crop", "highlight", "citation", "all source pixels"],
+  "reviewNotes": ["Private benchmark candidate; no external publication authorized.", "The highlighted sentence must remain legible and in surrounding context."]
+}
