@@ -1,0 +1,15 @@
+{
+  "candidateId": "NC-01",
+  "concept": "Exact pixels, approved once",
+  "status": "ready-for-review",
+  "dimensions": { "width": 1080, "height": 1350 },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "86a134fb7607899bda016964a70c44cb75841948ef665abc1d38ecb640c4a654" },
+  "sources": [
+    { "path": "../../assets/nocanva/blindspot-approved-draft.png", "sha256": "8b62f34dbedebff7f894e7c77e6ca5ae2789380593f1ea4bb54a05d4b4cddc6e", "role": "Current first-party rendered-draft workspace capture" },
+    { "path": "../../assets/nocanva/blindspot-immutable-render.png", "sha256": "012a5d17ee00f140ab24e7b7e6e86152fc287886a3b142d96c2f4bf457a519d2", "role": "Matching immutable render-detail capture" },
+    { "path": "../../launch-runs/blindspot.json", "role": "Revision, render, template, dimension, and SHA provenance" }
+  ],
+  "generatedRegions": [],
+  "deterministicRegions": ["all typography", "all framing", "all first-party UI pixels", "approval connector and provenance labels"],
+  "reviewNotes": ["Private benchmark candidate; no publication authorized.", "Both UI surfaces refer to the same rendered revision and immutable output."]
+}

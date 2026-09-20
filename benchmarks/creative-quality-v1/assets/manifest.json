@@ -11,27 +11,33 @@
   ],
   "products": {
     "nocanva": {
-      "status": "capture-required",
+      "status": "ready-for-private-benchmark",
       "items": [
         {
           "id": "dashboard",
-          "description": "Current dashboard capture with personal data removed",
-          "status": "capture-required"
+          "description": "Dashboard capture is not required by the final selected compositions",
+          "status": "not-required"
         },
         {
           "id": "review",
           "description": "Current draft review capture with readable artwork and state",
-          "status": "capture-required"
+          "path": "nocanva/blindspot-approved-draft.png",
+          "sha256": "8b62f34dbedebff7f894e7c77e6ca5ae2789380593f1ea4bb54a05d4b4cddc6e",
+          "status": "ready"
         },
         {
           "id": "immutable-render",
           "description": "Exact immutable render corresponding to the review capture",
-          "status": "capture-required"
+          "path": "nocanva/blindspot-immutable-render.png",
+          "sha256": "012a5d17ee00f140ab24e7b7e6e86152fc287886a3b142d96c2f4bf457a519d2",
+          "status": "ready"
         },
         {
           "id": "revision-history",
           "description": "One real multi-revision draft with stable URL and safe identifiers",
-          "status": "capture-required"
+          "path": "nocanva/draft.png",
+          "sha256": "66f7cc3bff9c55a052375b59bee3c6ed087c65cad41c1daeb21f49bac6af551c",
+          "status": "ready"
         }
       ]
     },
