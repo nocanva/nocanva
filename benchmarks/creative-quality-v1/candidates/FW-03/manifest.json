@@ -1,12 +1,12 @@
 {
   "candidateId": "FW-03",
-  "concept": "One tool. Every part.",
+  "concept": "Designed to be repairable.",
   "status": "ready-for-review",
   "dimensions": { "width": 1080, "height": 1350 },
-  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "02a3900490c4ffe511486a4ea4716ed8a09f738156a42297ff9adfb7fede181a" },
+  "files": { "source": "poster-v1.svg", "render": "poster-v1.png", "renderSha256": "72e93463ca469bcbfa7f25849af5089a9fe2649b1b4862a76a163ab702fd5c7c" },
   "sources": [
     { "path": "../../assets/framework/laptop-13-screwdriver-guide.jpg", "sha256": "b4dddbc63e3b6c3baa61de3f453f82f53b5bb81203365d834eddfb1496fdbc38", "role": "Official Framework guide photograph showing the five captive Input Cover screws" },
-    { "url": "https://frame.work/laptop13", "role": "Official replaceability and included-tool facts" },
+    { "url": "https://frame.work/laptop13", "role": "Official repairability, replaceability, and upgradeability facts" },
     { "url": "https://guides.frame.work/Guide/Mainboard+Replacement+for+Framework+Laptop+13/79", "role": "Mainboard Replacement Guide, Step 4" }
   ],
   "generatedRegions": [],
