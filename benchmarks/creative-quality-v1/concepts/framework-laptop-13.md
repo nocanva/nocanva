@@ -88,9 +88,9 @@ Repairability becomes credible when the real internal system and service action 
 
 ### Copy hierarchy
 
-1. **Built to open. Built to last.**
-2. Replace and upgrade real parts with documented guides.
-3. One sourced service fact or guide title.
+1. **Designed to be repairable.**
+2. Replace and upgrade real parts.
+3. Sourced service facts or a guide title.
 
 ### Composition
 

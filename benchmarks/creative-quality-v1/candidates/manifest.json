@@ -12,7 +12,7 @@
     { "id": "CF-03", "product": "cloudflare-agents-sdk", "concept": "State survives the conversation", "status": "ready-for-review" },
     { "id": "FW-01", "product": "framework-laptop-13", "concept": "This laptop stays yours", "status": "ready-for-review" },
     { "id": "FW-02", "product": "framework-laptop-13", "concept": "Choose your ports", "status": "ready-for-review" },
-    { "id": "FW-03", "product": "framework-laptop-13", "concept": "One tool. Every part.", "status": "ready-for-review" },
+    { "id": "FW-03", "product": "framework-laptop-13", "concept": "Designed to be repairable.", "status": "ready-for-review" },
     { "id": "OL-01", "product": "olipop-classic-grape", "concept": "Grape, grown up", "status": "ready-for-review" },
     { "id": "OL-02", "product": "olipop-classic-grape", "concept": "Read the can", "status": "ready-for-review" },
     { "id": "OL-03", "product": "olipop-classic-grape", "concept": "Concord grape, kissed with lime", "status": "ready-for-review" }
